@@ -1,0 +1,4 @@
+# Cache do widget e liberação de embed em qualquer site da Ana
+/widget-captura.js
+  Cache-Control: public, max-age=300
+  Access-Control-Allow-Origin: *

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Captura — Ana Carolina</title>
+<style>
+  body{margin:0;font-family:system-ui,Segoe UI,Roboto,sans-serif;background:#f2faf8;color:#14202a}
+  .hero{max-width:640px;margin:0 auto;padding:48px 20px 12px;text-align:center}
+  .hero h1{font-size:26px;margin:0 0 10px}
+  .hero p{color:#54636d;font-size:16px;line-height:1.5}
+  .wrap{padding:8px 20px 60px}
+</style>
+</head>
+<body>
+  <div class="hero">
+    <h1>Receba os conteúdos da Ana Carolina</h1>
+    <p>Deixe seus dados e entre para a lista.</p>
+  </div>
+  <div class="wrap">
+    <div id="captura-ana"></div>
+    <!-- Servido pelo próprio Pages: endpoint relativo (mesma origem) -->
+    <script src="/widget-captura.js"
+            data-endpoint="/api/capture"
+            data-form="palestra-sp"
+            data-target="#captura-ana"
+            data-titulo="Quero receber os conteúdos"
+            data-botao="Entrar na lista"
+            data-optin="Autorizo a Ana Carolina a me enviar e-mails e mensagens no WhatsApp. Posso sair quando quiser."
+            data-redirect=""></script>
+  </div>
+</body>
+</html>
