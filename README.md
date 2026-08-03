@@ -112,6 +112,38 @@ Acesse `https://SEU-PROJETO.pages.dev/painel.html`, faça login com o usuário c
 
 ---
 
+# Funil de e-mail ("ZapFlow do e-mail")
+
+Construtor de sequências + motor de envio automático (Resend) + rastreamento. A lógica de envio é a Function `/api/engine/tick`, disparada a cada minuto pelo `pg_cron` do Supabase.
+
+## Ativar (uma vez)
+
+1. **SQL:** rode `supabase/06_email_funil.sql` (colunas, RPCs de inscrição/stats, extensões `pg_cron`/`pg_net`).
+2. **Variáveis no Pages** (Settings → Environment variables):
+
+   | Nome | Valor |
+   |---|---|
+   | `RESEND_API_KEY` | (já existe) chave do Resend |
+   | `RESEND_FROM` | `Ana Carolina <contato@SEU-DOMINIO>` (domínio verificado no Resend) |
+   | `ENGINE_KEY` | uma chave forte inventada por você |
+   | `PUBLIC_BASE` | `https://SEU-PROJETO.pages.dev` |
+   | `RESEND_WEBHOOK_SECRET` | (opcional) segredo do webhook no Resend |
+
+3. **Agendador:** no fim do `06_email_funil.sql` há um bloco comentado. Edite a URL (`/api/engine/tick`) e a chave (= `ENGINE_KEY`), descomente e rode. Isso liga o cron de 1 em 1 minuto.
+4. **Webhook do Resend:** no painel do Resend → Webhooks → aponte para `https://SEU-PROJETO.pages.dev/api/webhooks/resend` (eventos delivered/opened/clicked/bounced/complained). Se definir um Signing Secret, coloque em `RESEND_WEBHOOK_SECRET`.
+5. Push do repo.
+
+## Usar (no painel, aba E-mail / Funil)
+
+- **+ Nova sequência:** nome, remetente, ativo. Depois **Abrir** → adicione **passos** (ordem, atraso em horas, assunto, corpo HTML). Use `{{nome}}` para o primeiro nome.
+- **Inscrever segmento:** escolhe o funil e filtra por estado / origem / tag / opt-in — joga o segmento no funil de uma vez.
+- **Auto-inscrição:** dentro do funil, ligue uma **origem**; todo lead novo capturado por ela entra sozinho.
+- O motor manda o passo 0 na entrada e os seguintes conforme o atraso de cada passo. Descadastro é automático (link no rodapé + `/api/unsub`), e o RLS/LGPD ficam preservados.
+
+Endpoints novos: `/api/engine/tick` (motor, protegido por `ENGINE_KEY`), `/api/webhooks/resend` (eventos), `/api/unsub` (descadastro).
+
+---
+
 # Monitor de audiência (`/monitor.html`)
 
 Relatório visual no estilo "Central de Relatórios" (placar por estado, abas por canal, gráficos de entrada por dia). Ideal para apresentar à cliente. Mesmo login do painel.

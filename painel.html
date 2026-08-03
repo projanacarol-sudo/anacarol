@@ -165,10 +165,11 @@
     <!-- ------- E-MAIL / FUNIL ------- -->
     <section class="panel" id="panel-email">
       <div class="cards" id="emailKpis"></div>
-      <div class="row2">
-        <div class="box"><h3>Eventos de e-mail</h3><canvas id="chartEmail"></canvas></div>
-        <div class="box"><h3>Sequências</h3><div id="seqList"></div></div>
+      <div class="toolbar">
+        <button class="btn" id="btnNovaSeq">+ Nova sequência</button>
+        <button class="btn ghost" id="btnInscrever">Inscrever segmento</button>
       </div>
+      <div class="box"><h3>Funis de e-mail</h3><div id="seqList"></div></div>
     </section>
 
     <!-- ------- GRUPOS E REDES ------- -->
@@ -418,29 +419,158 @@ $("#btnExport").addEventListener("click", async ()=>{
 });
 function csv(v){if(v==null)return"";const s=String(v).replace(/"/g,'""');return /[;"\n]/.test(s)?`"${s}"`:s;}
 
-/* ================= E-MAIL / FUNIL ================= */
+/* ================= E-MAIL / FUNIL (construtor) ================= */
 async function loadEmail(){
   const { data: ev } = await sb.rpc("crm_email_eventos");
   const map={}; (ev||[]).forEach(e=>map[e.tipo]=Number(e.total));
   $("#emailKpis").innerHTML=[
-    kpi("Enviados",fmt(map.sent||map.delivered||0)),
+    kpi("Enviados",fmt((map.sent||0)+(map.delivered||0))),
     kpi("Aberturas",fmt(map.opened||0)),
     kpi("Cliques",fmt(map.clicked||0)),
-    kpi("Descadastros",fmt(map.unsubscribed||0)),
+    kpi("Descadastros",fmt((map.unsubscribed||0)+(map.complained||0))),
   ].join("");
-  const order=["sent","delivered","opened","clicked","bounced","complained","unsubscribed"];
-  const labels=order.filter(t=>map[t]!=null);
-  barChart("chartEmail", labels, labels.map(t=>map[t]), "Eventos");
-  if(!labels.length) $("#chartEmail").parentElement.innerHTML='<h3>Eventos de e-mail</h3><div class="empty">Sem eventos ainda. Aparecem quando o funil começar a enviar.</div>';
+  await carregarSequencias();
+}
 
-  if(!SEQUENCES.length){ $("#seqList").innerHTML='<div class="empty">Nenhuma sequência criada ainda.</div>'; return; }
+async function carregarSequencias(){
+  const { data } = await sb.from("email_sequences").select("id,nome,objetivo,ativo,from_nome,from_email").order("nome");
+  SEQUENCES = data||[];
+  if(!SEQUENCES.length){ $("#seqList").innerHTML='<div class="empty">Nenhum funil ainda. Clique em “+ Nova sequência”.</div>'; return; }
   const rows=[];
   for(const s of SEQUENCES){
-    const { count } = await sb.from("lead_sequence_state").select("*",{count:"exact",head:true}).eq("sequence_id",s.id).eq("status","ativo");
-    rows.push(`<tr><td>${esc(s.nome)}</td><td>${s.ativo?'<span class="pill ok">ativa</span>':'<span class="muted">pausada</span>'}</td><td>${fmt(count||0)} leads ativos</td></tr>`);
+    const { data: st } = await sb.rpc("crm_funil_stats",{p_sequence:s.id});
+    const x = st||{};
+    rows.push(`<tr>
+      <td><strong>${esc(s.nome)}</strong>${s.objetivo?`<div class="muted" style="font-size:11px">${esc(s.objetivo)}</div>`:""}</td>
+      <td>${s.ativo?'<span class="pill ok">ativo</span>':'<span class="pill frio">pausado</span>'}</td>
+      <td>${fmt(x.ativos)} ativos · ${fmt(x.concluidos)} concluídos</td>
+      <td>${fmt(x.enviados)} env · ${fmt(x.aberturas)} abert · ${fmt(x.cliques)} cliq</td>
+      <td><button class="lnk" data-seq="${s.id}">Abrir</button></td>
+    </tr>`);
   }
-  $("#seqList").innerHTML=`<table><thead><tr><th>Sequência</th><th>Status</th><th>No funil</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
+  $("#seqList").innerHTML=`<table><thead><tr><th>Funil</th><th>Status</th><th>No funil</th><th>Desempenho</th><th></th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
+  $$("[data-seq]").forEach(b=>b.addEventListener("click",()=>abrirSequencia(SEQUENCES.find(s=>s.id===b.dataset.seq))));
 }
+
+/* --- criar/editar sequência --- */
+$("#btnNovaSeq").addEventListener("click",()=>editarSequencia(null));
+function editarSequencia(s){
+  s=s||{};
+  $("#modalRoot").innerHTML=`<div class="overlay" id="ov"><div class="modal">
+    <h3>${s.id?"Editar":"Nova"} sequência</h3>
+    <label>Nome</label><input id="sNome" value="${esc(s.nome)}" placeholder="Ex: Boas-vindas">
+    <label>Objetivo (opcional)</label><input id="sObj" value="${esc(s.objetivo)}">
+    <label>Remetente — nome</label><input id="sFromN" value="${esc(s.from_nome)}" placeholder="Ana Carolina">
+    <label>Remetente — e-mail (domínio verificado no Resend)</label><input id="sFromE" value="${esc(s.from_email)}" placeholder="contato@seudominio.com.br">
+    <div class="chk"><input type="checkbox" id="sAtivo" ${s.ativo!==false?"checked":""}><label style="margin:0">Ativo (envia)</label></div>
+    <div class="actions"><button class="btn" id="sSave">Salvar</button><button class="btn ghost" id="sClose">Cancelar</button></div>
+  </div></div>`;
+  const close=()=>$("#modalRoot").innerHTML="";
+  $("#sClose").onclick=close; $("#ov").onclick=e=>{if(e.target.id==="ov")close();};
+  $("#sSave").onclick=async()=>{
+    const rec={nome:$("#sNome").value.trim(),objetivo:$("#sObj").value.trim()||null,from_nome:$("#sFromN").value.trim()||null,from_email:$("#sFromE").value.trim()||null,ativo:$("#sAtivo").checked};
+    if(!rec.nome){toast("Dê um nome ao funil");return;}
+    let err;
+    if(s.id){({error:err}=await sb.from("email_sequences").update(rec).eq("id",s.id));}
+    else {({error:err}=await sb.from("email_sequences").insert(rec));}
+    if(err){toast("Erro ao salvar");return;}
+    toast("Funil salvo");close();carregarSequencias();
+  };
+}
+
+/* --- abrir sequência: passos + auto-enroll --- */
+async function abrirSequencia(s){
+  if(!s)return;
+  const { data: steps } = await sb.from("email_steps").select("*").eq("sequence_id",s.id).order("ordem");
+  const { data: origens } = await sb.from("origens").select("id,nome,auto_sequence_id").order("nome");
+  const stepRows=(steps||[]).map(st=>`<tr>
+    <td>${st.ordem}</td><td>${st.atraso_horas}h</td><td>${esc(st.assunto)}</td>
+    <td><button class="lnk" data-est="${st.id}">Editar</button> · <button class="lnk" data-del="${st.id}" style="color:#c0392b">Excluir</button></td></tr>`).join("");
+  const origOpts=(origens||[]).map(o=>`<option value="${o.id}" ${o.auto_sequence_id===s.id?"selected":""}>${esc(o.nome)}</option>`).join("");
+  $("#modalRoot").innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:600px">
+    <h3>${esc(s.nome)}</h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:6px 0">
+      <strong>Passos</strong><button class="btn" id="addStep" style="padding:6px 12px">+ Passo</button></div>
+    <table><thead><tr><th>#</th><th>Atraso</th><th>Assunto</th><th></th></tr></thead>
+      <tbody>${stepRows||'<tr><td colspan="4" class="muted" style="text-align:center">Nenhum passo ainda</td></tr>'}</tbody></table>
+    <div class="divider"></div>
+    <label>Auto-inscrever: leads novos desta origem entram neste funil</label>
+    <select id="autoOrig"><option value="">— escolher origem —</option>${origOpts}</select>
+    <button class="btn ghost" id="ligarAuto" style="margin-top:8px;width:100%">Ligar auto-inscrição</button>
+    <div class="actions"><button class="btn ghost" id="fClose">Fechar</button></div>
+  </div></div>`;
+  const close=()=>$("#modalRoot").innerHTML="";
+  $("#fClose").onclick=close; $("#ov").onclick=e=>{if(e.target.id==="ov")close();};
+  $("#addStep").onclick=()=>editarPasso(s,null,(steps||[]).length+1);
+  $$("[data-est]").forEach(b=>b.addEventListener("click",()=>editarPasso(s,(steps||[]).find(x=>x.id===b.dataset.est))));
+  $$("[data-del]").forEach(b=>b.addEventListener("click",async()=>{
+    if(!confirm("Excluir este passo?"))return;
+    await sb.from("email_steps").delete().eq("id",b.dataset.del);toast("Passo excluído");abrirSequencia(s);
+  }));
+  $("#ligarAuto").onclick=async()=>{
+    const oid=$("#autoOrig").value; if(!oid){toast("Escolha uma origem");return;}
+    await sb.from("origens").update({auto_sequence_id:s.id}).eq("id",oid);
+    toast("Auto-inscrição ligada");
+  };
+}
+
+/* --- editar passo --- */
+function editarPasso(seq,st,ordemSugerida){
+  st=st||{};
+  $("#modalRoot").innerHTML=`<div class="overlay" id="ov2"><div class="modal" style="max-width:600px">
+    <h3>${st.id?"Editar":"Novo"} passo</h3>
+    <div style="display:flex;gap:10px">
+      <div style="flex:0 0 90px"><label>Ordem</label><input id="pOrdem" type="number" value="${st.ordem||ordemSugerida||1}"></div>
+      <div style="flex:1"><label>Atraso (horas após o anterior)</label><input id="pAtraso" type="number" value="${st.atraso_horas||0}"></div>
+    </div>
+    <label>Assunto <span class="muted">(use {{nome}} para o 1º nome)</span></label>
+    <input id="pAssunto" value="${esc(st.assunto)}">
+    <label>Corpo (HTML — {{nome}} disponível)</label>
+    <textarea id="pCorpo" style="width:100%;min-height:160px;padding:10px;border:1px solid #cfd8dd;border-radius:9px;font-family:monospace;font-size:13px">${esc(st.corpo_html)}</textarea>
+    <div class="actions"><button class="btn" id="pSave">Salvar passo</button><button class="btn ghost" id="pClose">Cancelar</button></div>
+  </div></div>`;
+  const close=()=>{$("#modalRoot").innerHTML="";abrirSequencia(seq);};
+  $("#pClose").onclick=close; $("#ov2").onclick=e=>{if(e.target.id==="ov2")close();};
+  $("#pSave").onclick=async()=>{
+    const rec={sequence_id:seq.id,ordem:Number($("#pOrdem").value)||1,atraso_horas:Number($("#pAtraso").value)||0,assunto:$("#pAssunto").value.trim(),corpo_html:$("#pCorpo").value};
+    if(!rec.assunto){toast("Dê um assunto");return;}
+    let err;
+    if(st.id){({error:err}=await sb.from("email_steps").update(rec).eq("id",st.id));}
+    else {({error:err}=await sb.from("email_steps").insert(rec));}
+    if(err){toast("Erro ao salvar passo (ordem duplicada?)");return;}
+    toast("Passo salvo");close();
+  };
+}
+
+/* --- inscrever segmento --- */
+$("#btnInscrever").addEventListener("click",async()=>{
+  if(!SEQUENCES.length){toast("Crie um funil primeiro");return;}
+  const { data: origens } = await sb.from("origens").select("id,nome").order("nome");
+  const seqOpts=SEQUENCES.map(s=>`<option value="${s.id}">${esc(s.nome)}</option>`).join("");
+  const origOpts=(origens||[]).map(o=>`<option value="${o.id}">${esc(o.nome)}</option>`).join("");
+  $("#modalRoot").innerHTML=`<div class="overlay" id="ov"><div class="modal">
+    <h3>Inscrever segmento num funil</h3>
+    <label>Funil</label><select id="iSeq">${seqOpts}</select>
+    <label>Estado (opcional)</label><input id="iUf" placeholder="Ex: SP" maxlength="2">
+    <label>Origem (opcional)</label><select id="iOrig"><option value="">todas</option>${origOpts}</select>
+    <label>Tag (opcional)</label><input id="iTag" placeholder="ex: telefone_revisar">
+    <div class="chk"><input type="checkbox" id="iOptin" checked><label style="margin:0">Só com opt-in</label></div>
+    <div class="actions"><button class="btn" id="iGo">Inscrever</button><button class="btn ghost" id="iClose">Cancelar</button></div>
+    <p class="muted" style="font-size:11px;margin-top:8px">Descadastrados nunca entram. Quem já está no funil é ignorado.</p>
+  </div></div>`;
+  const close=()=>$("#modalRoot").innerHTML="";
+  $("#iClose").onclick=close; $("#ov").onclick=e=>{if(e.target.id==="ov")close();};
+  $("#iGo").onclick=async()=>{
+    const args={p_sequence:$("#iSeq").value,
+      p_uf:($("#iUf").value.trim().toUpperCase()||null),
+      p_origem:($("#iOrig").value||null),
+      p_tag:($("#iTag").value.trim()||null),
+      p_somente_optin:$("#iOptin").checked};
+    const { data, error } = await sb.rpc("enroll_segment",args);
+    if(error){toast("Erro ao inscrever");return;}
+    toast(`${fmt(data)} leads inscritos`);close();carregarSequencias();
+  };
+});
 
 /* ================= GRUPOS E REDES ================= */
 async function loadCanais(){

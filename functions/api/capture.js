@@ -125,6 +125,16 @@ async function handleCapture(request, env, cors) {
   await sb(env, "PATCH", `/form_submissions?id=eq.${submission.id}`,
     { processado: true, lead_id: lead.id });
 
+  // 4b) auto-enroll: se a origem tem um funil ligado, inscreve o lead
+  if (optInEmail && lead.origem_id) {
+    try {
+      const org = await sb(env, "GET",
+        `/origens?id=eq.${lead.origem_id}&select=auto_sequence_id&limit=1`);
+      const seqId = org[0] && org[0].auto_sequence_id;
+      if (seqId) await sb(env, "POST", "/rpc/enroll_lead", { p_lead: lead.id, p_sequence: seqId });
+    } catch (e) { console.log("auto-enroll falhou:", String(e)); }
+  }
+
   // 5) Resend (não bloqueia a resposta)
   let resend = { synced: false };
   if (optInEmail && email_normalizado && env.RESEND_API_KEY && env.RESEND_AUDIENCE_ID) {
