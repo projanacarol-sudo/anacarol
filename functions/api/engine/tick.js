@@ -36,12 +36,19 @@ async function tick(env) {
   // pega inscrições devidas, com dados do lead e do funil
   const devidos = await sb(env, "GET",
     `/lead_sequence_state?status=eq.ativo&proximo_envio_em=lte.${nowISO}` +
-    `&select=id,lead_id,sequence_id,step_atual,tentativas,` +
+    `&select=id,lead_id,sequence_id,current_step_id,tentativas,ultimo_envio_em,` +
     `leads(email,nome,unsubscribed_email),email_sequences(from_nome,from_email,ativo)` +
     `&order=proximo_envio_em.asc&limit=${LOTE}`);
 
   let enviados = 0, concluidos = 0, pulados = 0, falhas = 0, acoes = 0;
-  const stepsCache = {};
+  const nodeCache = {};
+  const getNode = async (id) => {
+    if (!id) return null;
+    if (nodeCache[id] !== undefined) return nodeCache[id];
+    const r = await sb(env, "GET",
+      `/email_steps?id=eq.${id}&select=id,tipo,config,assunto,corpo_html,preheader,atraso_horas,next_step_id,next_no_id&limit=1`);
+    return (nodeCache[id] = r[0] || null);
+  };
 
   for (const d of devidos) {
     const lead = d.leads || {};
@@ -53,16 +60,8 @@ async function tick(env) {
       pulados++; continue;
     }
 
-    // nós do funil (cache por sequência dentro do tick)
-    let steps = stepsCache[d.sequence_id];
-    if (!steps) {
-      steps = await sb(env, "GET",
-        `/email_steps?sequence_id=eq.${d.sequence_id}&order=ordem.asc&select=ordem,tipo,config,assunto,corpo_html,preheader,atraso_horas`);
-      stepsCache[d.sequence_id] = steps;
-    }
-    const i = d.step_atual || 0;
-    if (i >= steps.length) { await patchState(env, d.id, { status: "concluido" }); concluidos++; continue; }
-    const node = steps[i];
+    const node = await getNode(d.current_step_id);
+    if (!node) { await patchState(env, d.id, { status: "concluido" }); concluidos++; continue; }
     const tipo = node.tipo || "email";
 
     // CLAIM: adia 5 min e conta tentativa (evita processamento duplo)
@@ -73,30 +72,45 @@ async function tick(env) {
 
     try {
       // ---- executa o nó conforme o tipo ----
+      let nextId = node.next_step_id;   // caminho padrão / "Sim"
       if (tipo === "email") {
         if (!lead.email) throw new Error("lead sem e-mail");
         const emailId = await enviaResend(env, lead, seq, node, d.lead_id);
         await sb(env, "POST", "/email_events", {
           lead_id: d.lead_id, email_id: emailId, tipo: "sent",
-          payload: { sequence_id: d.sequence_id, step: node.ordem },
+          payload: { sequence_id: d.sequence_id, step_id: node.id },
         });
         enviados++;
       } else if (tipo === "tag_add" || tipo === "tag_remove") {
         await aplicaTag(env, d.lead_id, node.config && node.config.tag, tipo === "tag_add");
+        acoes++;
+      } else if (tipo === "condicao") {
+        // avalia se o lead abriu/clicou desde o último e-mail deste funil
+        const cond = (node.config && node.config.cond) || "abriu";
+        const evTipo = cond === "clicou" ? "clicked" : "opened";
+        let ok = false;
+        if (d.ultimo_envio_em) {
+          const ev = await sb(env, "GET",
+            `/email_events?lead_id=eq.${d.lead_id}&tipo=eq.${evTipo}&created_at=gte.${d.ultimo_envio_em}&limit=1`);
+          ok = ev.length > 0;
+        }
+        nextId = ok ? node.next_step_id : node.next_no_id;   // Sim x Não
         acoes++;
       } else {
         // 'espera' e outros: nó instantâneo (o atraso já foi cumprido antes dele)
         acoes++;
       }
 
-      // ---- avança ----
-      const prox = i + 1;
-      if (prox >= steps.length) {
-        await patchState(env, d.id, { status: "concluido", step_atual: prox, ultimo_envio_em: nowISO, tentativas: 0 });
+      // ---- avança para o próximo nó ligado ----
+      // ultimo_envio_em só muda quando um e-mail foi enviado (referência da condição)
+      const marcaEnvio = tipo === "email" ? { ultimo_envio_em: nowISO } : {};
+      if (!nextId) {
+        await patchState(env, d.id, { status: "concluido", current_step_id: null, tentativas: 0, ...marcaEnvio });
         concluidos++;
       } else {
-        const atraso = Number(steps[prox].atraso_horas || 0);
-        await patchState(env, d.id, { step_atual: prox, proximo_envio_em: plus(atraso), ultimo_envio_em: nowISO, tentativas: 0 });
+        const next = await getNode(nextId);
+        const atraso = Number((next && next.atraso_horas) || 0);
+        await patchState(env, d.id, { current_step_id: nextId, proximo_envio_em: plus(atraso), tentativas: 0, ...marcaEnvio });
       }
     } catch (e) {
       console.log("falha nó lead", d.lead_id, String(e));
