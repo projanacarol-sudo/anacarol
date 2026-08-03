@@ -89,10 +89,11 @@
 
 <!-- ============================ CONFIG ============================ -->
 <script>
-  // Preencha com os dados do SEU projeto Supabase (Project Settings -> API).
+  // O painel busca a config em /api/config (variáveis do Pages) ao abrir.
+  // Estes valores são só um fallback caso você prefira fixar aqui no arquivo.
   // A anon key é pública por design; quem protege os dados é o RLS + login.
-  const SUPABASE_URL = "https://SEU-PROJETO.supabase.co";
-  const SUPABASE_ANON_KEY = "SUA_ANON_KEY_AQUI";
+  let SUPABASE_URL = "https://ftwzcgmtczzjkuqudith.supabase.co";
+  let SUPABASE_ANON_KEY = "SUA_ANON_KEY_AQUI";
 </script>
 
 <!-- ============================ LOGIN ============================ -->
@@ -183,7 +184,7 @@
 
 <!-- ============================ APP JS ============================ -->
 <script>
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let sb;   // criado após carregar a config (/api/config ou fallback do arquivo)
 let CHARTS = {};
 let ORIGENS = {};        // id -> nome
 let SEQUENCES = [];      // {id, nome}
@@ -197,16 +198,43 @@ const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&
 function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2200);}
 function fmt(n){return (n==null?0:n).toLocaleString("pt-BR");}
 
+/* ---------- checagem de configuração ---------- */
+function configOk(){
+  return SUPABASE_URL && SUPABASE_ANON_KEY
+    && !/SEU-PROJETO/.test(SUPABASE_URL)
+    && !/SUA_ANON_KEY/.test(SUPABASE_ANON_KEY)
+    && /^https:\/\/.+\.supabase\.co/.test(SUPABASE_URL);
+}
+
 /* ---------- auth ---------- */
 $("#loginForm").addEventListener("submit", async e => {
   e.preventDefault();
   $("#loginErr").textContent = "";
+
+  // 1) config não preenchida é a causa nº 1 de "senha inválida"
+  if (!configOk()){
+    $("#loginErr").textContent = "⚠️ Configuração ausente: preencha SUPABASE_URL e SUPABASE_ANON_KEY no topo do painel.html.";
+    console.error("[login] SUPABASE_URL/ANON_KEY não preenchidos ou inválidos.");
+    return;
+  }
+
   $("#loginBtn").disabled = true; $("#loginBtn").textContent = "Entrando...";
   const { error } = await sb.auth.signInWithPassword({
     email: $("#loginEmail").value.trim(), password: $("#loginPass").value
   });
   $("#loginBtn").disabled = false; $("#loginBtn").textContent = "Entrar";
-  if (error) { $("#loginErr").textContent = "E-mail ou senha inválidos."; return; }
+
+  if (error) {
+    // Mostra o motivo REAL (antes escondíamos tudo como "senha inválida")
+    console.error("[login] erro:", error);
+    var m = error.message || "";
+    var amigavel = m;
+    if (/invalid login credentials/i.test(m)) amigavel = "E-mail ou senha incorretos.";
+    else if (/email not confirmed/i.test(m)) amigavel = "Usuário não confirmado. Recrie com 'Auto Confirm User' marcado.";
+    else if (/failed to fetch|networkerror/i.test(m)) amigavel = "Não conectou ao Supabase. Confira a URL/anon key.";
+    $("#loginErr").textContent = "Erro: " + amigavel;
+    return;
+  }
   boot();
 });
 $("#btnLogout").addEventListener("click", async () => { await sb.auth.signOut(); location.reload(); });
@@ -451,7 +479,23 @@ function doughnut(id,labels,data,colors){
 function baseOpts(){return{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}};}
 
 /* ---------- start ---------- */
-guard();
+async function init(){
+  // Tenta a config do Pages (variáveis) primeiro; cai no fallback do arquivo.
+  try{
+    const r = await fetch("/api/config", { cache: "no-store" });
+    const c = await r.json();
+    if (c && c.ok && c.url && c.anonKey){ SUPABASE_URL = c.url; SUPABASE_ANON_KEY = c.anonKey; }
+  }catch(e){ console.warn("[config] /api/config indisponível, usando fallback do arquivo.", e); }
+
+  if (!configOk()){
+    $("#loginErr").textContent = "⚠️ Configuração ausente: adicione a variável SUPABASE_ANON_KEY nas variáveis do Pages (ou preencha no topo do painel.html).";
+    console.error("[config] SUPABASE_ANON_KEY não encontrada.");
+    return;
+  }
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  guard();
+}
+init();
 </script>
 </body>
 </html>
