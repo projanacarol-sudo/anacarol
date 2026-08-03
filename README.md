@@ -12,7 +12,8 @@ Monorepo do CRM da Ana Carolina. Nesta fase, entrega a **captura de leads**: um 
 │       └── health.js      → GET  /api/health
 ├── widget-captura.js      → servido em /widget-captura.js (asset estático)
 ├── index.html             → página de captura de exemplo (/)
-├── painel.html            → o CRM/dashboard (/painel.html)
+├── painel.html            → o CRM operacional (/painel.html)
+├── monitor.html           → o monitor de audiência, estilo relatório (/monitor.html)
 ├── _headers               → cache + CORS do widget
 └── supabase/
     ├── 01_schema.sql      → schema do banco (Fase 1)
@@ -108,3 +109,13 @@ Acesse `https://SEU-PROJETO.pages.dev/painel.html`, faça login com o usuário c
 - **Grupos e Redes:** grupos do SendFlow e métricas sociais — populam nas fases seguintes.
 
 > Segurança: a `service_role` continua **só** nas variáveis do Pages (server-side, usada pelo `/api/capture`). O painel usa a **anon key** + Supabase Auth; o RLS já criado limita o acesso a usuários logados.
+
+---
+
+# Monitor de audiência (`/monitor.html`)
+
+Relatório visual no estilo "Central de Relatórios" (placar por estado, abas por canal, gráficos de entrada por dia). Ideal para apresentar à cliente. Mesmo login do painel.
+
+**Ativar:** rode `supabase/04_monitor.sql` no SQL Editor (funções `crm_por_dia`, `crm_estado`). Depois acesse `/monitor.html`.
+
+Edite a marca no topo do arquivo (bloco `MARCA`): nome, subtítulo, site, foto e o estado-foco (padrão `SP`). As abas WhatsApp, E-mail e do estado-foco já acendem com a base; YouTube e Instagram ficam como "aguardando conexão" até ligarmos as redes.
