@@ -102,7 +102,11 @@ async function tick(env) {
 
 /* ---------- Resend ---------- */
 async function enviaResend(env, lead, seq, step, leadId) {
-  const from = (seq.from_email ? `${seq.from_nome || ""} <${seq.from_email}>`.trim() : env.RESEND_FROM);
+  // Formato aceito pelo Resend: "email@dominio" OU "Nome <email@dominio>".
+  // Sem nome, usa o e-mail puro (nunca "<email>", que o Resend rejeita).
+  const from = seq.from_email
+    ? (seq.from_nome ? `${seq.from_nome} <${seq.from_email}>` : seq.from_email)
+    : env.RESEND_FROM;
   if (!from) throw new Error("sem remetente (RESEND_FROM ou funil.from_email)");
   const unsub = `${env.PUBLIC_BASE || ""}/api/unsub?l=${encodeURIComponent(leadId)}`;
   const html = montarHtml(step.corpo_html || "", lead, unsub);
