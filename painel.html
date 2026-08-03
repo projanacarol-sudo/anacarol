@@ -696,8 +696,9 @@ async function abrirSequencia(s){
   $$("[data-new]").forEach(b=>b.onclick=async()=>{
     const tipo=b.dataset.new;
     const rec={sequence_id:s.id,tipo,ordem:nodes.length+1,
-      atraso_horas:tipo==="espera"?24:0, x:140, y:150+nodes.length*95, is_start:nodes.length===0};
-    if(tipo==="email"){rec.assunto="Novo e-mail";rec.corpo_html="<p>Olá {{nome}},</p>\n<p>Escreva aqui...</p>";}
+      atraso_horas:tipo==="espera"?24:0, x:140, y:150+nodes.length*95, is_start:nodes.length===0,
+      assunto: tipo==="email"?"Novo e-mail":""};   // assunto é obrigatório no banco
+    if(tipo==="email"){rec.corpo_html="<p>Olá {{nome}},</p>\n<p>Escreva aqui...</p>";}
     if(tipo==="tag_add"||tipo==="tag_remove"){rec.config={tag:""};}
     if(tipo==="condicao"){rec.config={cond:"abriu"};}
     const {error}=await sb.from("email_steps").insert(rec);
