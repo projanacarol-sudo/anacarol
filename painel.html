@@ -83,6 +83,19 @@
   .divider{height:1px;background:var(--line);margin:16px 0}
   .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f1c22;color:#fff;padding:11px 18px;border-radius:10px;font-size:13.5px;z-index:60;opacity:0;transition:opacity .2s}
   .toast.show{opacity:1}
+  /* visão geral estilo monitor (cores do painel) */
+  .placar{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+  .placar .kpi .val{color:var(--brand)}
+  .ovbars .ovrow{margin-bottom:13px}.ovbars .ovrow:last-child{margin-bottom:0}
+  .ovh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+  .ovn{font-weight:800;font-size:14.5px}.ovv{font-weight:900;font-size:16px}
+  .ovtag{font-size:11px;color:#0f8a63;background:#e2f5ee;padding:2px 8px;border-radius:10px;margin-left:7px}
+  .ovtrack{height:18px;background:#eef2f4;border-radius:9px;overflow:hidden}
+  .ovfill{height:100%;border-radius:9px;width:0;background:var(--brand);transition:width 1s cubic-bezier(.2,.8,.2,1)}
+  .ovrow.top .ovfill{background:#f5b301}
+  .resumo h3{margin:0 0 10px}
+  .resumo .rz{display:flex;gap:8px;font-size:14px;margin:8px 0;color:#2a3540}
+  .resumo .rz b{color:#0f1c22;font-weight:800}
 </style>
 </head>
 <body>
@@ -129,12 +142,13 @@
   <main>
     <!-- ------- VISÃO GERAL ------- -->
     <section class="panel active" id="panel-overview">
-      <div class="cards" id="kpis"></div>
+      <div class="placar" id="kpis"></div>
+      <div class="box"><h3>📍 Leads por estado</h3><div id="ufBars" class="ovbars"></div></div>
       <div class="row2">
-        <div class="box"><h3>Crescimento da base (por mês)</h3><canvas id="chartMes"></canvas></div>
-        <div class="box"><h3>Aquecimento dos leads</h3><canvas id="chartFunil"></canvas></div>
+        <div class="box"><h3>📈 Crescimento da base (por mês)</h3><canvas id="chartMes"></canvas></div>
+        <div class="box"><h3>🔥 Aquecimento dos leads</h3><canvas id="chartFunil"></canvas></div>
       </div>
-      <div class="box"><h3>Leads por estado (top 12)</h3><canvas id="chartUf"></canvas></div>
+      <div class="box resumo" id="resumoOv"></div>
     </section>
 
     <!-- ------- LEADS ------- -->
@@ -284,26 +298,45 @@ async function loadOverview(){
   const { data: ov } = await sb.rpc("crm_overview");
   const o = ov || {};
   $("#kpis").innerHTML = [
-    kpi("Total de leads", fmt(o.total)),
-    kpi("Com opt-in de e-mail", fmt(o.com_optin), pct(o.com_optin,o.total)),
-    kpi("Com WhatsApp", fmt(o.com_telefone), pct(o.com_telefone,o.total)),
-    kpi("Estado identificado", fmt(o.com_uf), pct(o.com_uf,o.total)),
-    kpi("Novos (30 dias)", fmt(o.novos_30d)),
+    kpi("Total de leads", o.total),
+    kpi("Com opt-in de e-mail", o.com_optin, pct(o.com_optin,o.total)),
+    kpi("Com WhatsApp", o.com_telefone, pct(o.com_telefone,o.total)),
+    kpi("Estado identificado", o.com_uf, pct(o.com_uf,o.total)),
+    kpi("Novos (30 dias)", o.novos_30d),
   ].join("");
+  animAll();
 
   const { data: mes } = await sb.rpc("crm_por_mes");
-  lineChart("chartMes", (mes||[]).map(r=>r.mes), (mes||[]).map(r=>Number(r.total)), "Novos leads");
+  barChart("chartMes", (mes||[]).map(r=>r.mes), (mes||[]).map(r=>Number(r.total)), "Novos leads");
 
   doughnut("chartFunil", ["Frio","Morno","Quente"],
     [Number(o.frio||0),Number(o.morno||0),Number(o.quente||0)],
     ["#8aa0ab","#f5b301","#e0574c"]);
 
   const { data: uf } = await sb.rpc("crm_por_uf");
-  const top = (uf||[]).filter(u=>u.uf!=="—").slice(0,12);
-  barChart("chartUf", top.map(r=>r.uf), top.map(r=>Number(r.total)), "Leads");
+  const top = (uf||[]).filter(u=>u.uf!=="—");
+  estadoBarsOv("ufBars", top.slice(0,10));
+  const t0=top[0]||{};
+  $("#resumoOv").innerHTML=`<h3>📝 Resumo</h3>
+    <div class="rz">✓ Base de <b>${fmt(o.total)}</b> leads, <b>${pct(o.com_optin,o.total)}</b> com opt-in.</div>
+    <div class="rz">✓ <b>${fmt(o.com_telefone)}</b> com WhatsApp para disparo 1 a 1.</div>
+    <div class="rz">✓ <b>${esc(t0.uf||"—")}</b> lidera com <b>${fmt(t0.total||0)}</b> leads.</div>
+    <div class="rz">✓ <b>${fmt(o.novos_30d)}</b> novos leads nos últimos 30 dias.</div>`;
 }
-function kpi(l,v,sub){return `<div class="kpi"><div class="lbl">${esc(l)}</div><div class="val">${v}</div>${sub?`<div class="sub">${sub}</div>`:""}</div>`;}
-function pct(a,b){if(!b)return"";return Math.round((Number(a||0)/Number(b))*100)+"% da base";}
+function kpi(l,v,sub){return `<div class="kpi"><div class="lbl">${esc(l)}</div><div class="val" data-c="${Number(v||0)}">0</div>${sub?`<div class="sub">${esc(sub)}</div>`:""}</div>`;}
+function pct(a,b){if(!b)return"0%";return Math.round((Number(a||0)/Number(b))*100)+"%";}
+function animNum(el,tgt,dur){dur=dur||1000;let s=null;const step=ts=>{if(!s)s=ts;const p=Math.min((ts-s)/dur,1);const e=1-Math.pow(1-p,3);el.textContent=fmt(Math.round(tgt*e));if(p<1)requestAnimationFrame(step);};requestAnimationFrame(step);}
+function animAll(){$$("[data-c]").forEach(el=>animNum(el,Number(el.dataset.c)));}
+function estadoBarsOv(boxId,arr){
+  const box=$("#"+boxId); if(!arr||!arr.length){box.innerHTML='<div class="empty">Sem dados ainda.</div>';return;}
+  const max=Number(arr[0].total)||1;
+  box.innerHTML=arr.map((s,i)=>`<div class="ovrow ${i===0?"top":""}">
+    <div class="ovh"><span class="ovn">${esc(s.uf)}${i===0?' <span class="ovtag">1º</span>':""}</span><span class="ovv">${fmt(s.total)}</span></div>
+    <div class="ovtrack"><div class="ovfill" data-w="${(Number(s.total)/max*100).toFixed(1)}"></div></div>
+  </div>`).join("");
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.style.width=e.target.dataset.w+"%";io.unobserve(e.target);}}),{threshold:.1});
+  box.querySelectorAll(".ovfill").forEach(f=>io.observe(f));
+}
 
 /* ================= LEADS ================= */
 function leadFilters(){
