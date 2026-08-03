@@ -560,8 +560,8 @@ async function abrirSequencia(s){
     <div class="cvview" id="cvview">
       <div class="cvpan" id="cvpan">
         <svg class="cvedges" id="cvedges" width="6000" height="4000"></svg>
-        <div class="cvstart">▶ Início do funil</div>
-        ${nodes.length?"":'<div class="cvempty">Fluxo vazio. Clique em “＋ E-mail” lá em cima para colocar o primeiro balão, arraste-o pelo topo e ligue os balões pela bolinha de baixo.</div>'}
+        <div class="cvstart" id="cvstart">▶ Início do funil<div class="chandle" data-start-handle title="Ligar ao 1º balão" style="left:50%"></div></div>
+        ${nodes.length?"":'<div class="cvempty">Fluxo vazio. Clique em “＋ E-mail” lá em cima — o balão aparece aqui. Ligue o “Início” ao primeiro balão puxando a bolinha verde de baixo.</div>'}
       </div>
     </div>
   </div>`;
@@ -606,6 +606,10 @@ async function abrirSequencia(s){
       if(cond && n.next_no_id){ const b=el4(n.next_no_id);
         if(b) paths+=edgePath(bottomAt(a,0.68),center(b),"#e0574c"); }
     });
+    // ligação do Início até o nó marcado como início
+    const st=nodes.find(n=>n.is_start), si=$("#cvstart");
+    if(st&&si){ const b=el4(st.id);
+      if(b) paths+=edgePath({x:si.offsetLeft+si.offsetWidth/2,y:si.offsetTop+si.offsetHeight},center(b),"#128C7E"); }
     if(temp) paths+=edgePath(temp.from,temp.to,"#9aa6ad");
     svg.innerHTML=paths;
   }
@@ -673,10 +677,32 @@ async function abrirSequencia(s){
   };
 
   $("#cvClose").onclick=()=>$("#modalRoot").innerHTML="";
-  $$("[data-new]").forEach(b=>b.onclick=()=>{
-    // posiciona o novo nó numa área visível
-    const y=140+nodes.length*90;
-    editarNo(s,null,b.dataset.new,nodes.length,abrirSequencia,{x:120,y,is_start:nodes.length===0});
+
+  // ligar o "Início" ao 1º balão (marca is_start no alvo)
+  const sh=$("#cvstart").querySelector("[data-start-handle]");
+  if(sh) sh.onmousedown=(e)=>{
+    e.preventDefault(); e.stopPropagation();
+    const si=$("#cvstart"); const from={x:si.offsetLeft+si.offsetWidth/2,y:si.offsetTop+si.offsetHeight};
+    const mv=(ev)=>{ const r=panEl.getBoundingClientRect(); drawEdges({from,to:{x:ev.clientX-r.left,y:ev.clientY-r.top}}); };
+    const up=async(ev)=>{ document.removeEventListener("mousemove",mv); document.removeEventListener("mouseup",up);
+      const tgt=document.elementFromPoint(ev.clientX,ev.clientY); const tn=tgt&&tgt.closest(".cnode");
+      if(tn){ await sb.from("email_steps").update({is_start:false}).eq("sequence_id",s.id);
+        await sb.from("email_steps").update({is_start:true}).eq("id",tn.dataset.id); toast("Início ligado"); abrirSequencia(s); }
+      else drawEdges(); };
+    document.addEventListener("mousemove",mv); document.addEventListener("mouseup",up);
+  };
+
+  // adicionar balão: cai DIRETO no canvas (depois clica pra editar)
+  $$("[data-new]").forEach(b=>b.onclick=async()=>{
+    const tipo=b.dataset.new;
+    const rec={sequence_id:s.id,tipo,ordem:nodes.length+1,
+      atraso_horas:tipo==="espera"?24:0, x:140, y:150+nodes.length*95, is_start:nodes.length===0};
+    if(tipo==="email"){rec.assunto="Novo e-mail";rec.corpo_html="<p>Olá {{nome}},</p>\n<p>Escreva aqui...</p>";}
+    if(tipo==="tag_add"||tipo==="tag_remove"){rec.config={tag:""};}
+    if(tipo==="condicao"){rec.config={cond:"abriu"};}
+    const {error}=await sb.from("email_steps").insert(rec);
+    if(error){toast("Erro ao inserir");return;}
+    toast("Balão adicionado — clique nele para editar");abrirSequencia(s);
   });
   $("#autoOrig").onchange=async()=>{
     await sb.from("origens").update({auto_sequence_id:null}).eq("auto_sequence_id",s.id);
