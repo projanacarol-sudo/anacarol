@@ -375,10 +375,18 @@ function openLead(l){
       <label>Adicionar a uma sequência de e-mail</label>
       <select id="mSeq">${seqOpts||'<option value="">Nenhuma sequência criada</option>'}</select>
       <button class="btn ghost" id="mAddSeq" style="margin-top:10px;width:100%">Adicionar ao funil</button>
+      <div class="divider"></div>
+      <button class="btn ghost" id="mDel" style="width:100%;color:#c0392b;border-color:#f0c9c4">Excluir lead (LGPD)</button>
     </div>
   </div>`;
   const close=()=>{$("#modalRoot").innerHTML="";};
   $("#mClose").addEventListener("click",close);
+  $("#mDel").addEventListener("click",async()=>{
+    if(!confirm("Excluir este lead e todos os seus dados? Esta ação não pode ser desfeita."))return;
+    const { error } = await sb.from("leads").delete().eq("id",l.id);
+    if(error){toast("Erro ao excluir");return;}
+    toast("Lead excluído");close();loadLeads();
+  });
   $("#ov").addEventListener("click",e=>{if(e.target.id==="ov")close();});
   $("#mSave").addEventListener("click",async()=>{
     const tags = $("#mTags").value.split(",").map(t=>t.trim()).filter(Boolean);
@@ -445,11 +453,16 @@ async function carregarSequencias(){
       <td>${s.ativo?'<span class="pill ok">ativo</span>':'<span class="pill frio">pausado</span>'}</td>
       <td>${fmt(x.ativos)} ativos · ${fmt(x.concluidos)} concluídos</td>
       <td>${fmt(x.enviados)} env · ${fmt(x.aberturas)} abert · ${fmt(x.cliques)} cliq</td>
-      <td><button class="lnk" data-seq="${s.id}">Abrir</button></td>
+      <td><button class="lnk" data-seq="${s.id}">Abrir</button> · <button class="lnk" data-delseq="${s.id}" style="color:#c0392b">Excluir</button></td>
     </tr>`);
   }
   $("#seqList").innerHTML=`<table><thead><tr><th>Funil</th><th>Status</th><th>No funil</th><th>Desempenho</th><th></th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
   $$("[data-seq]").forEach(b=>b.addEventListener("click",()=>abrirSequencia(SEQUENCES.find(s=>s.id===b.dataset.seq))));
+  $$("[data-delseq]").forEach(b=>b.addEventListener("click",async()=>{
+    if(!confirm("Excluir este funil e todos os seus passos? (os leads saem do funil)"))return;
+    await sb.from("email_sequences").delete().eq("id",b.dataset.delseq);
+    toast("Funil excluído");carregarSequencias();
+  }));
 }
 
 /* --- criar/editar sequência --- */
@@ -478,66 +491,123 @@ function editarSequencia(s){
   };
 }
 
-/* --- abrir sequência: passos + auto-enroll --- */
+/* --- abrir sequência: FLUXO VISUAL de nós --- */
+const FX_CSS=`<style id="fxcss">
+.fx-scroll{max-height:56vh;overflow:auto;padding:6px 2px;margin:6px -6px}
+.fx-center{text-align:center}
+.fx-pill{display:inline-block;font-weight:800;font-size:12px;padding:6px 16px;border-radius:20px}
+.fx-in{background:#eef4f3;color:#0f8a6f}.fx-end{background:#f0eef7;color:#6d5fb0}
+.fx-conn{width:2px;height:20px;background:#cfd8dd;margin:0 auto}
+.fx-node{display:flex;align-items:center;gap:11px;background:#fff;border:1.5px solid #e5e9ec;border-radius:14px;padding:11px 13px;max-width:430px;margin:0 auto;box-shadow:0 2px 10px #0000000d}
+.fx-node.email{border-color:#128C7E}.fx-node.espera{border-color:#e0a53a}
+.fx-node.tag_add,.fx-node.tag_remove{border-color:#7d5fd0}
+.fx-ic{font-size:19px;width:36px;height:36px;display:grid;place-items:center;border-radius:10px;background:#f4f7f8;flex:0 0 auto}
+.fx-b{flex:1;min-width:0}.fx-t{font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fx-m{font-size:11.5px;color:#66757e;margin-top:1px}
+.fx-a{display:flex;gap:3px;flex:0 0 auto}
+.fx-a button{border:0;background:#f2f5f6;border-radius:7px;padding:5px 7px;cursor:pointer;font-size:12px}
+.fx-add{display:flex;gap:6px;justify-content:center;margin:14px 0 2px;flex-wrap:wrap}
+.fx-add button{border:1px dashed #b9c6cd;background:#fff;border-radius:20px;padding:7px 13px;cursor:pointer;font-size:12.5px;font-weight:700;color:#41505a}
+</style>`;
+function fxNode(n){
+  const t=n.tipo||"email";
+  const ic={email:"📧",espera:"⏱️","tag_add":"🏷️","tag_remove":"🏷️"}[t]||"📧";
+  const atraso=Number(n.atraso_horas||0);
+  let tit,meta;
+  if(t==="email"){tit=esc(n.assunto)||"<span class='muted'>e-mail sem assunto</span>";meta="E-mail"+(atraso?` · após ${atraso}h`:"");}
+  else if(t==="espera"){tit=`Esperar ${atraso}h`;meta="Espera";}
+  else if(t==="tag_add"){tit="Adicionar tag: "+esc((n.config||{}).tag||"—");meta="Tag"+(atraso?` · após ${atraso}h`:"");}
+  else if(t==="tag_remove"){tit="Remover tag: "+esc((n.config||{}).tag||"—");meta="Tag"+(atraso?` · após ${atraso}h`:"");}
+  else {tit=esc(t);meta="";}
+  return `<div class="fx-conn"></div><div class="fx-node ${t}">
+    <div class="fx-ic">${ic}</div>
+    <div class="fx-b"><div class="fx-t">${tit}</div><div class="fx-m">${meta}</div></div>
+    <div class="fx-a"><button data-up="${n.id}" title="Subir">▲</button><button data-down="${n.id}" title="Descer">▼</button>
+      <button data-edit="${n.id}" title="Editar">✎</button><button data-del="${n.id}" title="Excluir" style="color:#c0392b">🗑</button></div>
+  </div>`;
+}
 async function abrirSequencia(s){
   if(!s)return;
   const { data: steps } = await sb.from("email_steps").select("*").eq("sequence_id",s.id).order("ordem");
   const { data: origens } = await sb.from("origens").select("id,nome,auto_sequence_id").order("nome");
-  const stepRows=(steps||[]).map(st=>`<tr>
-    <td>${st.ordem}</td><td>${st.atraso_horas}h</td><td>${esc(st.assunto)}</td>
-    <td><button class="lnk" data-est="${st.id}">Editar</button> · <button class="lnk" data-del="${st.id}" style="color:#c0392b">Excluir</button></td></tr>`).join("");
+  const nodes=(steps||[]);
+  const fluxo=`<div class="fx-center"><span class="fx-pill fx-in">▶ Lead entra no funil</span></div>`
+    + nodes.map(fxNode).join("")
+    + `<div class="fx-conn"></div><div class="fx-center"><span class="fx-pill fx-end">✔ Fim do funil</span></div>`;
   const origOpts=(origens||[]).map(o=>`<option value="${o.id}" ${o.auto_sequence_id===s.id?"selected":""}>${esc(o.nome)}</option>`).join("");
-  $("#modalRoot").innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:600px">
+  $("#modalRoot").innerHTML=`${FX_CSS}<div class="overlay" id="ov"><div class="modal" style="max-width:560px">
     <h3>${esc(s.nome)}</h3>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin:6px 0">
-      <strong>Passos</strong><button class="btn" id="addStep" style="padding:6px 12px">+ Passo</button></div>
-    <table><thead><tr><th>#</th><th>Atraso</th><th>Assunto</th><th></th></tr></thead>
-      <tbody>${stepRows||'<tr><td colspan="4" class="muted" style="text-align:center">Nenhum passo ainda</td></tr>'}</tbody></table>
+    <div class="fx-scroll">${fluxo}</div>
+    <div class="fx-add">
+      <button data-new="email">📧 E-mail</button>
+      <button data-new="espera">⏱️ Espera</button>
+      <button data-new="tag_add">🏷️ Add tag</button>
+      <button data-new="tag_remove">🏷️ Remover tag</button>
+    </div>
     <div class="divider"></div>
     <label>Auto-inscrever: leads novos desta origem entram neste funil</label>
-    <select id="autoOrig"><option value="">— escolher origem —</option>${origOpts}</select>
-    <button class="btn ghost" id="ligarAuto" style="margin-top:8px;width:100%">Ligar auto-inscrição</button>
+    <select id="autoOrig"><option value="">— nenhuma —</option>${origOpts}</select>
+    <button class="btn ghost" id="ligarAuto" style="margin-top:8px;width:100%">Salvar auto-inscrição</button>
     <div class="actions"><button class="btn ghost" id="fClose">Fechar</button></div>
   </div></div>`;
   const close=()=>$("#modalRoot").innerHTML="";
   $("#fClose").onclick=close; $("#ov").onclick=e=>{if(e.target.id==="ov")close();};
-  $("#addStep").onclick=()=>editarPasso(s,null,(steps||[]).length+1);
-  $$("[data-est]").forEach(b=>b.addEventListener("click",()=>editarPasso(s,(steps||[]).find(x=>x.id===b.dataset.est))));
-  $$("[data-del]").forEach(b=>b.addEventListener("click",async()=>{
-    if(!confirm("Excluir este passo?"))return;
-    await sb.from("email_steps").delete().eq("id",b.dataset.del);toast("Passo excluído");abrirSequencia(s);
-  }));
+  $$("[data-new]").forEach(b=>b.onclick=()=>editarNo(s,null,b.dataset.new,nodes.length));
+  $$("[data-edit]").forEach(b=>b.onclick=()=>editarNo(s,nodes.find(x=>x.id===b.dataset.edit)));
+  $$("[data-del]").forEach(b=>b.onclick=async()=>{ if(!confirm("Excluir este passo?"))return;
+    await sb.from("email_steps").delete().eq("id",b.dataset.del);toast("Passo excluído");abrirSequencia(s); });
+  $$("[data-up]").forEach(b=>b.onclick=()=>moverNo(s,nodes,b.dataset.up,-1));
+  $$("[data-down]").forEach(b=>b.onclick=()=>moverNo(s,nodes,b.dataset.down,1));
   $("#ligarAuto").onclick=async()=>{
-    const oid=$("#autoOrig").value; if(!oid){toast("Escolha uma origem");return;}
-    await sb.from("origens").update({auto_sequence_id:s.id}).eq("id",oid);
-    toast("Auto-inscrição ligada");
+    await sb.from("origens").update({auto_sequence_id:null}).eq("auto_sequence_id",s.id); // limpa anteriores
+    const oid=$("#autoOrig").value;
+    if(oid) await sb.from("origens").update({auto_sequence_id:s.id}).eq("id",oid);
+    toast("Auto-inscrição salva");
   };
 }
 
-/* --- editar passo --- */
-function editarPasso(seq,st,ordemSugerida){
-  st=st||{};
-  $("#modalRoot").innerHTML=`<div class="overlay" id="ov2"><div class="modal" style="max-width:600px">
-    <h3>${st.id?"Editar":"Novo"} passo</h3>
-    <div style="display:flex;gap:10px">
-      <div style="flex:0 0 90px"><label>Ordem</label><input id="pOrdem" type="number" value="${st.ordem||ordemSugerida||1}"></div>
-      <div style="flex:1"><label>Atraso (horas após o anterior)</label><input id="pAtraso" type="number" value="${st.atraso_horas||0}"></div>
-    </div>
-    <label>Assunto <span class="muted">(use {{nome}} para o 1º nome)</span></label>
-    <input id="pAssunto" value="${esc(st.assunto)}">
-    <label>Corpo (HTML — {{nome}} disponível)</label>
-    <textarea id="pCorpo" style="width:100%;min-height:160px;padding:10px;border:1px solid #cfd8dd;border-radius:9px;font-family:monospace;font-size:13px">${esc(st.corpo_html)}</textarea>
-    <div class="actions"><button class="btn" id="pSave">Salvar passo</button><button class="btn ghost" id="pClose">Cancelar</button></div>
+/* mover nó (troca a ordem com o vizinho) */
+async function moverNo(seq,nodes,id,dir){
+  const idx=nodes.findIndex(n=>n.id===id); const j=idx+dir;
+  if(j<0||j>=nodes.length)return;
+  const a=nodes[idx], b=nodes[j];
+  await sb.from("email_steps").update({ordem:-1}).eq("id",a.id);
+  await sb.from("email_steps").update({ordem:a.ordem}).eq("id",b.id);
+  await sb.from("email_steps").update({ordem:b.ordem}).eq("id",a.id);
+  abrirSequencia(seq);
+}
+
+/* --- editar nó (por tipo) --- */
+function editarNo(seq,node,tipoNovo,qtd){
+  node=node||{}; const tipo=node.tipo||tipoNovo||"email";
+  const cfg=node.config||{};
+  const campos = tipo==="email"
+    ? `<label>Assunto <span class="muted">({{nome}} = 1º nome)</span></label><input id="nAssunto" value="${esc(node.assunto)}">
+       <label>Corpo (HTML — {{nome}} disponível)</label>
+       <textarea id="nCorpo" style="width:100%;min-height:150px;padding:10px;border:1px solid #cfd8dd;border-radius:9px;font-family:monospace;font-size:13px">${esc(node.corpo_html)}</textarea>`
+    : (tipo==="tag_add"||tipo==="tag_remove")
+    ? `<label>Nome da tag</label><input id="nTag" value="${esc(cfg.tag)}" placeholder="ex: cliente">`
+    : `<p class="muted" style="font-size:13px">Este passo só aguarda o tempo definido abaixo antes de seguir.</p>`;
+  const titulo={email:"E-mail",espera:"Espera",tag_add:"Adicionar tag",tag_remove:"Remover tag"}[tipo]||tipo;
+  $("#modalRoot").innerHTML=`<div class="overlay" id="ov2"><div class="modal" style="max-width:560px">
+    <h3>${node.id?"Editar":"Novo"} passo · ${titulo}</h3>
+    <label>Esperar (horas) antes deste passo</label>
+    <input id="nAtraso" type="number" min="0" value="${node.atraso_horas!=null?node.atraso_horas:0}">
+    ${campos}
+    <div class="actions"><button class="btn" id="nSave">Salvar</button><button class="btn ghost" id="nClose">Cancelar</button></div>
   </div></div>`;
   const close=()=>{$("#modalRoot").innerHTML="";abrirSequencia(seq);};
-  $("#pClose").onclick=close; $("#ov2").onclick=e=>{if(e.target.id==="ov2")close();};
-  $("#pSave").onclick=async()=>{
-    const rec={sequence_id:seq.id,ordem:Number($("#pOrdem").value)||1,atraso_horas:Number($("#pAtraso").value)||0,assunto:$("#pAssunto").value.trim(),corpo_html:$("#pCorpo").value};
-    if(!rec.assunto){toast("Dê um assunto");return;}
+  $("#nClose").onclick=close; $("#ov2").onclick=e=>{if(e.target.id==="ov2")close();};
+  $("#nSave").onclick=async()=>{
+    const rec={sequence_id:seq.id,tipo,atraso_horas:Number($("#nAtraso").value)||0};
+    if(tipo==="email"){ rec.assunto=$("#nAssunto").value.trim(); rec.corpo_html=$("#nCorpo").value;
+      if(!rec.assunto){toast("Dê um assunto");return;} }
+    if(tipo==="tag_add"||tipo==="tag_remove"){ const t=$("#nTag").value.trim();
+      if(!t){toast("Informe a tag");return;} rec.config={tag:t}; }
     let err;
-    if(st.id){({error:err}=await sb.from("email_steps").update(rec).eq("id",st.id));}
-    else {({error:err}=await sb.from("email_steps").insert(rec));}
-    if(err){toast("Erro ao salvar passo (ordem duplicada?)");return;}
+    if(node.id){({error:err}=await sb.from("email_steps").update(rec).eq("id",node.id));}
+    else { rec.ordem=(qtd||0)+1; ({error:err}=await sb.from("email_steps").insert(rec)); }
+    if(err){toast("Erro ao salvar");return;}
     toast("Passo salvo");close();
   };
 }

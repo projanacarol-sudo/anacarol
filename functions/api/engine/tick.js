@@ -40,44 +40,56 @@ async function tick(env) {
     `leads(email,nome,unsubscribed_email),email_sequences(from_nome,from_email,ativo)` +
     `&order=proximo_envio_em.asc&limit=${LOTE}`);
 
-  let enviados = 0, concluidos = 0, pulados = 0, falhas = 0;
+  let enviados = 0, concluidos = 0, pulados = 0, falhas = 0, acoes = 0;
   const stepsCache = {};
 
   for (const d of devidos) {
     const lead = d.leads || {};
     const seq = d.email_sequences || {};
 
-    // funil pausado ou lead sem e-mail / descadastrado -> encerra
-    if (!seq.ativo || !lead.email || lead.unsubscribed_email) {
+    // funil pausado ou lead descadastrado -> encerra
+    if (!seq.ativo || lead.unsubscribed_email) {
       await patchState(env, d.id, { status: "concluido" });
       pulados++; continue;
     }
 
-    // passos do funil (cache por sequência dentro do tick)
+    // nós do funil (cache por sequência dentro do tick)
     let steps = stepsCache[d.sequence_id];
     if (!steps) {
       steps = await sb(env, "GET",
-        `/email_steps?sequence_id=eq.${d.sequence_id}&order=ordem.asc&select=ordem,assunto,corpo_html,preheader`);
+        `/email_steps?sequence_id=eq.${d.sequence_id}&order=ordem.asc&select=ordem,tipo,config,assunto,corpo_html,preheader,atraso_horas`);
       stepsCache[d.sequence_id] = steps;
     }
     const i = d.step_atual || 0;
     if (i >= steps.length) { await patchState(env, d.id, { status: "concluido" }); concluidos++; continue; }
-    const step = steps[i];
+    const node = steps[i];
+    const tipo = node.tipo || "email";
 
-    // CLAIM: adia 5 min e conta tentativa (evita envio duplo em ticks sobrepostos)
+    // CLAIM: adia 5 min e conta tentativa (evita processamento duplo)
     const claim = await sb(env, "PATCH",
       `/lead_sequence_state?id=eq.${d.id}&proximo_envio_em=lte.${nowISO}`,
       { proximo_envio_em: plus(5 / 60), tentativas: (d.tentativas || 0) + 1 }, "return=representation");
     if (!claim || !claim.length) { continue; } // já foi pego por outro tick
 
-    // ENVIA
     try {
-      const emailId = await enviaResend(env, lead, seq, step, d.lead_id);
-      await sb(env, "POST", "/email_events", {
-        lead_id: d.lead_id, email_id: emailId, tipo: "sent",
-        payload: { sequence_id: d.sequence_id, step: step.ordem },
-      });
-      // AVANÇA
+      // ---- executa o nó conforme o tipo ----
+      if (tipo === "email") {
+        if (!lead.email) throw new Error("lead sem e-mail");
+        const emailId = await enviaResend(env, lead, seq, node, d.lead_id);
+        await sb(env, "POST", "/email_events", {
+          lead_id: d.lead_id, email_id: emailId, tipo: "sent",
+          payload: { sequence_id: d.sequence_id, step: node.ordem },
+        });
+        enviados++;
+      } else if (tipo === "tag_add" || tipo === "tag_remove") {
+        await aplicaTag(env, d.lead_id, node.config && node.config.tag, tipo === "tag_add");
+        acoes++;
+      } else {
+        // 'espera' e outros: nó instantâneo (o atraso já foi cumprido antes dele)
+        acoes++;
+      }
+
+      // ---- avança ----
       const prox = i + 1;
       if (prox >= steps.length) {
         await patchState(env, d.id, { status: "concluido", step_atual: prox, ultimo_envio_em: nowISO, tentativas: 0 });
@@ -86,18 +98,24 @@ async function tick(env) {
         const atraso = Number(steps[prox].atraso_horas || 0);
         await patchState(env, d.id, { step_atual: prox, proximo_envio_em: plus(atraso), ultimo_envio_em: nowISO, tentativas: 0 });
       }
-      enviados++;
     } catch (e) {
-      console.log("falha envio lead", d.lead_id, String(e));
+      console.log("falha nó lead", d.lead_id, String(e));
       await sb(env, "POST", "/email_events", { lead_id: d.lead_id, tipo: "falha", payload: { erro: String(e).slice(0, 300) } });
-      // esgotou tentativas -> pausa
-      if ((d.tentativas || 0) + 1 >= MAX_TENTATIVAS) {
-        await patchState(env, d.id, { status: "pausado" });
-      }
+      if ((d.tentativas || 0) + 1 >= MAX_TENTATIVAS) await patchState(env, d.id, { status: "pausado" });
       falhas++;
     }
   }
-  return { processados: devidos.length, enviados, concluidos, pulados, falhas };
+  return { processados: devidos.length, enviados, acoes, concluidos, pulados, falhas };
+}
+
+/* aplica/remove tag no lead */
+async function aplicaTag(env, leadId, tag, add) {
+  if (!tag) return;
+  const rows = await sb(env, "GET", `/leads?id=eq.${leadId}&select=tags`);
+  let tags = (rows[0] && rows[0].tags) || [];
+  if (add) { if (!tags.includes(tag)) tags = tags.concat([tag]); }
+  else { tags = tags.filter((t) => t !== tag); }
+  await sb(env, "PATCH", `/leads?id=eq.${leadId}`, { tags });
 }
 
 /* ---------- Resend ---------- */
