@@ -882,10 +882,16 @@ async function loadPaginas(){
   const { data } = await sb.from("landing_pages").select("*").order("created_at",{ascending:false});
   const rows=data||[];
   if(!rows.length){ $("#paginasWrap").innerHTML='<div class="empty">Nenhuma página ainda. Clique em “+ Nova página de captura”.</div>'; return; }
-  $("#paginasWrap").innerHTML=`<table><thead><tr><th>Página</th><th>Link público</th><th>Tag</th><th>Status</th><th></th></tr></thead><tbody>${
+  // conta leads capturados por página (pela origem da página)
+  for(const p of rows){
+    if(p.origem_id){ const { count } = await sb.from("leads").select("*",{count:"exact",head:true}).eq("origem_id",p.origem_id); p._leads=count||0; }
+    else p._leads=0;
+  }
+  $("#paginasWrap").innerHTML=`<table><thead><tr><th>Página</th><th>Link público</th><th>Leads</th><th>Tag</th><th>Status</th><th></th></tr></thead><tbody>${
     rows.map(p=>{const url=location.origin+"/p/"+p.slug;return `<tr>
       <td><strong>${esc(p.headline||p.slug)}</strong></td>
       <td><a href="${esc(url)}" target="_blank" class="lnk">/p/${esc(p.slug)}</a> · <button class="lnk" data-copy="${esc(url)}">copiar</button></td>
+      <td><strong>${fmt(p._leads)}</strong></td>
       <td>${p.tag?('<span class="pill ok">'+esc(p.tag)+'</span>'):'<span class="muted">—</span>'}</td>
       <td>${p.ativo?'<span class="pill ok">ativa</span>':'<span class="pill frio">inativa</span>'}</td>
       <td><button class="lnk" data-ep="${p.id}">Editar</button> · <button class="lnk" data-dp="${p.id}" style="color:#c0392b">Excluir</button></td>
@@ -919,6 +925,12 @@ function editarPagina(p){
     </div>
     <label>Link do grupo de WhatsApp (destino da página de Obrigado)</label>
     <input id="lpGrupo" value="${esc(p.grupo_url)}" placeholder="https://chat.whatsapp.com/...">
+    <label>Cores da página</label>
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;font-size:12.5px;font-weight:600;color:#41505a">
+      <span>Fundo <input id="lpFundo" type="color" value="${esc(p.cor_fundo||'#eef2f4')}" style="vertical-align:middle;width:34px;height:26px;border:0;background:none;padding:0"></span>
+      <span>Botão <input id="lpBotao" type="color" value="${esc(p.cor||'#128C7E')}" style="vertical-align:middle;width:34px;height:26px;border:0;background:none;padding:0"></span>
+      <span>Título <input id="lpTitulo" type="color" value="${esc(p.cor_titulo||'#14202a')}" style="vertical-align:middle;width:34px;height:26px;border:0;background:none;padding:0"></span>
+    </div>
     <div style="display:flex;gap:10px;align-items:center">
       <div style="flex:1"><label>Slug (endereço)</label><input id="lpSlug" value="${esc(p.slug)}" placeholder="gerado do headline"></div>
       <label class="chk" style="margin-top:22px"><input type="checkbox" id="lpAtivo" ${p.ativo!==false?"checked":""}> Ativa</label>
@@ -955,7 +967,8 @@ function editarPagina(p){
       const rec={slug,headline,subheadline:$("#lpS").value.trim()||null,descricao:$("#lpD").value.trim()||null,
         data_txt:$("#lpDt").value.trim()||null,local:$("#lpL").value.trim()||null,banner_url,
         tag:$("#lpTag").value.trim()||null,sequence_id:$("#lpSeq").value||null,origem_id,
-        grupo_url:$("#lpGrupo").value.trim()||null,ativo:$("#lpAtivo").checked};
+        grupo_url:$("#lpGrupo").value.trim()||null,ativo:$("#lpAtivo").checked,
+        cor:$("#lpBotao").value,cor_fundo:$("#lpFundo").value,cor_titulo:$("#lpTitulo").value};
       let err;
       if(p.id){({error:err}=await sb.from("landing_pages").update(rec).eq("id",p.id));}
       else {({error:err}=await sb.from("landing_pages").insert(rec));}

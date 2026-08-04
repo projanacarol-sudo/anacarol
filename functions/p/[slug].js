@@ -17,6 +17,8 @@ export async function onRequestGet(context) {
 
 function render(p) {
   const cor = p.cor || "#128C7E";
+  const fundo = p.cor_fundo || "#eef2f4";
+  const titulo = p.cor_titulo || "#14202a";
   const banner = p.banner_url
     ? `<img src="${attr(p.banner_url)}" alt="" style="width:100%;border-radius:16px;display:block;margin-bottom:22px">` : "";
   const chips = [p.data_txt, p.local].filter(Boolean)
@@ -27,9 +29,9 @@ function render(p) {
 <style>
   :root{--cor:${cor}}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#eef2f4;color:#14202a;line-height:1.55}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:${fundo};color:#14202a;line-height:1.55}
   .wrap{max-width:560px;margin:0 auto;padding:28px 18px 60px}
-  h1{font-size:27px;line-height:1.2;margin-bottom:8px}
+  h1{font-size:27px;line-height:1.2;margin-bottom:8px;color:${titulo}}
   .sub{font-size:17px;color:#41505a;margin-bottom:16px}
   .desc{font-size:15px;color:#41505a;margin-bottom:18px;white-space:pre-line}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
