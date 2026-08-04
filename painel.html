@@ -136,6 +136,7 @@
     <button data-tab="overview" class="active">Visão geral</button>
     <button data-tab="leads">Leads</button>
     <button data-tab="email">E-mail / Funil</button>
+    <button data-tab="paginas">Páginas</button>
     <button data-tab="canais">Grupos e Redes</button>
   </nav>
 
@@ -184,6 +185,12 @@
         <button class="btn ghost" id="btnInscrever">Inscrever segmento</button>
       </div>
       <div class="box"><h3>Funis de e-mail</h3><div id="seqList"></div></div>
+    </section>
+
+    <!-- ------- PÁGINAS DE CAPTURA ------- -->
+    <section class="panel" id="panel-paginas">
+      <div class="toolbar"><button class="btn" id="btnNovaPagina">+ Nova página de captura</button></div>
+      <div class="box"><h3>Páginas de captura</h3><div id="paginasWrap"></div></div>
     </section>
 
     <!-- ------- GRUPOS E REDES ------- -->
@@ -275,6 +282,7 @@ $$("nav.tabs button").forEach(b => b.addEventListener("click", () => {
   $("#panel-"+b.dataset.tab).classList.add("active");
   if (b.dataset.tab==="leads") loadLeads();
   if (b.dataset.tab==="email") loadEmail();
+  if (b.dataset.tab==="paginas") loadPaginas();
   if (b.dataset.tab==="canais") loadCanais();
 }));
 
@@ -864,6 +872,97 @@ async function loadCanais(){
     const h=series[acc.id]||[];
     if(h.length>1) lineChart("soc_"+acc.id, h.map(r=>new Date(r.coletado_em).toLocaleDateString("pt-BR")), h.map(r=>Number(r.seguidores||0)), "Seguidores");
   }
+}
+
+/* ================= PÁGINAS DE CAPTURA ================= */
+function slugify(s){return (s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")
+  .replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,50)||("pagina-"+Date.now());}
+
+async function loadPaginas(){
+  const { data } = await sb.from("landing_pages").select("*").order("created_at",{ascending:false});
+  const rows=data||[];
+  if(!rows.length){ $("#paginasWrap").innerHTML='<div class="empty">Nenhuma página ainda. Clique em “+ Nova página de captura”.</div>'; return; }
+  $("#paginasWrap").innerHTML=`<table><thead><tr><th>Página</th><th>Link público</th><th>Tag</th><th>Status</th><th></th></tr></thead><tbody>${
+    rows.map(p=>{const url=location.origin+"/p/"+p.slug;return `<tr>
+      <td><strong>${esc(p.headline||p.slug)}</strong></td>
+      <td><a href="${esc(url)}" target="_blank" class="lnk">/p/${esc(p.slug)}</a> · <button class="lnk" data-copy="${esc(url)}">copiar</button></td>
+      <td>${p.tag?('<span class="pill ok">'+esc(p.tag)+'</span>'):'<span class="muted">—</span>'}</td>
+      <td>${p.ativo?'<span class="pill ok">ativa</span>':'<span class="pill frio">inativa</span>'}</td>
+      <td><button class="lnk" data-ep="${p.id}">Editar</button> · <button class="lnk" data-dp="${p.id}" style="color:#c0392b">Excluir</button></td>
+    </tr>`;}).join("")
+  }</tbody></table>`;
+  $$("[data-ep]").forEach(b=>b.onclick=()=>editarPagina(rows.find(x=>x.id===b.dataset.ep)));
+  $$("[data-dp]").forEach(b=>b.onclick=async()=>{ if(!confirm("Excluir esta página?"))return;
+    await sb.from("landing_pages").delete().eq("id",b.dataset.dp); toast("Página excluída"); loadPaginas(); });
+  $$("[data-copy]").forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.dataset.copy).then(()=>toast("Link copiado"));});
+}
+
+$("#btnNovaPagina").addEventListener("click",()=>editarPagina(null));
+function editarPagina(p){
+  p=p||{};
+  const seqOpts=`<option value="">— nenhum funil —</option>`+SEQUENCES.map(s=>`<option value="${s.id}" ${p.sequence_id===s.id?"selected":""}>${esc(s.nome)}</option>`).join("");
+  $("#modalRoot").innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:560px">
+    <h3>${p.id?"Editar":"Nova"} página de captura</h3>
+    <label>Headline</label><input id="lpH" value="${esc(p.headline)}" placeholder="Palestra: Proteção Infantil">
+    <label>Sub-headline</label><input id="lpS" value="${esc(p.subheadline)}">
+    <label>Descrição / promessa</label><textarea id="lpD" style="width:100%;min-height:90px;padding:10px;border:1px solid #cfd8dd;border-radius:9px">${esc(p.descricao)}</textarea>
+    <div style="display:flex;gap:10px">
+      <div style="flex:1"><label>Data e hora</label><input id="lpDt" value="${esc(p.data_txt)}" placeholder="12/09 às 19h"></div>
+      <div style="flex:1"><label>Local</label><input id="lpL" value="${esc(p.local)}" placeholder="Guararapes/SP"></div>
+    </div>
+    <label>Banner do evento (imagem)</label>
+    <input id="lpBanner" type="file" accept="image/*">
+    ${p.banner_url?`<div class="muted" style="font-size:11px;margin-top:4px">Banner atual: <a href="${esc(p.banner_url)}" target="_blank">ver</a></div>`:""}
+    <div style="display:flex;gap:10px">
+      <div style="flex:1"><label>Tag de captura</label><input id="lpTag" value="${esc(p.tag)}" placeholder="palestra-set"></div>
+      <div style="flex:1"><label>Funil de e-mail</label><select id="lpSeq">${seqOpts}</select></div>
+    </div>
+    <label>Link do grupo de WhatsApp (destino da página de Obrigado)</label>
+    <input id="lpGrupo" value="${esc(p.grupo_url)}" placeholder="https://chat.whatsapp.com/...">
+    <div style="display:flex;gap:10px;align-items:center">
+      <div style="flex:1"><label>Slug (endereço)</label><input id="lpSlug" value="${esc(p.slug)}" placeholder="gerado do headline"></div>
+      <label class="chk" style="margin-top:22px"><input type="checkbox" id="lpAtivo" ${p.ativo!==false?"checked":""}> Ativa</label>
+    </div>
+    <div class="actions"><button class="btn" id="lpSave">Salvar</button><button class="btn ghost" id="lpClose">Cancelar</button></div>
+    <div class="muted" id="lpMsg" style="font-size:12px;margin-top:8px"></div>
+  </div></div>`;
+  const close=()=>$("#modalRoot").innerHTML="";
+  $("#lpClose").onclick=close; $("#ov").onclick=e=>{if(e.target.id==="ov")close();};
+  $("#lpSave").onclick=async()=>{
+    const headline=$("#lpH").value.trim();
+    if(!headline){toast("Dê um headline");return;}
+    const slug=($("#lpSlug").value.trim()||slugify(headline));
+    const btn=$("#lpSave"); btn.disabled=true; $("#lpMsg").textContent="Salvando...";
+    try{
+      // 1) banner (upload se escolheu arquivo)
+      let banner_url=p.banner_url||null;
+      const file=$("#lpBanner").files[0];
+      if(file){
+        $("#lpMsg").textContent="Enviando banner...";
+        const ext=(file.name.split(".").pop()||"jpg").toLowerCase();
+        const path=slug+"-"+Date.now()+"."+ext;
+        const up=await sb.storage.from("banners").upload(path,file,{upsert:true,cacheControl:"3600"});
+        if(up.error) throw up.error;
+        banner_url=sb.storage.from("banners").getPublicUrl(path).data.publicUrl;
+      }
+      // 2) origem (cria uma vez por página)
+      let origem_id=p.origem_id||null;
+      if(!origem_id){
+        const {data:org}=await sb.from("origens").insert({nome:"Página: "+headline,tipo:"formulario",canal:"landing",base_legal_padrao:"consentimento"}).select("id").single();
+        origem_id=org&&org.id;
+      }
+      // 3) upsert da página
+      const rec={slug,headline,subheadline:$("#lpS").value.trim()||null,descricao:$("#lpD").value.trim()||null,
+        data_txt:$("#lpDt").value.trim()||null,local:$("#lpL").value.trim()||null,banner_url,
+        tag:$("#lpTag").value.trim()||null,sequence_id:$("#lpSeq").value||null,origem_id,
+        grupo_url:$("#lpGrupo").value.trim()||null,ativo:$("#lpAtivo").checked};
+      let err;
+      if(p.id){({error:err}=await sb.from("landing_pages").update(rec).eq("id",p.id));}
+      else {({error:err}=await sb.from("landing_pages").insert(rec));}
+      if(err) throw err;
+      toast("Página salva"); close(); loadPaginas();
+    }catch(e){ console.error(e); $("#lpMsg").textContent="Erro: "+(e.message||"não foi possível salvar (slug repetido?)"); btn.disabled=false; }
+  };
 }
 
 /* ================= CHART HELPERS ================= */

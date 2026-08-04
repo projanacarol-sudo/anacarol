@@ -49,6 +49,7 @@ async function handleCapture(request, env, cors) {
   const email_normalizado = normEmail(emailRaw);
   const phone = parsePhone(body.telefone || body.phone || body.whatsapp);
   const formSlug = clean(body.form || body.form_slug);
+  const pageSlug = clean(body.page);
   const optInEmail = truthy(body.opt_in_email ?? body.optin ?? body.consent);
   const textoOptin = clean(body.texto_optin);
   const originUrl = clean(body.origem_url) || request.headers.get("referer") || "";
@@ -60,12 +61,18 @@ async function handleCapture(request, env, cors) {
   const ip = request.headers.get("cf-connecting-ip") || null;
   const ua = request.headers.get("user-agent") || null;
 
-  // 0) resolve o formulário/origem
+  // 0) resolve o formulário/origem (ou a página de captura)
   let form = null;
   if (formSlug) {
     const rows = await sb(env, "GET",
       `/capture_forms?slug=eq.${encodeURIComponent(formSlug)}&select=id,origem_id,texto_optin,redirect_url&limit=1`);
     form = rows[0] || null;
+  }
+  let page = null;
+  if (pageSlug) {
+    const rows = await sb(env, "GET",
+      `/landing_pages?slug=eq.${encodeURIComponent(pageSlug)}&select=id,origem_id,tag,sequence_id&limit=1`);
+    page = rows[0] || null;
   }
 
   // 1) envio bruto
@@ -96,10 +103,14 @@ async function handleCapture(request, env, cors) {
     uf: geo.uf || (lead && lead.uf) || null,
     regiao: geo.regiao || (lead && lead.regiao) || null,
     cidade_estimada: geo.cidade_estimada || (lead && lead.cidade_estimada) || null,
-    origem_id: form ? form.origem_id : (lead && lead.origem_id) || null,
+    origem_id: (page && page.origem_id) || (form && form.origem_id) || (lead && lead.origem_id) || null,
     opt_in_email: optInEmail || (lead && lead.opt_in_email) || false,
     ultima_interacao_em: now,
   };
+  // tag da página de captura
+  if (page && page.tag) {
+    leadData.tags = Array.from(new Set(((lead && lead.tags) || []).concat([page.tag])));
+  }
 
   if (lead) {
     lead = (await sb(env, "PATCH", `/leads?id=eq.${lead.id}`, leadData, "return=representation"))[0];
@@ -134,6 +145,11 @@ async function handleCapture(request, env, cors) {
       if (seqId) await sb(env, "POST", "/rpc/enroll_lead", { p_lead: lead.id, p_sequence: seqId });
     } catch (e) { console.log("auto-enroll falhou:", String(e)); }
   }
+  // 4c) funil da página de captura
+  if (optInEmail && page && page.sequence_id) {
+    try { await sb(env, "POST", "/rpc/enroll_lead", { p_lead: lead.id, p_sequence: page.sequence_id }); }
+    catch (e) { console.log("enroll da página falhou:", String(e)); }
+  }
 
   // 5) Resend (não bloqueia a resposta)
   let resend = { synced: false };
@@ -149,7 +165,8 @@ async function handleCapture(request, env, cors) {
     }
   }
 
-  const redirect = (form && form.redirect_url) || clean(body.redirect) || null;
+  const redirect = (page ? `/obrigado/${encodeURIComponent(pageSlug)}` : null)
+    || (form && form.redirect_url) || clean(body.redirect) || null;
   return json({ ok: true, lead_id: lead.id, uf: geo.uf, resend, redirect }, 200, cors);
 }
 
