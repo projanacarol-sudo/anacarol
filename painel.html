@@ -837,8 +837,10 @@ $("#btnInscrever").addEventListener("click",async()=>{
 /* ================= GRUPOS E REDES ================= */
 async function loadCanais(){
   let ghtml="";
-  // métricas de campanha (evento campaign.metrics do SendFlow)
-  const { data: camps } = await sb.from("sendflow_campanhas").select("*").order("atualizado_em",{ascending:false});
+  // métricas de campanha — mostra apenas as campanhas desta lista
+  const CAMPANHAS_VISIVEIS = ["CL0nKFrUVqsol11qTefA"];
+  const { data: camps } = await sb.from("sendflow_campanhas").select("*")
+    .in("campaign_id", CAMPANHAS_VISIVEIS).order("atualizado_em",{ascending:false});
   (camps||[]).forEach(c=>{
     ghtml+=`<div style="margin-bottom:10px"><strong>${esc(c.nome||"Campanha "+c.campaign_id)}</strong></div>
       <div class="placar">

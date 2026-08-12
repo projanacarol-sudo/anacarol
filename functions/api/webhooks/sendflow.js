@@ -34,6 +34,10 @@ async function handle(env, body) {
   const ev = body.event || "";
   const d = body.data || {};
 
+  // allowlist: se SENDFLOW_CAMPAIGNS estiver definido, só processa essas campanhas
+  const permitidas = (env.SENDFLOW_CAMPAIGNS || "").split(",").map(s => s.trim()).filter(Boolean);
+  if (permitidas.length && d.campaignId && !permitidas.includes(d.campaignId)) return;
+
   // métricas agregadas da campanha (participantes, grupos, entradas/saídas por dia)
   if (ev === "campaign.metrics") {
     await sb(env, "POST", "/sendflow_campanhas", {
