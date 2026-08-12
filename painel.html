@@ -836,12 +836,32 @@ $("#btnInscrever").addEventListener("click",async()=>{
 
 /* ================= GRUPOS E REDES ================= */
 async function loadCanais(){
+  let ghtml="";
+  // métricas de campanha (evento campaign.metrics do SendFlow)
+  const { data: camps } = await sb.from("sendflow_campanhas").select("*").order("atualizado_em",{ascending:false});
+  (camps||[]).forEach(c=>{
+    ghtml+=`<div style="margin-bottom:10px"><strong>${esc(c.nome||"Campanha "+c.campaign_id)}</strong></div>
+      <div class="placar">
+        ${kpi("Participantes", Number(c.participantes||0))}
+        ${kpi("Grupos", Number(c.grupos_total||0), c.grupos_abertos!=null?(c.grupos_abertos+" abertos"):"")}
+        ${kpi("Entradas", Number(c.entradas||0))}
+        ${kpi("Cliques", Number(c.cliques||0))}
+      </div>
+      <canvas id="camp_${esc(c.campaign_id)}" style="margin:10px 0 20px"></canvas>`;
+  });
+  // grupos individuais (eventos de membro)
   const { data: g } = await sb.from("groups").select("nome,qtd_membros,ativo").order("qtd_membros",{ascending:false});
   if(g && g.length){
-    $("#gruposWrap").innerHTML=`<table><thead><tr><th>Grupo</th><th>Membros</th><th>Status</th></tr></thead><tbody>${
+    ghtml+=`<table><thead><tr><th>Grupo</th><th>Membros</th><th>Status</th></tr></thead><tbody>${
       g.map(x=>`<tr><td>${esc(x.nome)}</td><td>${fmt(x.qtd_membros)}</td><td>${x.ativo?'<span class="pill ok">ativo</span>':'<span class="muted">inativo</span>'}</td></tr>`).join("")
     }</tbody></table>`;
-  } else $("#gruposWrap").innerHTML='<div class="empty">Nenhum grupo ainda. Aparecem quando o webhook do SendFlow for ligado.</div>';
+  } else if(!camps||!camps.length){ ghtml='<div class="empty">Nenhum dado de grupo ainda. Aparece quando o webhook do SendFlow enviar.</div>'; }
+  $("#gruposWrap").innerHTML=ghtml;
+  animAll();
+  (camps||[]).forEach(c=>{
+    const dd=c.input_dates||{}; const days=Object.keys(dd).sort();
+    if(days.length) barChart("camp_"+c.campaign_id, days.map(d=>d.slice(5)), days.map(k=>Number(dd[k])), "Entradas/dia");
+  });
 
   const { data: s } = await sb.from("social_accounts").select("id,plataforma,handle").eq("ativo",true);
   if(!s || !s.length){ $("#socialWrap").innerHTML='<div class="empty">Nenhuma conta social conectada ainda.</div>'; return; }

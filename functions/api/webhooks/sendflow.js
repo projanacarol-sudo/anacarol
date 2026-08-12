@@ -33,6 +33,21 @@ export async function onRequestPost(context) {
 async function handle(env, body) {
   const ev = body.event || "";
   const d = body.data || {};
+
+  // métricas agregadas da campanha (participantes, grupos, entradas/saídas por dia)
+  if (ev === "campaign.metrics") {
+    await sb(env, "POST", "/sendflow_campanhas", {
+      campaign_id: d.campaignId, nome: d.campaignName || null,
+      participantes: d.participantsAmount ?? null, cliques: d.clicksTotalCount ?? null,
+      entradas: d.inputAmount ?? null, saidas: d.outputAmount ?? null,
+      grupos_total: d.groupsTotalAmount ?? null, grupos_cheios: d.groupsFullAmount ?? null,
+      grupos_abertos: d.groupsOpenAmount ?? null,
+      input_dates: d.inputDates || {}, output_dates: d.outputDates || {},
+      atualizado_em: new Date().toISOString(),
+    }, "resolution=merge-duplicates");
+    return;
+  }
+
   const add = ev === "group.updated.members.added";
   const rem = ev === "group.updated.members.removed";
   if (!add && !rem) return;                 // ignora outros eventos, sem erro
