@@ -1,16 +1,19 @@
 /**
  * CRM Ana — Coletor SendFlow por API: POST /api/sendflow/sync
- * Puxa as campanhas e os analytics de cada uma (agregados + séries diárias)
- * e grava em sendflow_campanhas. É o "cron seu" (você controla a frequência).
+ * Puxa os grupos de cada campanha (participantsAmount, full) e grava os
+ * totais em sendflow_campanhas. É o "cron seu" (você controla a frequência).
  *
  * Protegido por: header x-engine-key == env.ENGINE_KEY
  * Variáveis (Pages → Environment variables):
  *   ENGINE_KEY (já existe)
- *   SENDFLOW_API_KEY (Secret) — API token do SendFlow
+ *   SENDFLOW_API_KEY  (Secret) — API token do SendFlow
+ *   SENDFLOW_CAMPAIGNS (opcional) — IDs das campanhas a sincronizar,
+ *       separados por vírgula. Vazio = todas. Use para EXCLUIR campanhas
+ *       (ex.: deixe só o id da campanha da Ana).
  *   SUPABASE_URL, SUPABASE_SERVICE_KEY (já existem)
  *
- * Rate limits do SendFlow: /releases a cada 5 min; analytics 1x/min por campanha.
- * Rode o cron no máximo a cada 30 min.
+ * Rate limits: /releases a cada 5 min; /groups no máx 1x/10 min por campanha.
+ * Rode o cron a cada 30 min.
  */
 const BASE = "https://sendapi.sendflow.pro";
 
@@ -21,24 +24,26 @@ export async function onRequestPost(context) {
   }
   if (!env.SENDFLOW_API_KEY) return json({ ok: false, error: "defina SENDFLOW_API_KEY" }, 200);
 
+  const permitidas = (env.SENDFLOW_CAMPAIGNS || "").split(",").map(s => s.trim()).filter(Boolean);
+
   try {
-    const campanhas = await sf(env, "/releases");
+    let campanhas = await sf(env, "/releases");
     if (!Array.isArray(campanhas)) return json({ ok: false, error: "resposta_inesperada", amostra: campanhas }, 200);
+    if (permitidas.length) campanhas = campanhas.filter(c => permitidas.includes(c.id));
 
     let ok = 0, erros = 0;
-    for (const c of campanhas) {
+    for (let i = 0; i < campanhas.length; i++) {
+      const c = campanhas[i];
       try {
-        await sleep(1300); // respeita o 1s entre GETs
-        const a = await sf(env, `/releases/${c.id}/analytics`);
+        if (i > 0) await sleep(1500);
+        let g = await sf(env, `/releases/${c.id}/groups`);
+        const grupos = Array.isArray(g) && Array.isArray(g[0]) ? g.flat() : (Array.isArray(g) ? g : []);
+        const participantes = grupos.reduce((a, x) => a + (Number(x.participantsAmount) || 0), 0);
+        const cheios = grupos.filter(x => x.full).length;
         await sb(env, "POST", "/sendflow_campanhas", {
           campaign_id: c.id, nome: c.name || null,
-          participantes: numOr(a.participants),
-          grupos_total: numOr(a.groups),
-          entradas: numOr(a.add && a.add.total),
-          saidas: numOr(a.remove && a.remove.total),
-          cliques: numOr(a.clicks && a.clicks.total),
-          input_dates: normDatas(a.add && a.add.dates),
-          output_dates: normDatas(a.remove && a.remove.dates),
+          participantes, grupos_total: grupos.length, grupos_cheios: cheios,
+          grupos_abertos: grupos.length - cheios,
           atualizado_em: new Date().toISOString(),
         }, "resolution=merge-duplicates");
         ok++;
@@ -51,18 +56,6 @@ export async function onRequestPost(context) {
   }
 }
 
-/* ddmmyyyy -> yyyy-mm-dd (formato que o painel usa) */
-function normDatas(obj) {
-  const out = {};
-  if (obj && typeof obj === "object") {
-    for (const k of Object.keys(obj)) {
-      const iso = /^\d{8}$/.test(k) ? (k.slice(4) + "-" + k.slice(2, 4) + "-" + k.slice(0, 2)) : k;
-      out[iso] = Number(obj[k]) || 0;
-    }
-  }
-  return out;
-}
-function numOr(v) { const n = Number(v); return Number.isFinite(n) ? n : null; }
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 async function sf(env, path) {
