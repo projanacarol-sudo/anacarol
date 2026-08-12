@@ -885,18 +885,41 @@ async function loadCanais(){
         ${kpi("Engajamento", last.engajamento!=null?(last.engajamento+"%"):"—")}
         ${kpi("Publicações", Number(last.publicacoes||0))}
       </div>
-      <canvas id="soc_${acc.id}" style="margin-top:12px"></canvas>
+      <div class="muted" style="font-size:12px;margin-top:10px">Total de seguidores</div>
+      <canvas id="soc_${acc.id}" style="margin-top:4px"></canvas>
+      <div class="muted" style="font-size:12px;margin-top:14px">Ganho de seguidores por dia</div>
+      <canvas id="gain_${acc.id}" style="margin-top:4px"></canvas>
     </div>`;
   }
   $("#socialWrap").innerHTML=html;
   animAll();
   for(const acc of s){
     const h=series[acc.id]||[];
-    if(h.length>1) lineChart("soc_"+acc.id, h.map(r=>new Date(r.coletado_em).toLocaleDateString("pt-BR")), h.map(r=>Number(r.seguidores||0)), "Seguidores");
+    if(h.length>1){
+      lineChart("soc_"+acc.id, h.map(r=>new Date(r.coletado_em).toLocaleDateString("pt-BR")), h.map(r=>Number(r.seguidores||0)), "Seguidores");
+      // ganho por dia = diferença entre coletas consecutivas
+      const lbls=[], vals=[], cores=[];
+      for(let i=1;i<h.length;i++){
+        const g=Number(h[i].seguidores||0)-Number(h[i-1].seguidores||0);
+        lbls.push(new Date(h[i].coletado_em).toLocaleDateString("pt-BR"));
+        vals.push(g); cores.push(g>=0?"#128C7E":"#e0574c");
+      }
+      barChartColor("gain_"+acc.id, lbls, vals, cores);
+    }
   }
+}
+/* barra com cor por barra (verde ganho / vermelho perda) */
+function barChartColor(id,labels,data,colors){
+  destroy(id);
+  CHARTS[id]=new Chart($("#"+id),{type:"bar",
+    data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:6}]},
+    options:{responsive:true,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>(c.parsed.y>=0?"+":"")+fmt(c.parsed.y)+" seguidores"}}},
+      scales:{y:{ticks:{precision:0}}}}});
 }
 
 /* ================= PÁGINAS DE CAPTURA ================= */
+const GRUPO_PADRAO="https://sndflw.com/i/CL0nKFrUVqsol11qTefA";
 function slugify(s){return (s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")
   .replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,50)||("pagina-"+Date.now());}
 
@@ -940,13 +963,14 @@ function editarPagina(p){
     </div>
     <label>Banner do evento (imagem)</label>
     <input id="lpBanner" type="file" accept="image/*">
+    <div class="muted" style="font-size:11.5px;margin-top:5px">Tamanho ideal: <b>1200 × 628 px</b> (paisagem ~1,9:1). Fica bom no desktop e no celular. A imagem é enquadrada automaticamente. Máx ~2 MB.</div>
     ${p.banner_url?`<div class="muted" style="font-size:11px;margin-top:4px">Banner atual: <a href="${esc(p.banner_url)}" target="_blank">ver</a></div>`:""}
     <div style="display:flex;gap:10px">
       <div style="flex:1"><label>Tag de captura</label><input id="lpTag" value="${esc(p.tag)}" placeholder="palestra-set"></div>
       <div style="flex:1"><label>Funil de e-mail</label><select id="lpSeq">${seqOpts}</select></div>
     </div>
     <label>Link do grupo de WhatsApp (destino da página de Obrigado)</label>
-    <input id="lpGrupo" value="${esc(p.grupo_url)}" placeholder="https://chat.whatsapp.com/...">
+    <input id="lpGrupo" value="${esc(p.grupo_url||GRUPO_PADRAO)}" placeholder="https://sndflw.com/i/...">
     <label>Cores da página</label>
     <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;font-size:12.5px;font-weight:600;color:#41505a">
       <span>Fundo <input id="lpFundo" type="color" value="${esc(p.cor_fundo||'#eef2f4')}" style="vertical-align:middle;width:34px;height:26px;border:0;background:none;padding:0"></span>

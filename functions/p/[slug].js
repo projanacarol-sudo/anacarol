@@ -20,7 +20,7 @@ function render(p) {
   const fundo = p.cor_fundo || "#eef2f4";
   const titulo = p.cor_titulo || "#14202a";
   const banner = p.banner_url
-    ? `<img src="${attr(p.banner_url)}" alt="" style="width:100%;border-radius:16px;display:block;margin-bottom:22px">` : "";
+    ? `<img src="${attr(p.banner_url)}" alt="" style="width:100%;aspect-ratio:1200/628;object-fit:cover;border-radius:16px;display:block;margin-bottom:22px">` : "";
   const chips = [p.data_txt, p.local].filter(Boolean)
     .map(t => `<span class="chip">${esc(t)}</span>`).join("");
   return `<!doctype html><html lang="pt-BR"><head>
