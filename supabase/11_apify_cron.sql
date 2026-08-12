@@ -1,0 +1,28 @@
+-- =====================================================================
+-- CRM Ana — Coletor Instagram (Apify): agendador diário
+-- Chama a Function /api/social/apify-ig 1x por dia.
+-- EDITE a URL e a ENGINE_KEY antes de rodar. Roda uma vez.
+-- =====================================================================
+--
+-- select cron.schedule('apify-instagram', '30 6 * * *', $cron$
+--   select net.http_post(
+--     url     := 'https://anacarol.pages.dev/api/social/apify-ig',
+--     headers := jsonb_build_object(
+--       'Content-Type','application/json',
+--       'x-engine-key','SUA_ENGINE_KEY'
+--     )
+--   );
+-- $cron$);
+--
+-- Ver / remover:
+--   select * from cron.job;
+--   select cron.unschedule('apify-instagram');
+--
+-- Para testar AGORA (dispara uma coleta na hora):
+--   select net.http_post(
+--     url     := 'https://anacarol.pages.dev/api/social/apify-ig',
+--     headers := jsonb_build_object('Content-Type','application/json','x-engine-key','SUA_ENGINE_KEY')
+--   );
+--   -- depois confira o retorno:
+--   select status_code, content, created from net._http_response order by created desc limit 3;
+-- =====================================================================

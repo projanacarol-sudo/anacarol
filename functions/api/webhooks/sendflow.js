@@ -14,10 +14,13 @@
  */
 export async function onRequestPost(context) {
   const { request, env } = context;
-  const tok = request.headers.get("sendtok") || request.headers.get("x-sendtok")
-    || (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
-  if (env.SENDFLOW_TOKEN && tok !== env.SENDFLOW_TOKEN) {
-    return new Response("unauthorized", { status: 401 });
+  // valida o token em QUALQUER header (independe do nome do cabeçalho)
+  if (env.SENDFLOW_TOKEN) {
+    let ok = false;
+    for (const [, v] of request.headers) {
+      if (v === env.SENDFLOW_TOKEN || v.replace(/^Bearer\s+/i, "") === env.SENDFLOW_TOKEN) { ok = true; break; }
+    }
+    if (!ok) return new Response("unauthorized", { status: 401 });
   }
   // rede de proteção: engole qualquer erro e sempre responde ok
   try {
