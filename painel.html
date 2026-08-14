@@ -96,6 +96,22 @@
   .resumo h3{margin:0 0 10px}
   .resumo .rz{display:flex;gap:8px;font-size:14px;margin:8px 0;color:#2a3540}
   .resumo .rz b{color:#0f1c22;font-weight:800}
+  /* kanban */
+  .kb{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start}
+  @media(max-width:900px){.kb{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.kb{grid-template-columns:1fr}}
+  .kbcol{background:#eef2f4;border-radius:14px;padding:10px;min-height:120px}
+  .kbcol.drag{outline:2px dashed var(--brand);outline-offset:-4px}
+  .kbcol h4{font-size:12.5px;font-weight:800;color:#41505a;margin:4px 6px 10px;display:flex;justify-content:space-between}
+  .kbcol h4 .n{background:#dbe3e7;color:#41505a;border-radius:10px;padding:1px 8px;font-size:11px}
+  .kcard{background:#fff;border-radius:11px;padding:11px;margin-bottom:9px;box-shadow:0 2px 6px #0000000d;cursor:grab;border-left:3px solid #cfd8dd}
+  .kcard:active{cursor:grabbing}
+  .kcard.alta{border-left-color:#e0574c}.kcard.media{border-left-color:#f5b301}.kcard.baixa{border-left-color:#8aa0ab}
+  .kcard .t{font-weight:700;font-size:13.5px;color:#14202a;margin-bottom:6px}
+  .kcard .meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:11px;color:#66757e}
+  .kcard .av{width:20px;height:20px;border-radius:50%;color:#fff;font-weight:800;font-size:9px;display:grid;place-items:center}
+  .kcard .prazo{background:#f0f3f5;border-radius:8px;padding:1px 7px;font-weight:700}
+  .kcard .prazo.vence{background:#fdecea;color:#c0392b}
 </style>
 </head>
 <body>
@@ -137,6 +153,7 @@
     <button data-tab="leads">Leads</button>
     <button data-tab="email">E-mail / Funil</button>
     <button data-tab="paginas">Páginas</button>
+    <button data-tab="tarefas">Tarefas</button>
     <button data-tab="canais">Grupos e Redes</button>
   </nav>
 
@@ -191,6 +208,16 @@
     <section class="panel" id="panel-paginas">
       <div class="toolbar"><button class="btn" id="btnNovaPagina">+ Nova página de captura</button></div>
       <div class="box"><h3>Páginas de captura</h3><div id="paginasWrap"></div></div>
+    </section>
+
+    <!-- ------- TAREFAS (KANBAN) ------- -->
+    <section class="panel" id="panel-tarefas">
+      <div class="toolbar">
+        <button class="btn" id="btnNovaTarefa">+ Nova tarefa</button>
+        <button class="btn ghost" id="btnColabs">Colaboradores</button>
+        <select id="fResp" class="cvsel" style="background:#fff;border:1px solid #cfd8dd;color:#14202a;padding:9px"><option value="">Todos os responsáveis</option></select>
+      </div>
+      <div class="kb" id="kanban"></div>
     </section>
 
     <!-- ------- GRUPOS E REDES ------- -->
@@ -283,6 +310,7 @@ $$("nav.tabs button").forEach(b => b.addEventListener("click", () => {
   if (b.dataset.tab==="leads") loadLeads();
   if (b.dataset.tab==="email") loadEmail();
   if (b.dataset.tab==="paginas") loadPaginas();
+  if (b.dataset.tab==="tarefas") loadTarefas();
   if (b.dataset.tab==="canais") loadCanais();
 }));
 
@@ -1022,6 +1050,132 @@ function editarPagina(p){
       toast("Página salva"); close(); loadPaginas();
     }catch(e){ console.error(e); $("#lpMsg").textContent="Erro: "+(e.message||"não foi possível salvar (slug repetido?)"); btn.disabled=false; }
   };
+}
+
+/* ================= TAREFAS (KANBAN) ================= */
+let COLABS=[];
+const KB_COLS=[["afazer","A fazer"],["fazendo","Fazendo"],["revisao","Revisão"],["concluido","Concluído"]];
+let dragTaskId=null;
+function colabById(id){return COLABS.find(c=>c.id===id);}
+function iniciais(n){return (n||"?").split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase();}
+
+async function loadTarefas(){
+  const { data: cols } = await sb.from("colaboradores").select("*").eq("ativo",true).order("nome");
+  COLABS=cols||[];
+  $("#fResp").innerHTML='<option value="">Todos os responsáveis</option>'+COLABS.map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join("");
+  renderBoard();
+}
+async function renderBoard(){
+  let q=sb.from("tarefas").select("*").order("ordem").order("created_at");
+  const rid=$("#fResp").value; if(rid) q=q.eq("responsavel_id",rid);
+  const { data } = await q; const tarefas=data||[];
+  const hoje=new Date().toISOString().slice(0,10);
+  $("#kanban").innerHTML=KB_COLS.map(([st,nome])=>{
+    const cards=tarefas.filter(t=>t.status===st);
+    return `<div class="kbcol" data-st="${st}"><h4>${nome} <span class="n">${cards.length}</span></h4>${
+      cards.map(t=>{
+        const c=colabById(t.responsavel_id);
+        const av=c?`<span class="av" style="background:${esc(c.cor||'#128C7E')}" title="${esc(c.nome)}">${iniciais(c.nome)}</span>`:"";
+        const prazo=t.prazo?`<span class="prazo ${(t.prazo<hoje&&t.status!=='concluido')?'vence':''}">${new Date(t.prazo+'T00:00').toLocaleDateString('pt-BR')}</span>`:"";
+        return `<div class="kcard ${esc(t.prioridade||'media')}" draggable="true" data-id="${t.id}"><div class="t">${esc(t.titulo)}</div><div class="meta">${av}${prazo}</div></div>`;
+      }).join("")
+    }</div>`;
+  }).join("");
+  bindKanban();
+}
+function bindKanban(){
+  $$(".kcard").forEach(el=>{
+    el.addEventListener("dragstart",()=>{dragTaskId=el.dataset.id;setTimeout(()=>el.style.opacity=".4",0);});
+    el.addEventListener("dragend",()=>{el.style.opacity="";});
+    el.addEventListener("click",()=>editarTarefa(el.dataset.id));
+  });
+  $$(".kbcol").forEach(col=>{
+    col.addEventListener("dragover",e=>{e.preventDefault();col.classList.add("drag");});
+    col.addEventListener("dragleave",()=>col.classList.remove("drag"));
+    col.addEventListener("drop",async e=>{e.preventDefault();col.classList.remove("drag");
+      if(!dragTaskId)return; await sb.from("tarefas").update({status:col.dataset.st}).eq("id",dragTaskId); dragTaskId=null; renderBoard();});
+  });
+}
+$("#fResp").addEventListener("change",renderBoard);
+$("#btnNovaTarefa").addEventListener("click",()=>editarTarefa(null));
+
+async function editarTarefa(id){
+  let t={};
+  if(id){ const {data}=await sb.from("tarefas").select("*").eq("id",id).single(); t=data||{}; }
+  const respOpts=`<option value="">— sem responsável —</option>`+COLABS.map(c=>`<option value="${c.id}" ${t.responsavel_id===c.id?"selected":""}>${esc(c.nome)}</option>`).join("");
+  const stOpts=KB_COLS.map(([s,n])=>`<option value="${s}" ${((t.status||'afazer')===s)?"selected":""}>${n}</option>`).join("");
+  $("#modalRoot").innerHTML=`<div class="overlay" id="ov"><div class="modal">
+    <h3>${id?"Editar":"Nova"} tarefa</h3>
+    <label>Título</label><input id="tT" value="${esc(t.titulo)}">
+    <label>Descrição</label><textarea id="tD" style="width:100%;min-height:90px;padding:10px;border:1px solid #cfd8dd;border-radius:9px">${esc(t.descricao)}</textarea>
+    <div style="display:flex;gap:10px">
+      <div style="flex:1"><label>Status</label><select id="tS">${stOpts}</select></div>
+      <div style="flex:1"><label>Prioridade</label><select id="tP">
+        <option value="baixa" ${t.prioridade==='baixa'?'selected':''}>Baixa</option>
+        <option value="media" ${(t.prioridade||'media')==='media'?'selected':''}>Média</option>
+        <option value="alta" ${t.prioridade==='alta'?'selected':''}>Alta</option></select></div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <div style="flex:1"><label>Responsável</label><select id="tR">${respOpts}</select></div>
+      <div style="flex:1"><label>Prazo</label><input id="tPz" type="date" value="${esc(t.prazo)}"></div>
+    </div>
+    <div class="actions"><button class="btn" id="tSave">Salvar</button><button class="btn ghost" id="tClose">Cancelar</button>
+      ${id?'<button class="btn ghost" id="tDel" style="color:#c0392b">Excluir</button>':''}</div>
+  </div></div>`;
+  const close=()=>$("#modalRoot").innerHTML="";
+  $("#tClose").onclick=close; $("#ov").onclick=e=>{if(e.target.id==="ov")close();};
+  if(id)$("#tDel").onclick=async()=>{if(!confirm("Excluir tarefa?"))return;await sb.from("tarefas").delete().eq("id",id);toast("Excluída");close();renderBoard();};
+  $("#tSave").onclick=async()=>{
+    const rec={titulo:$("#tT").value.trim(),descricao:$("#tD").value.trim()||null,status:$("#tS").value,
+      prioridade:$("#tP").value,responsavel_id:$("#tR").value||null,prazo:$("#tPz").value||null};
+    if(!rec.titulo){toast("Dê um título");return;}
+    let err;
+    if(id){({error:err}=await sb.from("tarefas").update(rec).eq("id",id));}
+    else {({error:err}=await sb.from("tarefas").insert(rec));}
+    if(err){toast("Erro ao salvar");return;}
+    toast("Tarefa salva");close();renderBoard();
+  };
+}
+
+$("#btnColabs").addEventListener("click",abrirColabs);
+async function abrirColabs(){
+  const { data } = await sb.from("colaboradores").select("*").order("nome");
+  const list=(data||[]).map(c=>`<tr><td><span class="av" style="background:${esc(c.cor)};width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;color:#fff;font-size:9px;font-weight:800;vertical-align:middle">${iniciais(c.nome)}</span> ${esc(c.nome)}</td><td>${esc(c.email)||""}</td><td>${c.email?`<button class="lnk" data-login="${esc(c.email)}">criar login</button> · `:""}<button class="lnk" data-dc="${c.id}" style="color:#c0392b">excluir</button></td></tr>`).join("");
+  $("#modalRoot").innerHTML=`<div class="overlay" id="ov"><div class="modal">
+    <h3>Colaboradores</h3>
+    <p class="muted" style="font-size:12px;margin-bottom:8px">“Criar login” gera o acesso ao painel (e-mail + senha) para o colaborador.</p>
+    <table><thead><tr><th>Nome</th><th>E-mail</th><th></th></tr></thead><tbody>${list||'<tr><td colspan="3" class="muted">Nenhum ainda</td></tr>'}</tbody></table>
+    <div class="divider"></div>
+    <label>Novo colaborador</label>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+      <input id="ccNome" placeholder="Nome" style="flex:1;padding:10px;border:1px solid #cfd8dd;border-radius:9px">
+      <input id="ccEmail" placeholder="E-mail (opcional)" style="flex:1;padding:10px;border:1px solid #cfd8dd;border-radius:9px">
+      <input id="ccCor" type="color" value="#128C7E" style="width:36px;height:36px;border:0;background:none">
+    </div>
+    <div class="actions"><button class="btn" id="ccAdd">Adicionar</button><button class="btn ghost" id="ccClose">Fechar</button></div>
+  </div></div>`;
+  const close=()=>$("#modalRoot").innerHTML="";
+  $("#ccClose").onclick=close; $("#ov").onclick=e=>{if(e.target.id==="ov")close();};
+  $$("[data-dc]").forEach(b=>b.onclick=async()=>{if(!confirm("Excluir colaborador?"))return;await sb.from("colaboradores").delete().eq("id",b.dataset.dc);abrirColabs();});
+  $$("[data-login]").forEach(b=>b.onclick=()=>criarLogin(b.dataset.login));
+  $("#ccAdd").onclick=async()=>{const nome=$("#ccNome").value.trim();if(!nome){toast("Informe o nome");return;}
+    await sb.from("colaboradores").insert({nome,email:$("#ccEmail").value.trim()||null,cor:$("#ccCor").value});
+    toast("Colaborador adicionado");COLABS=[];await loadTarefas();abrirColabs();};
+}
+async function criarLogin(email){
+  const senha=prompt("Defina uma senha para o login de "+email+" (mín. 6 caracteres):");
+  if(senha===null)return;
+  if(senha.length<6){toast("Senha muito curta (mín. 6)");return;}
+  const {data}=await sb.auth.getSession(); const token=data.session&&data.session.access_token;
+  try{
+    const r=await fetch("/api/admin/create-user",{method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({email,password:senha})});
+    const res=await r.json().catch(()=>({}));
+    if(res.ok) toast("Login criado! "+email+" já pode entrar.");
+    else if(res.error==="ja_existe") toast("Esse e-mail já tem login.");
+    else toast("Erro ao criar login ("+(res.error||"")+")");
+  }catch(e){ toast("Erro de conexão"); }
 }
 
 /* ================= CHART HELPERS ================= */
