@@ -145,6 +145,7 @@
     <div class="logo">CRM <span>Ana Carolina</span></div>
     <div class="sp"></div>
     <div class="who" id="whoami"></div>
+    <button id="btnSenha">Trocar senha</button>
     <button id="btnLogout">Sair</button>
   </header>
 
@@ -156,6 +157,7 @@
     <button data-tab="tarefas">Tarefas</button>
     <button data-tab="canais">Grupos e Redes</button>
     <button data-tab="colaboradores">Colaboradores</button>
+    <button data-tab="romaneio">Romaneio Materiais</button>
   </nav>
 
   <main>
@@ -225,6 +227,12 @@
     <section class="panel" id="panel-canais">
       <div class="box"><h3>Grupos de WhatsApp (SendFlow)</h3><div id="gruposWrap"></div></div>
       <div class="box"><h3>Redes sociais</h3><div id="socialWrap"></div></div>
+    </section>
+
+    <!-- ------- ROMANEIO MATERIAIS ------- -->
+    <section class="panel" id="panel-romaneio">
+      <iframe id="romaneioFrame" title="Romaneio de materiais"
+        style="width:100%;height:calc(100vh - 116px);border:0;border-radius:12px;background:#0c0908;display:block"></iframe>
     </section>
 
     <!-- ------- COLABORADORES ------- -->
@@ -299,6 +307,33 @@ $("#loginForm").addEventListener("submit", async e => {
 });
 $("#btnLogout").addEventListener("click", async () => { await sb.auth.signOut(); location.reload(); });
 
+$("#btnSenha").addEventListener("click", abrirTrocarSenha);
+function abrirTrocarSenha(){
+  $("#modalRoot").innerHTML=`<div class="overlay" id="ovs"><div class="modal" style="max-width:400px">
+    <h3>Trocar minha senha</h3>
+    <p class="muted" style="font-size:12.5px;margin:4px 0 12px">Defina uma nova senha (mínimo 6 caracteres).</p>
+    <div class="msg" id="senhaMsg" style="display:none;padding:9px;border-radius:8px;font-size:13px;font-weight:700;margin-bottom:10px"></div>
+    <label>Nova senha</label>
+    <input id="np1" type="password" autocomplete="new-password" style="width:100%;padding:11px;border:1px solid #cfd8dd;border-radius:9px;margin:4px 0 10px">
+    <label>Repita a nova senha</label>
+    <input id="np2" type="password" autocomplete="new-password" style="width:100%;padding:11px;border:1px solid #cfd8dd;border-radius:9px;margin:4px 0 4px">
+    <div class="actions"><button class="btn" id="npSave">Salvar</button><button class="btn ghost" id="npClose">Cancelar</button></div>
+  </div></div>`;
+  const close=()=>$("#modalRoot").innerHTML="";
+  const msg=(txt,ok)=>{const e=$("#senhaMsg");e.style.display="block";e.style.background=ok?"#e6f7ee":"#fdecea";e.style.color=ok?"#1c8a4e":"#c0392b";e.textContent=txt;};
+  $("#npClose").onclick=close; $("#ovs").onclick=e=>{if(e.target.id==="ovs")close();};
+  $("#npSave").onclick=async()=>{
+    const a=$("#np1").value, b=$("#np2").value;
+    if(a.length<6){msg("Senha muito curta (mín. 6).",false);return;}
+    if(a!==b){msg("As senhas não conferem.",false);return;}
+    $("#npSave").disabled=true;
+    const {error}=await sb.auth.updateUser({password:a});
+    $("#npSave").disabled=false;
+    if(error){msg("Erro: "+error.message,false);return;}
+    close(); toast("Senha alterada com sucesso!");
+  };
+}
+
 async function guard(){
   const { data } = await sb.auth.getSession();
   if (data.session) boot();
@@ -324,6 +359,7 @@ $$("nav.tabs button").forEach(b => b.addEventListener("click", () => {
   if (b.dataset.tab==="tarefas") loadTarefas();
   if (b.dataset.tab==="canais") loadCanais();
   if (b.dataset.tab==="colaboradores") { abrirColabs(); resumoColabs(); }
+  if (b.dataset.tab==="romaneio") { const f=$("#romaneioFrame"); if(f && !f.src) f.src="romaneio.html"; }
 }));
 
 async function resumoColabs(){
@@ -1236,19 +1272,23 @@ async function aprovarColab(id, nivel){
       body:JSON.stringify({id,nivel})});
     const res=await r.json().catch(()=>({}));
     if(res.ok){
-      if(res.password) mostrarSenha(res.email,res.password,nivel);
+      if(res.password) mostrarSenha(res.email,res.password,nivel,res.emailed);
       else { toast("Aprovado — esse e-mail já tinha login."); }
       await abrirColabs();
     } else toast("Erro ao aprovar ("+(res.error||"")+")");
   }catch(e){ toast("Erro de conexão"); }
 }
 
-function mostrarSenha(email,senha,nivel){
+function mostrarSenha(email,senha,nivel,emailed){
+  const aviso = emailed
+    ? `<p style="font-size:12.5px;color:#1c8a4e;font-weight:700;margin-top:6px">✓ Acesso enviado por e-mail para o colaborador.</p>`
+    : `<p style="font-size:12.5px;color:#c0392b;font-weight:700;margin-top:6px">Não foi possível enviar por e-mail — copie e envie manualmente.</p>`;
   $("#modalRoot").innerHTML=`<div class="overlay" id="ov2"><div class="modal" style="max-width:440px;text-align:center">
     <div style="width:56px;height:56px;border-radius:50%;background:#e6f7ee;color:#1c8a4e;display:grid;place-items:center;margin:0 auto 12px">
       <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg></div>
     <h3 style="margin-bottom:4px">Colaborador aprovado</h3>
     <p class="muted" style="font-size:13px">Nível: <b>${nivel==="admin"?"Admin":"Colaborador"}</b>. Envie estes dados de acesso (a senha só aparece agora):</p>
+    ${aviso}
     <div style="background:#f4f7f8;border:1px solid var(--line);border-radius:10px;padding:12px;margin:12px 0;text-align:left;font-size:14px">
       <div style="margin-bottom:6px"><span class="muted" style="font-size:11px">E-MAIL</span><br><b>${esc(email)}</b></div>
       <div><span class="muted" style="font-size:11px">SENHA TEMPORÁRIA</span><br><b style="font-family:monospace;font-size:16px;letter-spacing:1px">${esc(senha)}</b></div>

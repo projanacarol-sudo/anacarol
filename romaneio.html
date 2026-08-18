@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Romaneio — Ana Carolina Oliveira</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --preto:#120F11; --preto-2:#1A1618; --preto-3:#232022;
+  --amarelo:#F9BE15; --verde:#22B573; --azul:#3D8BFF; --vermelho:#FF5A4E;
+  --branco:#fff; --cinza:rgba(255,255,255,.62); --cinza-2:rgba(255,255,255,.34);
+  --linha:rgba(255,255,255,.12);
+  --d:'Montserrat',system-ui,sans-serif; --c:'Inter',system-ui,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;}
+body{margin:0;background:var(--preto);color:var(--branco);font-family:var(--c);font-size:14px;}
+button,input,select,textarea{font:inherit;color:inherit;}
+a{color:var(--amarelo);}
+
+.wrap{max-width:1400px;margin:0 auto;padding:18px 20px 60px;}
+
+/* ── login ─────────────────────────────────────────────── */
+.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.login-caixa{width:100%;max-width:340px;}
+.login h1{font-family:var(--d);font-weight:900;font-size:26px;margin:0 0 6px;text-transform:uppercase;letter-spacing:-.02em;}
+.login p{color:var(--cinza);margin:0 0 22px;}
+.campo{margin-bottom:14px;}
+.campo label{display:block;font-family:var(--d);font-weight:700;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--cinza);margin-bottom:6px;}
+.campo input,.campo select{
+  width:100%;padding:11px 12px;background:var(--preto-2);
+  border:1px solid var(--linha);border-radius:9px;
+}
+.campo input:focus,.campo select:focus{outline:none;border-color:var(--amarelo);}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  background:var(--amarelo);color:var(--preto);border:0;border-radius:9px;
+  padding:11px 18px;font-family:var(--d);font-weight:800;font-size:14px;cursor:pointer;
+}
+.btn:active{transform:scale(.98);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-2{background:var(--preto-3);color:var(--branco);border:1px solid var(--linha);}
+.btn-2:hover{background:var(--preto-2);}
+.btn-w{width:100%;padding:13px;}
+.erro{color:var(--vermelho);font-size:13px;margin-top:10px;min-height:18px;}
+
+/* ── cabeçalho ─────────────────────────────────────────── */
+.topo{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;}
+.topo h1{font-family:var(--d);font-weight:900;font-size:20px;margin:0;text-transform:uppercase;letter-spacing:-.02em;}
+.topo h1 b{color:var(--amarelo);}
+
+/* ── kpis ──────────────────────────────────────────────── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:10px;margin-bottom:20px;}
+.kpi{background:var(--preto-2);border:1px solid var(--linha);border-radius:12px;padding:13px 15px;}
+.kpi span{display:block;font-family:var(--d);font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--cinza-2);margin-bottom:5px;}
+.kpi b{font-family:var(--d);font-weight:900;font-size:25px;letter-spacing:-.02em;}
+.kpi.f b{color:var(--amarelo);} .kpi.d b{color:var(--azul);} .kpi.p b{color:var(--verde);}
+
+/* ── filtros ───────────────────────────────────────────── */
+.filtros{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:10px;align-items:end;margin-bottom:16px;
+  background:var(--preto-2);border:1px solid var(--linha);border-radius:12px;padding:14px;
+}
+.filtros .campo{margin:0;}
+
+/* ── ações em massa ────────────────────────────────────── */
+.acoes{
+  display:flex;gap:9px;flex-wrap:wrap;align-items:center;
+  margin-bottom:14px;padding:12px 14px;border-radius:12px;
+  background:rgba(249,190,21,.09);border:1px solid rgba(249,190,21,.28);
+}
+.acoes.off{display:none;}
+.acoes .sel{font-family:var(--d);font-weight:800;font-size:13px;margin-right:4px;}
+.acoes input[type=text]{
+  padding:8px 10px;background:var(--preto-2);border:1px solid var(--linha);
+  border-radius:8px;width:150px;
+}
+
+/* ── tabela ────────────────────────────────────────────── */
+.tabela-wrap{border:1px solid var(--linha);border-radius:12px;overflow:auto;background:var(--preto-2);}
+table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap;}
+th{
+  text-align:left;padding:11px 12px;position:sticky;top:0;background:var(--preto-3);
+  font-family:var(--d);font-weight:700;font-size:10px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--cinza);border-bottom:1px solid var(--linha);z-index:1;
+}
+td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top;}
+tr:hover td{background:rgba(255,255,255,.03);}
+td.end{white-space:normal;max-width:280px;line-height:1.4;}
+.mono{font-family:ui-monospace,monospace;font-size:12px;}
+.dim{color:var(--cinza-2);}
+
+.tag{
+  display:inline-block;padding:2px 8px;border-radius:20px;
+  font-family:var(--d);font-weight:800;font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+}
+.tag.fisico{background:rgba(249,190,21,.2);color:var(--amarelo);}
+.tag.digital{background:rgba(61,139,255,.2);color:var(--azul);}
+.tag.novo{background:rgba(255,255,255,.14);color:var(--branco);}
+.tag.separado{background:rgba(249,190,21,.2);color:var(--amarelo);}
+.tag.postado{background:rgba(34,181,115,.2);color:var(--verde);}
+.tag.entregue{background:rgba(34,181,115,.34);color:var(--verde);}
+.tag.cancelado{background:rgba(255,90,78,.18);color:var(--vermelho);}
+
+.inp-linha{
+  background:transparent;border:1px solid transparent;border-radius:6px;
+  padding:4px 6px;width:120px;font-family:ui-monospace,monospace;font-size:12px;
+}
+.inp-linha:hover{border-color:var(--linha);}
+.inp-linha:focus{outline:none;border-color:var(--amarelo);background:var(--preto);}
+
+.vazio{padding:40px 20px;text-align:center;color:var(--cinza-2);}
+.carregando{padding:40px;text-align:center;color:var(--cinza-2);}
+
+.rodape-tab{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;color:var(--cinza-2);font-size:13px;}
+
+/* ── impressão: romaneio e etiquetas ───────────────────── */
+.print-area{display:none;}
+@media print{
+  body{background:#fff;color:#000;}
+  .wrap,.topo,.kpis,.filtros,.acoes,.tabela-wrap,.rodape-tab{display:none!important;}
+  .print-area{display:block;padding:0;}
+  @page{size:A4;margin:12mm;}
+
+  .romaneio-cab{border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:12px;}
+  .romaneio-cab h2{font-family:var(--d);font-size:16pt;margin:0 0 3px;text-transform:uppercase;}
+  .romaneio-cab p{margin:0;font-size:9pt;color:#333;}
+  table.rom{width:100%;border-collapse:collapse;font-size:8.5pt;}
+  table.rom th,table.rom td{border:1px solid #999;padding:4px 5px;text-align:left;vertical-align:top;}
+  table.rom th{background:#eee;font-family:var(--d);font-size:7.5pt;text-transform:uppercase;}
+  table.rom tr{page-break-inside:avoid;}
+  .assina{margin-top:22px;font-size:9pt;}
+  .assina div{display:inline-block;width:44%;border-top:1px solid #000;padding-top:5px;margin-right:6%;}
+
+  .etiquetas{page-break-before:always;display:grid;grid-template-columns:1fr 1fr;gap:6mm;}
+  .etq{border:1px dashed #999;padding:5mm;font-size:9pt;line-height:1.35;page-break-inside:avoid;min-height:34mm;}
+  .etq .de{font-size:7pt;color:#444;border-top:1px solid #ccc;margin-top:4mm;padding-top:2mm;}
+  .etq b{font-size:10.5pt;}
+  .etq .cep{font-family:ui-monospace,monospace;font-size:11pt;font-weight:bold;letter-spacing:.06em;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════ LOGIN ══════ -->
+<div class="login" id="tela-login">
+  <div class="login-caixa">
+    <h1>Romaneio <span style="color:var(--amarelo)">Ana Carolina</span></h1>
+    <p>Painel logístico do material de campanha. Entre com o login do CRM.</p>
+    <div class="campo">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" autocomplete="username" enterkeyhint="next">
+    </div>
+    <div class="campo">
+      <label for="senha">Senha</label>
+      <input type="password" id="senha" autocomplete="current-password" enterkeyhint="go">
+    </div>
+    <button class="btn btn-w" id="btn-entrar">Entrar</button>
+    <div class="erro" id="erro-login"></div>
+  </div>
+</div>
+
+<!-- ══════ PAINEL ══════ -->
+<div class="wrap" id="tela-painel" style="display:none;">
+
+  <div class="topo">
+    <h1>Romaneio <b>Ana Carolina</b></h1>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-2" id="btn-atualizar">Atualizar</button>
+      <button class="btn btn-2" id="btn-csv">Baixar CSV</button>
+      <button class="btn btn-2" id="btn-sair">Sair</button>
+    </div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="filtros">
+    <div class="campo">
+      <label for="f-modo">Kit</label>
+      <select id="f-modo">
+        <option value="">Todos</option>
+        <option value="fisico">Impresso</option>
+        <option value="digital">Digital</option>
+      </select>
+    </div>
+    <div class="campo">
+      <label for="f-status">Status</label>
+      <select id="f-status">
+        <option value="">Todos</option>
+        <option value="novo">Novo</option>
+        <option value="separado">Separado</option>
+        <option value="postado">Postado</option>
+        <option value="entregue">Entregue</option>
+        <option value="cancelado">Cancelado</option>
+      </select>
+    </div>
+    <div class="campo">
+      <label for="f-cidade">Cidade</label>
+      <select id="f-cidade"><option value="">Todas</option></select>
+    </div>
+    <div class="campo">
+      <label for="f-lote">Lote</label>
+      <select id="f-lote">
+        <option value="">Todos</option>
+        <option value="__sem__">Sem lote</option>
+      </select>
+    </div>
+    <div class="campo">
+      <label for="f-q">Buscar</label>
+      <input type="search" id="f-q" placeholder="nome, WhatsApp, CEP, rastreio">
+    </div>
+  </div>
+
+  <div class="acoes off" id="acoes">
+    <span class="sel" id="txt-sel">0 selecionados</span>
+    <input type="text" id="nome-lote" placeholder="Nome do lote">
+    <button class="btn" id="btn-lote">Jogar no lote</button>
+    <button class="btn btn-2" data-status="separado">Marcar separado</button>
+    <button class="btn btn-2" data-status="postado">Marcar postado</button>
+    <button class="btn btn-2" data-status="entregue">Marcar entregue</button>
+    <button class="btn btn-2" id="btn-imprimir">Imprimir romaneio + etiquetas</button>
+  </div>
+
+  <div class="tabela-wrap">
+    <table id="tabela">
+      <thead>
+        <tr>
+          <th style="width:34px;"><input type="checkbox" id="sel-todos"></th>
+          <th>Kit</th><th>Status</th><th>Nome</th><th>Endereço</th>
+          <th>CEP</th><th>Cidade</th><th>Dist.</th>
+          <th>WhatsApp</th><th>Lote</th><th>Rastreio</th><th>Entrou</th>
+        </tr>
+      </thead>
+      <tbody id="corpo"><tr><td colspan="12" class="carregando">Carregando…</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="rodape-tab">
+    <span id="contagem"></span>
+    <span class="dim" id="aviso-sem-coord"></span>
+  </div>
+</div>
+
+<!-- área que sai na impressora -->
+<div class="print-area" id="print"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   CONFIGURAÇÃO  — dados do remetente (saem nas etiquetas)
+   ═══════════════════════════════════════════════════════════════ */
+const REMETENTE = {
+  nome: "Comitê Ana Carolina Oliveira",
+  endereco: "[endereço do comitê]",
+  cidade: "[cidade/UF]",
+  cep: "[CEP]"
+};
+/* ══════════════════ FIM CONFIG ══════════════════ */
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+let TODOS = [], LEADS = [], SEL = new Set(), sb = null;
+
+/* ─── Supabase ──────────────────────────────────────────── */
+async function getCfg(){
+  const u = window.SUPA_URL, k = window.SUPA_ANON;
+  if(u && k && !/^COLE/.test(u)) return { url:u, anonKey:k };
+  // mesmo domínio do CRM: usa o /api/config (e compartilha a sessão do painel)
+  try{ const c = await (await fetch('/api/config',{cache:'no-store'})).json(); if(c && c.ok) return { url:c.url, anonKey:c.anonKey }; }catch(e){}
+  return null;
+}
+async function initSb(){
+  const c = await getCfg();
+  if(!c){ $('#erro-login').textContent = 'Configuração ausente (SUPA_URL/SUPA_ANON ou /api/config).'; return false; }
+  sb = window.supabase.createClient(c.url, c.anonKey);
+  return true;
+}
+
+/* ─── login (Supabase Auth — mesmo login do CRM) ────────── */
+async function entrar(){
+  const email = $('#email').value.trim(), senha = $('#senha').value;
+  if(!email || !senha) return;
+  if(!sb && !(await initSb())) return;
+  $('#btn-entrar').disabled = true; $('#erro-login').textContent = '';
+  try{
+    const { error } = await sb.auth.signInWithPassword({ email, password: senha });
+    if(error) throw new Error('E-mail ou senha inválidos.');
+    abrirPainel();
+  }catch(e){
+    $('#erro-login').textContent = e.message;
+  }finally{
+    $('#btn-entrar').disabled = false;
+  }
+}
+$('#btn-entrar').addEventListener('click', entrar);
+$('#senha').addEventListener('keydown', e => { if(e.key === 'Enter') entrar(); });
+$('#email').addEventListener('keydown', e => { if(e.key === 'Enter') $('#senha').focus(); });
+
+async function sair(){
+  if(sb) await sb.auth.signOut();
+  $('#tela-painel').style.display = 'none';
+  $('#tela-login').style.display = 'flex';
+}
+$('#btn-sair').addEventListener('click', sair);
+
+function abrirPainel(){
+  $('#tela-login').style.display = 'none';
+  $('#tela-painel').style.display = 'block';
+  carregar();
+}
+
+/* ─── carregamento (uma leitura; filtros no cliente) ────── */
+async function carregar(){
+  $('#corpo').innerHTML = '<tr><td colspan="12" class="carregando">Carregando…</td></tr>';
+  try{
+    const { data, error } = await sb.from('apoiadores').select('*').order('criado_em', { ascending:false });
+    if(error) throw new Error(error.message);
+    TODOS = data || [];
+    aplicarFiltros();
+  }catch(e){
+    $('#corpo').innerHTML = `<tr><td colspan="12" class="vazio">Erro: ${e.message}</td></tr>`;
+  }
+}
+
+function passaFiltro(l){
+  const modo = $('#f-modo').value, status = $('#f-status').value, cidade = $('#f-cidade').value, lote = $('#f-lote').value, q = $('#f-q').value.trim().toLowerCase();
+  if(modo && l.modo !== modo) return false;
+  if(status && l.status !== status) return false;
+  if(cidade && (l.cidade || '') !== cidade) return false;
+  if(lote === '__sem__'){ if(l.lote) return false; }
+  else if(lote && l.lote !== lote) return false;
+  if(q){
+    const alvo = [l.nome, l.whatsapp, l.email, l.cep, l.rastreio].map(x => String(x || '').toLowerCase()).join(' ');
+    if(!alvo.includes(q)) return false;
+  }
+  return true;
+}
+
+function aplicarFiltros(){
+  LEADS = TODOS.filter(passaFiltro);
+  SEL.clear();
+  desenharKpis();
+  preencherSelects();
+  desenharTabela();
+  $('#contagem').textContent = `${LEADS.length} de ${TODOS.length} cadastros`;
+  const sc = TODOS.filter(l => l.metodo_rota === 'sem-coordenada').length;
+  $('#aviso-sem-coord').textContent = sc
+    ? `${sc} CEP(s) sem coordenada foram para o digital — confira as cidades no CFG` : '';
+}
+
+function desenharKpis(){
+  const t = (modo, status) => TODOS.filter(x => (!modo || x.modo === modo) && (!status || x.status === status)).length;
+  const kpis = [
+    ['Total', t(), ''],
+    ['Kit impresso', t('fisico'), 'f'],
+    ['Kit digital', t('digital'), 'd'],
+    ['A separar', t('fisico', 'novo'), ''],
+    ['Separados', t('fisico', 'separado'), ''],
+    ['Postados', t('fisico', 'postado'), 'p']
+  ];
+  $('#kpis').innerHTML = kpis.map(([r, n, c]) =>
+    `<div class="kpi ${c}"><span>${r}</span><b>${n}</b></div>`).join('');
+}
+
+function preencherSelects(){
+  const cid = $('#f-cidade'), lot = $('#f-lote');
+  const cidAtual = cid.value, lotAtual = lot.value;
+  const cont = (arr, key) => {
+    const m = {};
+    arr.forEach(l => { const v = l[key] || ''; if(key==='lote' && !v) return; m[v] = (m[v]||0)+1; });
+    return Object.entries(m).sort((a,b)=>a[0].localeCompare(b[0]));
+  };
+  cid.innerHTML = '<option value="">Todas</option>' +
+    cont(TODOS,'cidade').map(([c,n]) => `<option value="${esc(c)}">${esc(c||'—')} (${n})</option>`).join('');
+  lot.innerHTML = '<option value="">Todos</option><option value="__sem__">Sem lote</option>' +
+    cont(TODOS,'lote').sort((a,b)=>b[0].localeCompare(a[0])).map(([l,n]) => `<option value="${esc(l)}">${esc(l)} (${n})</option>`).join('');
+  cid.value = cidAtual; lot.value = lotAtual;
+}
+
+const esc = s => String(s == null ? '' : s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmtCep  = c => String(c || '').replace(/^(\d{5})(\d{3})$/, '$1-$2');
+const fmtZap  = w => String(w || '').replace(/^(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3');
+const fmtData = d => d ? new Date(d).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) : '';
+
+function endereco(l){
+  if(l.modo !== 'fisico') return '<span class="dim">— envio digital —</span>';
+  const p1 = [l.logradouro, l.numero].filter(Boolean).join(', ');
+  const p2 = [l.complemento, l.bairro].filter(Boolean).join(' · ');
+  return esc(p1) + (p2 ? '<br><span class="dim">' + esc(p2) + '</span>' : '');
+}
+
+function desenharTabela(){
+  if(!LEADS.length){
+    $('#corpo').innerHTML = '<tr><td colspan="12" class="vazio">Nenhum cadastro com esses filtros.</td></tr>';
+    atualizarSel(); return;
+  }
+  $('#corpo').innerHTML = LEADS.map(l => `
+    <tr data-id="${l.id}">
+      <td><input type="checkbox" class="chk" data-id="${l.id}"></td>
+      <td><span class="tag ${l.modo}">${l.modo === 'fisico' ? 'impresso' : 'digital'}</span></td>
+      <td><span class="tag ${l.status}">${l.status}</span></td>
+      <td>${esc(l.nome)}<br><span class="dim mono" style="font-size:11px">${esc(l.email)}</span></td>
+      <td class="end">${endereco(l)}</td>
+      <td class="mono">${fmtCep(l.cep)}</td>
+      <td>${esc(l.cidade || '')}<span class="dim">/${esc(l.uf || '')}</span></td>
+      <td class="mono dim">${l.distancia_km != null ? l.distancia_km + ' km' : '—'}</td>
+      <td class="mono">${fmtZap(l.whatsapp)}</td>
+      <td class="mono dim">${esc(l.lote || '—')}</td>
+      <td><input class="inp-linha campo-edit" data-campo="rastreio" data-id="${l.id}"
+                 value="${esc(l.rastreio || '')}" placeholder="—"></td>
+      <td class="dim mono">${fmtData(l.criado_em)}</td>
+    </tr>`).join('');
+
+  $$('.chk').forEach(c => c.addEventListener('change', e => {
+    const id = e.target.dataset.id;
+    e.target.checked ? SEL.add(id) : SEL.delete(id);
+    atualizarSel();
+  }));
+
+  $$('.campo-edit').forEach(i => i.addEventListener('change', async e => {
+    const { id, campo } = e.target.dataset;
+    try{
+      const patch = { [campo]: e.target.value, atualizado_em: new Date().toISOString() };
+      const { error } = await sb.from('apoiadores').update(patch).eq('id', id);
+      if(error) throw new Error(error.message);
+      const row = TODOS.find(x => x.id === id); if(row) row[campo] = e.target.value;
+      e.target.style.borderColor = 'var(--verde)';
+      setTimeout(() => { e.target.style.borderColor = ''; }, 900);
+    }catch(err){
+      e.target.style.borderColor = 'var(--vermelho)';
+      alert('Não salvou: ' + err.message);
+    }
+  }));
+  atualizarSel();
+}
+
+function atualizarSel(){
+  $('#txt-sel').textContent = `${SEL.size} selecionado${SEL.size === 1 ? '' : 's'}`;
+  $('#acoes').classList.toggle('off', SEL.size === 0);
+}
+
+$('#sel-todos').addEventListener('change', e => {
+  SEL.clear();
+  $$('.chk').forEach(c => { c.checked = e.target.checked; if(e.target.checked) SEL.add(c.dataset.id); });
+  atualizarSel();
+});
+
+/* ─── ações em massa ────────────────────────────────────── */
+async function emMassa(corpo){
+  if(!SEL.size) return;
+  try{
+    const patch = { ...corpo, atualizado_em: new Date().toISOString() };
+    const { error } = await sb.from('apoiadores').update(patch).in('id', [...SEL]);
+    if(error) throw new Error(error.message);
+    await carregar();
+  }catch(e){ alert('Falhou: ' + e.message); }
+}
+$('#btn-lote').addEventListener('click', () => {
+  const lote = $('#nome-lote').value.trim();
+  if(!lote) return alert('Dê um nome ao lote (ex: 2026-08-15-A).');
+  emMassa({ lote });
+});
+$$('[data-status]').forEach(b => b.addEventListener('click', () => emMassa({ status: b.dataset.status })));
+
+/* ─── CSV (gerado no navegador; ; + BOM p/ Excel PT) ────── */
+$('#btn-csv').addEventListener('click', () => {
+  if(!LEADS.length) return alert('Nada para exportar com esses filtros.');
+  const cols = ['criado_em','modo','status','nome','whatsapp','email','cep','logradouro','numero','complemento','bairro','cidade','uf','distancia_km','metodo_rota','lote','rastreio','obs'];
+  const cel = v => { const s = String(v == null ? '' : v).replace(/"/g,'""'); return /[";\n]/.test(s) ? `"${s}"` : s; };
+  const linhas = [cols.join(';')].concat(LEADS.map(l => cols.map(c => cel(l[c])).join(';')));
+  const blob = new Blob(['﻿' + linhas.join('\r\n')], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `apoiadores-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+});
+
+/* ─── impressão: romaneio + etiquetas ───────────────────── */
+$('#btn-imprimir').addEventListener('click', () => {
+  const itens = LEADS.filter(l => SEL.has(l.id) && l.modo === 'fisico');
+  if(!itens.length) return alert('Selecione ao menos um cadastro com kit impresso.');
+
+  const lote = $('#nome-lote').value.trim() || itens[0].lote || '—';
+  const hoje = new Date().toLocaleDateString('pt-BR');
+
+  const linhas = itens.map((l, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td><b>${esc(l.nome)}</b><br>${fmtZap(l.whatsapp)}</td>
+      <td>${esc([l.logradouro, l.numero].filter(Boolean).join(', '))}
+          ${l.complemento ? '<br>' + esc(l.complemento) : ''}
+          <br>${esc(l.bairro || '')}</td>
+      <td>${esc(l.cidade || '')}/${esc(l.uf || '')}</td>
+      <td>${fmtCep(l.cep)}</td>
+      <td style="width:26mm"></td>
+    </tr>`).join('');
+
+  const etiquetas = itens.map(l => `
+    <div class="etq">
+      <b>${esc(l.nome)}</b><br>
+      ${esc([l.logradouro, l.numero].filter(Boolean).join(', '))}
+      ${l.complemento ? ' — ' + esc(l.complemento) : ''}<br>
+      ${esc(l.bairro || '')}<br>
+      ${esc(l.cidade || '')} / ${esc(l.uf || '')}<br>
+      <span class="cep">${fmtCep(l.cep)}</span>
+      <div class="de">
+        REMETENTE: ${esc(REMETENTE.nome)} — ${esc(REMETENTE.endereco)},
+        ${esc(REMETENTE.cidade)}, CEP ${esc(REMETENTE.cep)}
+      </div>
+    </div>`).join('');
+
+  $('#print').innerHTML = `
+    <div class="romaneio-cab">
+      <h2>Romaneio de expedição — material de campanha</h2>
+      <p>Lote <b>${esc(lote)}</b> · ${itens.length} volume(s) · emitido em ${hoje}</p>
+    </div>
+    <table class="rom">
+      <thead><tr><th>#</th><th>Destinatário</th><th>Endereço</th><th>Cidade/UF</th><th>CEP</th><th>Rastreio</th></tr></thead>
+      <tbody>${linhas}</tbody>
+    </table>
+    <div class="assina">
+      <div>Separado por / data</div><div>Postado por / data</div>
+    </div>
+    <div class="etiquetas">${etiquetas}</div>`;
+  window.print();
+});
+
+/* ─── filtros ───────────────────────────────────────────── */
+['#f-modo','#f-status','#f-cidade','#f-lote'].forEach(s =>
+  $(s).addEventListener('change', aplicarFiltros));
+let tBusca;
+$('#f-q').addEventListener('input', () => { clearTimeout(tBusca); tBusca = setTimeout(aplicarFiltros, 300); });
+$('#btn-atualizar').addEventListener('click', carregar);
+
+/* ─── início: sessão já ativa? entra direto ─────────────── */
+(async () => {
+  if(!(await initSb())) return;
+  const { data } = await sb.auth.getSession();
+  if(data && data.session) abrirPainel(); else $('#email').focus();
+})();
+</script>
+</body>
+</html>

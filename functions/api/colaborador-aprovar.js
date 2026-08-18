@@ -47,7 +47,9 @@ export async function onRequestPost({ request, env }) {
   if (res.ok) {
     let uid = null; try { uid = JSON.parse(t).id || null; } catch {}
     await ativar(env, id, nivel, uid);
-    return json({ ok: true, email, nivel, password }, 200);
+    let emailed = false;
+    try { emailed = await enviarAcesso(env, email, col.nome, password, request); } catch (e) {}
+    return json({ ok: true, email, nivel, password, emailed }, 200);
   }
 
   // Já existia login para esse e-mail: só ativa (sem senha nova)
@@ -58,6 +60,36 @@ export async function onRequestPost({ request, env }) {
 
   return json({ ok: false, error: "falhou", detalhe: t.slice(0, 200) }, 200);
 }
+
+async function enviarAcesso(env, email, nome, senha, request) {
+  if (!env.RESEND_API_KEY || !env.RESEND_FROM) return false;
+  const origin = new URL(request.url).origin;
+  const link = `${origin}/painel.html`;
+  const primeiro = (nome || "").trim().split(/\s+/)[0] || "";
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;color:#14202a">
+      <h2 style="color:#128C7E">Seu acesso ao CRM está liberado</h2>
+      <p>Olá${primeiro ? " " + escHtml(primeiro) : ""}, seu cadastro foi aprovado. Use os dados abaixo para entrar:</p>
+      <div style="background:#f4f7f8;border:1px solid #e5e9ec;border-radius:10px;padding:14px 16px;margin:14px 0">
+        <p style="margin:0 0 6px"><b>Link:</b> <a href="${link}">${link}</a></p>
+        <p style="margin:0 0 6px"><b>E-mail:</b> ${escHtml(email)}</p>
+        <p style="margin:0"><b>Senha temporária:</b> <span style="font-family:monospace;font-size:16px">${escHtml(senha)}</span></p>
+      </div>
+      <p style="font-size:13px;color:#66757e">Recomendamos trocar a senha após o primeiro acesso, no botão <b>Trocar senha</b> dentro do painel.</p>
+    </div>`;
+  const r = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + env.RESEND_API_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: env.RESEND_FROM,
+      to: [email],
+      subject: "Seu acesso ao CRM — Ana Carolina Oliveira",
+      html,
+    }),
+  });
+  return r.ok;
+}
+function escHtml(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
 async function ativar(env, id, nivel, uid) {
   const patch = { status: "ativo", ativo: true, nivel };

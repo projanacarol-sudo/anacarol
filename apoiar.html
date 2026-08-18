@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Ana Carolina 20.260 — Material de campanha</title>
+<meta name="description" content="Cadastre-se para receber o material de campanha do Ana Carolina em casa.">
+<meta name="theme-color" content="#120F11">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="20.260">
+<meta property="og:title" content="Receba o material de campanha em casa">
+<meta property="og:description" content="Informe seu CEP e descubra se sua região recebe o kit impresso.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   TOKENS — amostrados dos PDFs da gráfica
+   preto #120F11 · laranja #CC532A · amarelo #F9BE15 · marinho #232A3B
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  /* Paleta Ana Carolina (vinho/dourado) — remapeada sobre as variáveis do template */
+  --preto:#0c0908;
+  --preto-2:#1a0f0a;
+  --laranja:#9a3524;
+  --laranja-2:#7a2418;
+  --amarelo:#e0a53a;
+  --amarelo-2:#f0d59a;
+  --marinho:#3a130c;
+  --branco:#FFFFFF;
+  --cinza:rgba(255,255,255,.60);
+  --cinza-2:rgba(255,255,255,.28);
+  --verde:#22B573;
+
+  --d:'Montserrat', system-ui, sans-serif;
+  --c:'Inter', system-ui, -apple-system, sans-serif;
+  --m:'Caveat', 'Brush Script MT', 'Segoe Script', 'Snell Roundhand', cursive;
+
+  --sat:env(safe-area-inset-top,0px);
+  --sab:env(safe-area-inset-bottom,0px);
+  --app-h:100dvh;
+  --gut:22px;
+}
+
+*,*::before,*::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{
+  height:100%;margin:0;padding:0;
+  overflow:hidden;               /* sem scroll — regra do projeto */
+  overscroll-behavior:none;
+  background:var(--preto);
+  font-family:var(--c);
+  color:var(--branco);
+  -webkit-font-smoothing:antialiased;
+  -webkit-text-size-adjust:100%;
+}
+img{display:block;max-width:100%;}
+button,input{font:inherit;color:inherit;}
+
+/* ── palco ─────────────────────────────────────────────────── */
+#app{
+  position:fixed;inset:0;
+  height:var(--app-h);
+  overflow:hidden;
+  display:flex;flex-direction:column;
+}
+
+/* fundo: gradiente da campanha + marca d'água VOTE */
+.fundo{position:absolute;inset:0;z-index:0;overflow:hidden;transition:opacity .5s ease;}
+.fundo-grad{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(115% 80% at 16% 6%, #FFD556 0%, rgba(255,213,86,0) 62%),
+    linear-gradient(168deg, var(--amarelo-2) 0%, var(--amarelo) 50%, #EDAB0D 100%);
+}
+.fundo-escuro .fundo-grad{
+  background:
+    radial-gradient(130% 80% at 80% 0%, rgba(204,83,42,.34) 0%, transparent 62%),
+    linear-gradient(160deg, var(--preto) 0%, #17100F 60%, #241611 100%);
+}
+/* marca d'agua: VOTE + assinatura manuscrita, camada unica */
+.camada{
+  position:absolute;top:-14%;left:-14%;width:128%;height:128%;
+  padding-left:4%;
+  overflow:hidden;user-select:none;pointer-events:none;
+  will-change:transform;
+}
+.camada.a{left:-4%;width:108%;padding-left:5%;animation:balancaA 19s ease-in-out infinite alternate;}
+.rolo{display:flex;flex-direction:column;will-change:transform;}
+.camada.a .rolo{animation:rolar 26s linear infinite;}
+.fita b,.fita i{display:block;font-style:normal;}
+.fita b{
+  font-family:var(--d);font-weight:900;
+  font-size:clamp(80px,22vw,182px);line-height:.80;letter-spacing:-.035em;
+  color:rgba(255,255,255,.34);
+  margin-bottom:.10em;
+}
+.fita i{
+  font-family:var(--m);font-weight:700;
+  font-size:clamp(31px,8.6vw,74px);line-height:1;letter-spacing:-.005em;
+  color:rgba(18,15,17,.085);
+  margin:.06em 0 .20em .06em;transform:rotate(-2.6deg);transform-origin:left center;
+  white-space:nowrap;
+}
+
+.fundo-escuro .fita b{color:rgba(255,255,255,.065);}
+.fundo-escuro .fita i{color:rgba(249,190,21,.13);}
+
+@keyframes rolar{from{transform:translateY(0);}to{transform:translateY(-50%);}}
+@keyframes balancaA{from{transform:translateX(3%) rotate(-.9deg) scale(1.00);}to{transform:translateX(-4%) rotate(.9deg) scale(1.12);}}
+
+.sheen{
+  position:absolute;top:-40%;left:0;width:52%;height:180%;
+  background:linear-gradient(100deg, transparent 0%, rgba(255,255,255,.06) 46%, transparent 100%);
+  pointer-events:none;
+  animation:varre 12s ease-in-out infinite;
+}
+@keyframes varre{
+  0%{transform:translateX(-150%) rotate(9deg);}
+  58%,100%{transform:translateX(330%) rotate(9deg);}
+}
+.fundo-escuro .brilho{background:radial-gradient(circle, rgba(249,190,21,.26) 0%, transparent 68%);}
+.brilho{
+  position:absolute;bottom:-32%;right:-28%;width:92vw;height:92vw;
+  background:radial-gradient(circle, rgba(255,255,255,.34) 0%, transparent 68%);
+  pointer-events:none;
+  animation:respira 13s ease-in-out infinite alternate;
+}
+@keyframes respira{
+  from{transform:translate(0,0) scale(1);opacity:.75;}
+  to{transform:translate(-9%,-7%) scale(1.28);opacity:1;}
+}
+
+/* ── topo: progresso + voltar ──────────────────────────────── */
+.topo{
+  position:relative;z-index:3;
+  padding:calc(var(--sat) + 10px) var(--gut) 0;
+  flex-shrink:0;
+}
+.barra{height:3px;background:rgba(255,255,255,.14);border-radius:99px;overflow:hidden;}
+.barra i{
+  display:block;height:100%;width:0%;background:var(--amarelo);
+  border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1);
+}
+.topo-linha{
+  display:flex;align-items:center;justify-content:space-between;
+  height:44px;
+}
+.voltar{
+  background:none;border:0;padding:8px;margin-left:-8px;
+  font-size:22px;line-height:1;cursor:pointer;color:var(--branco);
+  opacity:0;pointer-events:none;transition:opacity .25s ease;
+}
+.voltar.on{opacity:.7;pointer-events:auto;}
+.voltar:active{opacity:1;transform:scale(.92);}
+.selo-num{
+  font-family:var(--d);font-weight:900;font-size:15px;letter-spacing:-.02em;
+  color:var(--amarelo);
+}
+
+/* ── trilho de telas ───────────────────────────────────────── */
+.trilho{
+  position:relative;z-index:2;
+  flex:1;min-height:0;
+  display:flex;
+  width:100%;
+  transition:transform .46s cubic-bezier(.45,.05,.2,1);
+}
+.tela{
+  flex:0 0 100%;width:100%;min-width:100%;
+  display:flex;flex-direction:column;
+  padding:0 var(--gut) calc(var(--sab) + 34px);
+  min-height:0;
+  opacity:.25;transition:opacity .3s ease;
+}
+.tela.ativa{opacity:1;}
+.tela-corpo{
+  flex:1;min-height:0;
+  display:flex;flex-direction:column;justify-content:center;
+  gap:10px;
+  overflow:hidden;
+}
+.tela-pe{flex-shrink:0;padding-top:14px;}
+
+/* ── tipografia ────────────────────────────────────────────── */
+.olho{
+  font-family:var(--d);font-weight:800;
+  font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--amarelo);margin:0 0 4px;
+}
+h1{
+  font-family:var(--d);font-weight:900;
+  font-size:clamp(28px,8.6vw,42px);line-height:1.02;letter-spacing:-.025em;
+  text-transform:uppercase;margin:0 0 10px;
+}
+h2{
+  font-family:var(--d);font-weight:800;
+  font-size:clamp(23px,6.6vw,32px);line-height:1.08;letter-spacing:-.02em;
+  margin:0 0 8px;
+}
+.sub{font-size:15px;line-height:1.5;color:var(--cinza);margin:0;max-width:34ch;}
+
+/* ── botões ────────────────────────────────────────────────── */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:17px 20px;
+  background:var(--amarelo);color:var(--preto);
+  border:0;border-radius:14px;
+  font-family:var(--d);font-weight:800;font-size:16px;letter-spacing:.01em;
+  cursor:pointer;
+  transition:transform .12s ease, background .15s ease, opacity .15s ease;
+}
+.btn:active{transform:scale(.975);background:var(--amarelo-2);}
+.btn:disabled{opacity:.3;pointer-events:none;}
+.btn-ghost{
+  background:transparent;color:var(--branco);
+  border:1.5px solid rgba(255,255,255,.28);
+}
+.btn-ghost:active{background:rgba(255,255,255,.08);}
+.pe-nota{
+  text-align:center;font-size:12.5px;font-weight:500;
+  color:rgba(255,255,255,.68);
+  margin:11px 0 0;line-height:1.4;
+}
+
+/* ── campos ────────────────────────────────────────────────── */
+.campo{margin:0;}
+.campo label{
+  display:block;font-family:var(--d);font-weight:700;
+  font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--cinza);margin-bottom:6px;
+}
+.campo input{
+  width:100%;
+  background:transparent;border:0;
+  border-bottom:2px solid rgba(255,255,255,.22);
+  padding:9px 0;
+  font-family:var(--d);font-weight:700;
+  font-size:21px;letter-spacing:-.01em;
+  color:var(--branco);
+  border-radius:0;
+  transition:border-color .2s ease;
+}
+.campo input::placeholder{color:rgba(255,255,255,.2);font-weight:600;}
+.campo input:focus{outline:none;border-bottom-color:var(--amarelo);}
+.campo.erro input,
+.campo.erro-borda input{border-bottom-color:#FF5A4E;}
+.campo .msg{font-size:12.5px;color:#FF7A70;margin-top:7px;min-height:16px;display:none;}
+.campo.erro .msg{display:block;}
+
+.campo-grande input{
+  font-size:clamp(32px,10vw,44px);font-weight:900;letter-spacing:.04em;
+  padding:6px 0;
+}
+.dica{font-size:12.5px;color:var(--cinza-2);margin:9px 0 0;min-height:17px;}
+.dica.ok{color:var(--verde);}
+.dica.alerta{color:var(--amarelo);}
+.dica.ruim{color:#FF7A70;}
+
+.dupla{display:grid;grid-template-columns:1fr;gap:20px;}
+.dupla-2{display:grid;grid-template-columns:1fr 1.35fr;gap:16px;}
+
+/* ── tela 0: arte de campanha ──────────────────────────────── */
+.abertura{position:relative;justify-content:flex-start;padding-bottom:0;}
+
+.podemos{width:min(31%,124px);margin:4px 0 16px auto;position:relative;z-index:3;}
+
+.balao{
+  position:relative;z-index:3;align-self:flex-start;
+  background:var(--preto);border-radius:20px;
+  padding:15px 22px 17px;max-width:min(80%,340px);
+}
+.balao span{
+  display:block;color:var(--branco);
+  font-family:var(--d);font-weight:900;text-transform:uppercase;
+  font-size:clamp(29px,9.4vw,46px);line-height:.93;letter-spacing:-.035em;
+}
+.balao::after{
+  content:"";position:absolute;left:34px;bottom:-15px;
+  width:46px;height:30px;background:var(--preto);
+  border-radius:0 0 24px 6px;transform:skewX(-16deg);
+}
+
+.slogan-art{
+  position:relative;z-index:3;margin:30px 0 0;color:var(--preto);
+  font-family:var(--d);font-weight:600;
+  font-size:clamp(15.5px,4.5vw,21px);line-height:1.24;letter-spacing:-.02em;
+  max-width:63%;
+}
+.slogan-art b{font-weight:900;display:block;}
+
+.regua{
+  position:relative;z-index:3;border:0;border-top:2px solid var(--preto);
+  width:66%;margin:13px 0 0 calc(var(--gut) * -1);
+}
+
+.retrato{
+  position:absolute;right:-10%;bottom:0;left:auto;
+  height:min(80%,660px);width:auto;max-width:none;
+  z-index:1;
+  animation:sobe .85s cubic-bezier(.2,.9,.3,1) both;
+}
+@keyframes sobe{from{opacity:0;transform:translateY(34px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── Abertura = arte do Santão em tela cheia ──────────────── */
+.tela[data-tela="0"]{padding:0;position:relative;overflow:hidden;}
+.santao-bg{
+  position:absolute;inset:0;z-index:1;
+  background:#3a130c url('santao.jpg') top center / contain no-repeat;
+}
+.abertura-pe{
+  position:absolute;left:0;right:0;bottom:0;z-index:4;
+  padding:40px var(--gut) calc(var(--sab) + 18px);
+  background:linear-gradient(to top, #2a0f0a 40%, rgba(42,15,10,.85) 72%, transparent);
+  text-align:center;
+}
+.abertura-pe .num-sub{color:var(--amarelo-2);margin:0 0 12px;letter-spacing:.02em;}
+.abertura-pe .pe-nota{margin-top:10px;}
+.num-arte{
+  font-family:var(--d);font-weight:900;color:var(--branco);
+  font-size:clamp(46px,15.5vw,76px);line-height:.88;letter-spacing:-.04em;margin:0;
+}
+.num-sub{
+  font-family:var(--d);font-weight:800;color:var(--branco);text-transform:uppercase;
+  font-size:clamp(11.5px,3.7vw,17px);letter-spacing:.005em;margin:5px 0 16px;
+}
+
+/* ── tela 2: veredito ──────────────────────────────────────── */
+.veredito{align-items:flex-start;}
+.slam{
+  align-self:stretch;
+  padding:16px 18px;margin:0 0 16px;
+  animation:bate .42s cubic-bezier(.2,1.4,.35,1) both;
+}
+.slam.fisico{background:var(--preto);}
+.slam.digital{background:var(--amarelo);color:var(--preto);}
+@keyframes bate{
+  from{transform:scaleX(.2) translateX(-30px);opacity:0;}
+  to{transform:scaleX(1) translateX(0);opacity:1;}
+}
+.slam-rot{
+  font-family:var(--d);font-weight:800;font-size:10px;
+  letter-spacing:.2em;text-transform:uppercase;opacity:.65;margin:0 0 3px;
+}
+.slam-tit{
+  font-family:var(--d);font-weight:900;
+  font-size:clamp(26px,7.6vw,36px);line-height:1;letter-spacing:-.025em;
+  text-transform:uppercase;margin:0;
+}
+.slam.fisico .slam-tit{color:var(--amarelo);}
+.local{
+  font-family:var(--d);font-weight:700;font-size:14px;
+  color:var(--branco);margin:0 0 6px;
+}
+.lista-kit{list-style:none;margin:12px 0 0;padding:0;}
+.lista-kit li{
+  font-size:14px;color:var(--cinza);
+  padding:7px 0 7px 22px;position:relative;
+  border-top:1px solid rgba(255,255,255,.10);
+}
+.lista-kit li:first-child{border-top:0;}
+.lista-kit li::before{
+  content:"";position:absolute;left:2px;top:14px;
+  width:7px;height:7px;background:var(--amarelo);border-radius:2px;
+}
+
+/* ── tela 5: endereço ──────────────────────────────────────── */
+.cartao-end{
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:12px;padding:14px 16px;margin:0 0 18px;
+}
+.cartao-end .rot{
+  font-family:var(--d);font-weight:700;font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--cinza-2);margin:0 0 4px;
+}
+.cartao-end .val{font-family:var(--d);font-weight:700;font-size:15px;line-height:1.35;margin:0;}
+.corrigir{
+  background:none;border:0;padding:6px 0 0;margin:0;
+  font-size:12.5px;color:var(--amarelo);text-decoration:underline;cursor:pointer;
+}
+
+/* ── tela 6: aceite ────────────────────────────────────────── */
+.aceite{
+  display:flex;gap:13px;align-items:flex-start;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);
+  border-radius:12px;padding:15px 16px;cursor:pointer;
+  transition:border-color .2s ease,background .2s ease;
+}
+.aceite.on{border-color:var(--amarelo);background:rgba(249,190,21,.10);}
+.aceite input{width:21px;height:21px;margin:1px 0 0;flex-shrink:0;accent-color:var(--amarelo);}
+.aceite span{font-size:13px;line-height:1.5;color:var(--cinza);}
+.resumo{
+  font-size:13px;color:var(--cinza);line-height:1.6;
+  border-left:2px solid var(--amarelo);padding-left:13px;margin:0 0 16px;
+}
+.resumo b{color:var(--branco);font-weight:600;}
+
+/* ── tela 7: sucesso ───────────────────────────────────────── */
+.ok-selo{
+  width:64px;height:64px;border-radius:50%;
+  background:var(--amarelo);color:var(--preto);
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;font-weight:900;margin:0 0 16px;
+  animation:pula .5s cubic-bezier(.2,1.5,.4,1) both;
+}
+@keyframes pula{from{transform:scale(.3);opacity:0;}to{transform:scale(1);opacity:1;}}
+.dls{display:grid;gap:9px;margin:16px 0 0;}
+.dl{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);
+  border-radius:11px;padding:13px 15px;
+  text-decoration:none;color:var(--branco);
+  font-family:var(--d);font-weight:700;font-size:13.5px;
+}
+.dl b{color:var(--amarelo);font-size:12px;letter-spacing:.06em;}
+.dl:active{background:rgba(255,255,255,.16);}
+
+/* ── legal (bottom sheet) ──────────────────────────────────── */
+.topo.claro .barra{background:rgba(18,15,17,.16);}
+.topo.claro .barra i{background:var(--preto);}
+.topo.claro .selo-num{display:none;}
+.topo.claro .btn-info{color:rgba(18,15,17,.48);}
+.topo.claro .voltar{color:var(--preto);}
+.topo-dir{display:flex;align-items:center;gap:11px;}
+.btn-info{
+  background:none;border:0;padding:4px;line-height:1;
+  font-size:17px;color:rgba(255,255,255,.42);cursor:pointer;
+}
+.btn-info:active{color:var(--amarelo);}
+.sheet{
+  position:fixed;inset:0;z-index:20;
+  background:rgba(10,8,9,.82);backdrop-filter:blur(6px);
+  display:flex;align-items:flex-end;
+  opacity:0;pointer-events:none;transition:opacity .25s ease;
+}
+.sheet.on{opacity:1;pointer-events:auto;}
+.sheet-caixa{
+  width:100%;background:var(--preto-2);
+  border-radius:20px 20px 0 0;
+  padding:22px 22px calc(var(--sab) + 22px);
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.3,.9,.3,1);
+  max-height:82%;overflow-y:auto;
+}
+
+/* CNPJ sempre visível, fixo no pé, discreto, sem bloquear toques */
+.cnpj-fixo{
+  position:fixed;left:0;right:0;bottom:0;z-index:5;
+  padding:5px 12px calc(var(--sab) + 5px);
+  text-align:center;pointer-events:none;
+  font-size:9.5px;letter-spacing:.02em;line-height:1.2;
+  color:rgba(255,255,255,.42);
+  background:linear-gradient(to top, rgba(18,15,17,.82), rgba(18,15,17,0));
+}
+.sheet.on .sheet-caixa{transform:translateY(0);}
+.sheet h3{font-family:var(--d);font-weight:800;font-size:15px;margin:0 0 12px;text-transform:uppercase;letter-spacing:.04em;}
+.sheet p{font-size:12px;line-height:1.75;color:var(--cinza);margin:0 0 10px;}
+.sheet p b{color:var(--branco);}
+.sheet a{color:var(--amarelo);}
+
+.pote{position:absolute;left:-9999px;opacity:0;height:0;width:0;}
+
+/* ── responsivo / telas baixas ─────────────────────────────── */
+@media (max-height:640px){
+  .tela-corpo{gap:6px;}
+  h1{font-size:26px;}
+  h2{font-size:21px;}
+  .sub{font-size:13.5px;}
+  .campo input{font-size:19px;}
+  .btn{padding:15px 20px;font-size:15px;}
+  .lista-kit li{padding:5px 0 5px 22px;font-size:13px;}
+  .retrato{height:min(80%,470px);}
+  .balao{padding:12px 18px 14px;}
+  .slogan-art{margin-top:20px;}
+  .num-sub{margin-bottom:12px;}
+  .abertura-baixo{padding-top:20px;}
+}
+@media (min-width:640px){
+  :root{--gut:34px;}
+  #app{max-width:520px;margin:0 auto;box-shadow:0 0 90px rgba(0,0,0,.6);}
+  body{background:#0A0809;}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition-duration:.01ms!important;}
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- fundo -->
+  <div class="fundo" id="fundo">
+    <div class="fundo-grad"></div>
+    <div class="sheen" aria-hidden="true"></div>
+    <div class="camada a" aria-hidden="true"><div class="rolo"><div class="fita"><b>VOTE</b><i>Ana Carolina</i><b>VOTE</b><i>Ana Carolina</i><b>VOTE</b><i>Ana Carolina</i><b>VOTE</b><i>Ana Carolina</i></div><div class="fita"><b>VOTE</b><i>Ana Carolina</i><b>VOTE</b><i>Ana Carolina</i><b>VOTE</b><i>Ana Carolina</i><b>VOTE</b><i>Ana Carolina</i></div></div></div>
+    <div class="brilho" aria-hidden="true"></div>
+  </div>
+
+  <!-- topo -->
+  <div class="topo">
+    <div class="barra"><i id="progresso"></i></div>
+    <div class="topo-linha">
+      <button class="voltar" id="btn-voltar" aria-label="Voltar">←</button>
+      <div class="topo-dir">
+        <span class="selo-num" id="selo-num">20.260</span>
+        <button class="btn-info" id="btn-legal" aria-label="Informações legais">&#9432;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- trilho -->
+  <div class="trilho" id="trilho">
+
+    <!-- ░░ 0 · ABERTURA (arte do Santão) ░░ -->
+    <section class="tela ativa" data-tela="0">
+      <div class="santao-bg" aria-label="Ana Carolina Oliveira — Vote 2026 para Deputada Federal"></div>
+      <div class="tela-pe abertura-pe">
+        <p class="num-sub" id="num-sub">Receba o material de campanha</p>
+        <button class="btn" data-ir="1">Quero meu material</button>
+        <p class="pe-nota">Leva menos de 1 minuto · sem custo</p>
+      </div>
+    </section>
+
+    <!-- ░░ 1 · CEP ░░ -->
+    <section class="tela" data-tela="1">
+      <div class="tela-corpo">
+        <p class="olho">Passo 1</p>
+        <h2>Qual é o seu CEP?</h2>
+        <p class="sub">A tiragem impressa sai por rota. O CEP diz se a sua região recebe o kit em casa.</p>
+        <div class="campo campo-grande" id="c-cep" style="margin-top:14px;">
+          <label for="cep">CEP</label>
+          <input type="text" id="cep" inputmode="numeric" placeholder="00000-000" maxlength="9" autocomplete="postal-code">
+          <div class="msg">CEP inválido. Confira os 8 dígitos.</div>
+        </div>
+        <p class="dica" id="dica-cep">Não sabe? Pode usar o CEP da rua.</p>
+      </div>
+      <div class="tela-pe">
+        <button class="btn" id="btn-cep" disabled>Verificar minha região</button>
+      </div>
+    </section>
+
+    <!-- ░░ 2 · VEREDITO ░░ -->
+    <section class="tela" data-tela="2">
+      <div class="tela-corpo veredito">
+        <div class="slam" id="slam">
+          <p class="slam-rot" id="slam-rot"></p>
+          <p class="slam-tit" id="slam-tit"></p>
+        </div>
+        <p class="local" id="local"></p>
+        <p class="sub" id="veredito-sub"></p>
+        <ul class="lista-kit" id="lista-kit"></ul>
+      </div>
+      <div class="tela-pe">
+        <button class="btn" data-ir="3" id="btn-veredito">Continuar</button>
+      </div>
+    </section>
+
+    <!-- ░░ 3 · NOME ░░ -->
+    <section class="tela" data-tela="3">
+      <div class="tela-corpo">
+        <p class="olho">Passo 2</p>
+        <h2>Como você se chama?</h2>
+        <p class="sub" id="sub-nome">É o nome que vai na etiqueta do pacote.</p>
+        <div class="campo" id="c-nome" style="margin-top:20px;">
+          <label for="nome">Nome completo</label>
+          <input type="text" id="nome" placeholder="Nome e sobrenome" autocomplete="name" enterkeyhint="next">
+          <div class="msg">Escreva nome e sobrenome.</div>
+        </div>
+      </div>
+      <div class="tela-pe">
+        <button class="btn" data-ir="4">Continuar</button>
+      </div>
+    </section>
+
+    <!-- ░░ 4 · CONTATO ░░ -->
+    <section class="tela" data-tela="4">
+      <div class="tela-corpo">
+        <p class="olho">Passo 3</p>
+        <h2>Onde te avisamos?</h2>
+        <p class="sub">Usamos só para avisar sobre o material e a campanha.</p>
+        <div class="dupla" style="margin-top:20px;">
+          <div class="campo" id="c-whats">
+            <label for="whats">WhatsApp</label>
+            <input type="tel" id="whats" inputmode="numeric" placeholder="(11) 90000-0000" maxlength="15" autocomplete="tel-national" enterkeyhint="next">
+            <div class="msg">Informe o número com DDD.</div>
+          </div>
+          <div class="campo" id="c-email">
+            <label for="email">E-mail</label>
+            <input type="email" id="email" placeholder="voce@email.com" autocomplete="email" enterkeyhint="next">
+            <div class="msg">E-mail inválido.</div>
+          </div>
+        </div>
+      </div>
+      <div class="tela-pe">
+        <button class="btn" data-ir="5">Continuar</button>
+      </div>
+    </section>
+
+    <!-- ░░ 5 · ENDEREÇO (só físico) ░░ -->
+    <section class="tela" data-tela="5">
+      <div class="tela-corpo">
+        <p class="olho">Passo 4</p>
+        <h2>Para onde mandamos?</h2>
+
+        <div class="cartao-end" id="cartao-end" style="margin-top:16px;">
+          <p class="rot">Endereço do CEP</p>
+          <p class="val" id="end-txt">—</p>
+          <button type="button" class="corrigir" id="btn-corrigir">Corrigir endereço</button>
+        </div>
+
+        <div id="end-editavel" style="display:none;">
+          <div class="campo" id="c-rua" style="margin-bottom:16px;">
+            <label for="rua">Rua</label>
+            <input type="text" id="rua" autocomplete="address-line1">
+            <div class="msg">Informe a rua.</div>
+          </div>
+          <div class="campo" id="c-bairro" style="margin-bottom:16px;">
+            <label for="bairro">Bairro</label>
+            <input type="text" id="bairro">
+            <div class="msg">Informe o bairro.</div>
+          </div>
+        </div>
+
+        <div class="dupla-2">
+          <div class="campo" id="c-numero">
+            <label for="numero">Número</label>
+            <input type="text" id="numero" inputmode="numeric" placeholder="123" enterkeyhint="next">
+            <div class="msg">Obrigatório.</div>
+          </div>
+          <div class="campo">
+            <label for="compl">Complemento</label>
+            <input type="text" id="compl" placeholder="Apto, bloco">
+          </div>
+        </div>
+      </div>
+      <div class="tela-pe">
+        <button class="btn" data-ir="6">Continuar</button>
+      </div>
+    </section>
+
+    <!-- ░░ 6 · ACEITE ░░ -->
+    <section class="tela" data-tela="6">
+      <div class="tela-corpo">
+        <p class="olho">Último passo</p>
+        <h2>Confere e confirma</h2>
+        <p class="resumo" id="resumo"></p>
+        <label class="aceite" id="aceite-box">
+          <input type="checkbox" id="aceite">
+          <span>Autorizo o uso dos meus dados para envio do material e contato da campanha por WhatsApp e e-mail durante o período eleitoral. Posso pedir exclusão a qualquer momento.</span>
+        </label>
+        <input type="text" class="pote" id="pote" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="campo" style="margin-top:2px;"><div class="msg" id="msg-envio" style="display:none;"></div></div>
+      </div>
+      <div class="tela-pe">
+        <button class="btn" id="btn-enviar" disabled>Confirmar cadastro</button>
+        <p class="pe-nota">Não pedimos CPF, título de eleitor nem dado de pagamento.</p>
+      </div>
+    </section>
+
+    <!-- ░░ 7 · SUCESSO ░░ -->
+    <section class="tela" data-tela="7">
+      <div class="tela-corpo">
+        <div class="ok-selo" id="ok-selo">✓</div>
+        <h2 id="ok-titulo"></h2>
+        <p class="sub" id="ok-texto"></p>
+        <div class="dls" id="ok-links"></div>
+      </div>
+      <div class="tela-pe">
+        <button class="btn btn-ghost" id="btn-compartilhar">Apresente o Ana Carolina para seus amigos</button>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="cnpj-fixo" aria-label="CNPJ da campanha">Propaganda eleitoral · CNPJ 68.492.046/0001-09</div>
+
+</div>
+
+<!-- bottom sheet legal -->
+<div class="sheet" id="sheet">
+  <div class="sheet-caixa">
+    <h3>Informações legais</h3>
+    <p><b id="lg-nome"></b></p>
+    <p>Propaganda eleitoral. CNPJ da campanha: <b id="lg-cnpj"></b>.</p>
+    <p>O material impresso traz, no próprio impresso, a tiragem e o CNPJ da gráfica responsável, conforme o art. 38 da Lei 9.504/97.</p>
+    <p><b>Seus dados:</b> o endereço é usado apenas para postagem do kit. WhatsApp e e-mail, apenas para comunicação da campanha no período eleitoral. Não vendemos nem repassamos a lista. Para sair, responda qualquer mensagem com SAIR.</p>
+    <p>Encarregado de dados (LGPD): <b id="lg-dpo"></b></p>
+    <p style="margin-top:16px;"><button class="btn btn-ghost" id="fechar-sheet" style="padding:13px;">Fechar</button></p>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+   ┃  CONFIGURAÇÃO — mexa só daqui até "FIM CONFIG"  ┃
+   ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+   ═══════════════════════════════════════════════════════════════ */
+const CFG = {
+
+  /* ── Identidade ─────────────────────────────────────────── */
+  candidato:  "Ana Carolina Oliveira",
+  numero:     "____",          /* ⚠️ PREENCHER: número de urna (ex.: 19.000) */
+  numero_urna:"_____",         /* ⚠️ PREENCHER: número sem pontos */
+  cargo:      "Deputada Federal",
+  uf:         "SP",
+  partido:    "PODEMOS",
+  slogan:     "Esse é o nosso Legado",
+  instagram:  "@anacarolinaoliveira_oficial",
+
+  /* ⚠️ CONFERIR COM O JURÍDICO antes de publicar. */
+  razao_social: "PODEMOS – ELEIÇÃO 2026 ANA CAROLINA OLIVEIRA",
+  cnpj:         "00.000.000/0001-00",
+  email_dpo:    "[contato@dominio.com.br]",
+
+  /* ── Rota de entrega: raio a partir de um ponto ──────────
+     O CEP é convertido em coordenada pela BrasilAPI e a
+     distância é calculada por haversine. Dentro do raio =
+     kit impresso.                                          */
+  raio_km: 30,
+  centro: { lat:-23.55052, lng:-46.63331, nome:"Praça da Sé, São Paulo" },
+
+  /* Cidades que entram no impresso INDEPENDENTE da distância.
+     A capital fica aqui porque o município se estende por mais
+     de 30 km da Sé (Parelheiros, Marsilac) e ninguém de São
+     Paulo deveria cair no digital.                          */
+  sempre_incluir_cidades: ["São Paulo"],
+
+  /* Rede de segurança: usada só quando a BrasilAPI não devolve
+     coordenada para o CEP. Vazio = esses casos vão para digital
+     (não desperdiça postagem). Preencha depois de ver o relatório
+     de "sem-coordenada" no painel.                          */
+  cidades_fallback: [],
+
+  aceita_fora_de_sp: false,
+
+  /* ── Backend ─────────────────────────────────────────────
+     URL do endpoint no CRM. "" = MODO SIMULAÇÃO (só console).   */
+  endpoint: "/api/apoiador",
+
+  /* ── Conteúdo dos kits ───────────────────────────────────── */
+  kit_fisico: [
+    "Santinhos para distribuir",
+    "Adesivo de carro e de janela",
+    "Cartão-colinha com o número",
+    "Placa “Aqui apoiamos”"
+  ],
+  kit_digital: [
+    "Artes para feed e stories",
+    "Figurinhas de WhatsApp",
+    "Moldura para foto de perfil",
+    "Santinho em PDF para imprimir"
+  ],
+
+  /* ── Entregáveis digitais (R2) ───────────────────────────── */
+  links_digitais: [
+    // { rotulo:"Pack de artes", url:"https://..." },
+  ],
+  link_grupo: "",
+  prazo: "O envio sai em lotes semanais, com prazo médio de 7 a 12 dias úteis.",
+
+  /* ── Compartilhamento ────────────────────────────────────── */
+  /* ── Compartilhamento ────────────────────────────────────────
+     Mensagem pronta que abre no WhatsApp quando o apoiador toca
+     "Chamar mais alguém". O WhatsApp abre a lista de contatos da
+     pessoa para ela escolher até 5 amigos e enviar. {LINK} é
+     trocado pelo post do Instagram do William (post_instagram
+     abaixo); se omitir, o link entra no fim da mensagem.        */
+  post_instagram: "https://www.instagram.com/anacarolinaoliveira_oficial/",   // ← post/reel da Ana (opcional)
+  share_texto: "Oi! Eu vou apoiar a Ana Carolina Oliveira para Deputada Federal em SP. Se quiser conhecer o trabalho dela, entra aqui: {LINK}"
+};
+/* ══════════════════ FIM CONFIG ══════════════════ */
+
+
+/* ─── injeta config no HTML ─────────────────────────────────── */
+const $ = s => document.querySelector(s);
+const txt = (s,v) => { const e=$(s); if(e) e.textContent = v; };
+txt('#selo-num', CFG.numero);
+const _bn=$('#balao-nome'); if(_bn) _bn.innerHTML = CFG.candidato.replace(' ', '<br>');
+txt('#lg-nome', `${CFG.candidato} — ${CFG.partido} — Nº ${CFG.numero_urna}`);
+txt('#lg-cnpj', CFG.cnpj);
+txt('#lg-dpo', CFG.email_dpo);
+document.title = `${CFG.candidato} ${CFG.numero} — Material de campanha`;
+
+
+/* ─── PWA: manifest + ícone gerados em runtime ──────────────── */
+(function pwa(){
+  try{
+    const c = document.createElement('canvas'); c.width=c.height=512;
+    const x = c.getContext('2d');
+    x.fillStyle='#F9BE15'; x.fillRect(0,0,512,512);
+    x.fillStyle='#120F11'; x.fillRect(0,178,512,156);
+    x.fillStyle='#FFFFFF';
+    x.font='900 92px Montserrat, sans-serif';
+    x.textAlign='center'; x.textBaseline='middle';
+    x.fillText(CFG.numero, 256, 258);
+    const icone = c.toDataURL('image/png');
+    const manifest = {
+      name: `${CFG.candidato} ${CFG.numero}`,
+      short_name: CFG.numero,
+      start_url: '.', display:'standalone',
+      background_color:'#120F11', theme_color:'#120F11',
+      icons:[{src:icone,sizes:'512x512',type:'image/png',purpose:'any maskable'}]
+    };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'}));
+    const l = document.createElement('link'); l.rel='manifest'; l.href=url;
+    document.head.appendChild(l);
+    const ai = document.createElement('link'); ai.rel='apple-touch-icon'; ai.href=icone;
+    document.head.appendChild(ai);
+  }catch(e){}
+})();
+
+
+/* ─── altura real (teclado do celular) ──────────────────────── */
+function alturaApp(){
+  const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+  document.documentElement.style.setProperty('--app-h', h + 'px');
+}
+alturaApp();
+window.addEventListener('resize', alturaApp);
+if(window.visualViewport) window.visualViewport.addEventListener('resize', alturaApp);
+
+
+/* ─── estado + navegação ────────────────────────────────────── */
+const S = { tela:0, modo:null, rota:null, dist:null, metodo:null, end:null, enviando:false, editando:false };
+const TOTAL = 7;
+const trilho = $('#trilho');
+const telas  = [...document.querySelectorAll('.tela')];
+const fundo  = $('#fundo');
+const btnVoltar = $('#btn-voltar');
+
+function ir(n, opts={}){
+  if(n === S.tela) return;
+  // pula a tela de endereço quando o modo é digital
+  if(n === 5 && S.modo === 'digital') n = 6;
+  if(n === 5 && S.modo === null)      n = 6;
+
+  S.tela = n;
+  trilho.style.transform = `translateX(-${n * 100}%)`;
+  telas.forEach((t,i)=> t.classList.toggle('ativa', i===n));
+  $('#progresso').style.width = Math.round((n / TOTAL) * 100) + '%';
+  btnVoltar.classList.toggle('on', n > 0 && n < 7);
+  fundo.classList.toggle('fundo-escuro', n > 0);
+  document.querySelector('.topo').classList.remove('claro'); /* abertura já é escura (Santão) */
+
+  if(n === 6) montarResumo();
+  if(!opts.semFoco){
+    setTimeout(()=>{
+      const alvo = telas[n].querySelector('input:not([readonly]):not(.pote)');
+      if(alvo && n!==0 && n!==2 && n!==6 && n!==7 && window.innerWidth > 520) alvo.focus();
+    }, 480);
+  }
+}
+
+document.getElementById('fundo').classList.add('fundo-escuro');
+
+document.querySelectorAll('[data-ir]').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    const destino = +b.dataset.ir;
+    if(validarTela(S.tela)) ir(destino);
+  });
+});
+
+btnVoltar.addEventListener('click', ()=>{
+  let anterior = S.tela - 1;
+  if(anterior === 5 && S.modo === 'digital') anterior = 4;
+  if(anterior < 0) anterior = 0;
+  ir(anterior, {semFoco:true});
+});
+
+/* Enter avança */
+document.addEventListener('keydown', e=>{
+  if(e.key !== 'Enter') return;
+  const btn = telas[S.tela].querySelector('.tela-pe .btn:not(:disabled)');
+  if(btn){ e.preventDefault(); btn.click(); }
+});
+
+
+/* ─── máscaras ──────────────────────────────────────────────── */
+const iCep = $('#cep'), iWhats = $('#whats'), iNome = $('#nome'), iEmail = $('#email');
+
+iCep.addEventListener('input', e=>{
+  let v = e.target.value.replace(/\D/g,'').slice(0,8);
+  e.target.value = v.length>5 ? v.slice(0,5)+'-'+v.slice(5) : v;
+  $('#c-cep').classList.remove('erro','erro-borda');
+  $('#btn-cep').disabled = v.length !== 8;
+  if(v.length === 8) $('#dica-cep').textContent = 'Toque em verificar.';
+});
+
+iWhats.addEventListener('input', e=>{
+  let v = e.target.value.replace(/\D/g,'').slice(0,11);
+  if(v.length>10)     v = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
+  else if(v.length>6) v = `(${v.slice(0,2)}) ${v.slice(2,6)}-${v.slice(6)}`;
+  else if(v.length>2) v = `(${v.slice(0,2)}) ${v.slice(2)}`;
+  else if(v.length>0) v = `(${v}`;
+  e.target.value = v;
+});
+
+['nome','whats','email','rua','bairro','numero'].forEach(id=>{
+  const i = document.getElementById(id);
+  if(i) i.addEventListener('input', ()=> i.closest('.campo').classList.remove('erro'));
+});
+
+
+/* ─── roteamento por CEP ────────────────────────────────────── */
+const norm = s => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+
+/* haversine — distancia em km entre duas coordenadas */
+function distanciaKm(a, b){
+  const R = 6371, rad = x => x * Math.PI / 180;
+  const dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat/2)**2 +
+            Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function dentroDaRota(d){
+  // 1. cidades sempre incluidas (a capital inteira)
+  if(CFG.sempre_incluir_cidades.some(c => norm(c) === norm(d.cidade)))
+    return { ok:true, metodo:'cidade', dist:null, rota:d.cidade };
+
+  // 2. coordenada do CEP -> distancia real ate o centro
+  if(d.lat != null && d.lng != null){
+    const km = distanciaKm(CFG.centro, { lat:d.lat, lng:d.lng });
+    return { ok: km <= CFG.raio_km, metodo:'coordenada',
+             dist: Math.round(km * 10) / 10, rota: `${Math.round(km)}km` };
+  }
+
+  // 3. rede de seguranca quando o CEP nao tem coordenada
+  if(CFG.cidades_fallback.some(c => norm(c) === norm(d.cidade)))
+    return { ok:true, metodo:'cidade-fallback', dist:null, rota:d.cidade };
+
+  return { ok:false, metodo:'sem-coordenada', dist:null, rota:null };
+}
+
+/* BrasilAPI primeiro: e a unica das duas que devolve coordenada.
+   ViaCEP so como reserva (sem coordenada -> cai na regra 3). */
+async function buscarCep(cep8){
+  try{
+    const r = await fetch(`https://brasilapi.com.br/api/cep/v2/${cep8}`);
+    if(r.ok){
+      const d = await r.json();
+      const c = d.location && d.location.coordinates;
+      const lat = c && c.latitude  != null ? parseFloat(c.latitude)  : null;
+      const lng = c && c.longitude != null ? parseFloat(c.longitude) : null;
+      return { logradouro:d.street||'', bairro:d.neighborhood||'',
+               cidade:d.city, uf:d.state,
+               lat: Number.isFinite(lat) ? lat : null,
+               lng: Number.isFinite(lng) ? lng : null };
+    }
+  }catch(e){}
+  try{
+    const r = await fetch(`https://viacep.com.br/ws/${cep8}/json/`);
+    const d = await r.json();
+    if(!d.erro) return { logradouro:d.logradouro||'', bairro:d.bairro||'',
+                         cidade:d.localidade, uf:d.uf, lat:null, lng:null };
+  }catch(e){}
+  return null;
+}
+
+$('#btn-cep').addEventListener('click', async ()=>{
+  const cep8 = iCep.value.replace(/\D/g,'');
+  if(cep8.length !== 8){ $('#c-cep').classList.add('erro'); return; }
+
+  const b = $('#btn-cep');
+  b.disabled = true; b.textContent = 'Consultando…';
+  $('#dica-cep').className = 'dica';
+  $('#dica-cep').textContent = 'Checando a rota de entrega…';
+
+  const d = await buscarCep(cep8);
+  b.disabled = false; b.textContent = 'Verificar minha região';
+
+  if(!d){
+    $('#c-cep').classList.add('erro-borda');
+    $('#dica-cep').className = 'dica ruim';
+    $('#dica-cep').textContent = 'CEP não encontrado. Confira os números.';
+    return;
+  }
+
+  S.end = d;
+  const foraSP = d.uf !== CFG.uf && !CFG.aceita_fora_de_sp;
+  const r = foraSP ? { ok:false, metodo:'fora-uf', dist:null } : dentroDaRota(d);
+  S.dist = r.dist; S.metodo = r.metodo;
+
+  if(r.ok) montarFisico(d, r.rota, r.dist); else montarDigital(d, foraSP, r.dist);
+  ir(2, {semFoco:true});
+});
+
+function montarFisico(d, rota, dist){
+  S.modo = 'fisico'; S.rota = rota;
+  $('#slam').className = 'slam fisico';
+  $('#slam-rot').textContent = 'Sua região está na rota';
+  $('#slam-tit').textContent = 'Entrega em casa';
+  $('#local').textContent = dist != null ? `${d.cidade}/${d.uf} · ${dist} km do centro` : `${d.cidade}/${d.uf}`;
+  $('#veredito-sub').textContent = 'Você recebe o kit impresso pelos Correios, sem custo nenhum.';
+  $('#lista-kit').innerHTML = CFG.kit_fisico.map(i=>`<li>${i}</li>`).join('');
+  $('#btn-veredito').textContent = 'Continuar';
+  $('#sub-nome').textContent = 'É o nome que vai na etiqueta do pacote.';
+  $('#end-txt').textContent = [d.logradouro, d.bairro, `${d.cidade}/${d.uf}`].filter(Boolean).join(' · ') || 'CEP sem rua definida';
+  $('#rua').value = d.logradouro; $('#bairro').value = d.bairro;
+  if(!d.logradouro) abrirEdicao();
+}
+
+function montarDigital(d, foraSP, dist){
+  S.modo = 'digital'; S.rota = null;
+  $('#slam').className = 'slam digital';
+  $('#slam-rot').textContent = foraSP ? `Envio impresso só em ${CFG.uf}` : (dist != null ? `${dist} km do centro — fora do raio de ${CFG.raio_km} km` : 'Fora da rota impressa');
+  $('#slam-tit').textContent = 'Kit digital';
+  $('#local').textContent = `${d.cidade}/${d.uf}`;
+  $('#veredito-sub').textContent = 'O kit digital é liberado na hora — dá para imprimir, postar e encaminhar. E você entra na fila caso abram novas rotas.';
+  $('#lista-kit').innerHTML = CFG.kit_digital.map(i=>`<li>${i}</li>`).join('');
+  $('#btn-veredito').textContent = 'Quero o kit digital';
+  $('#sub-nome').textContent = 'Para personalizar o material que vamos te mandar.';
+}
+
+
+/* ─── endereço editável ─────────────────────────────────────── */
+function abrirEdicao(){
+  S.editando = true;
+  $('#end-editavel').style.display = 'block';
+  $('#cartao-end').style.display = 'none';
+}
+$('#btn-corrigir').addEventListener('click', abrirEdicao);
+
+
+/* ─── validação por tela ────────────────────────────────────── */
+function marca(sel, ok){ const e=$(sel); if(e) e.classList.toggle('erro', !ok); return ok; }
+const t = v => String(v||'').trim();
+
+function validarTela(n){
+  if(n === 3){
+    const v = t(iNome.value);
+    return marca('#c-nome', v.length>=5 && v.split(/\s+/).length>=2);
+  }
+  if(n === 4){
+    let ok = marca('#c-whats', t(iWhats.value).replace(/\D/g,'').length>=10);
+    ok = marca('#c-email', /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(t(iEmail.value))) && ok;
+    return ok;
+  }
+  if(n === 5){
+    let ok = marca('#c-numero', t($('#numero').value).length>=1);
+    if(S.editando){
+      ok = marca('#c-rua', t($('#rua').value).length>=3) && ok;
+      ok = marca('#c-bairro', t($('#bairro').value).length>=2) && ok;
+    }
+    return ok;
+  }
+  return true;
+}
+
+
+/* ─── resumo + aceite ───────────────────────────────────────── */
+function montarResumo(){
+  const linhas = [`<b>${t(iNome.value)}</b>`, t(iWhats.value), t(iEmail.value)];
+  if(S.modo === 'fisico'){
+    const e = [t($('#rua').value), t($('#numero').value), t($('#compl').value)].filter(Boolean).join(', ');
+    linhas.push(`${e} — ${t($('#bairro').value)}, ${S.end.cidade}/${S.end.uf}`);
+    linhas.push(`<b>Kit impresso</b> · CEP ${iCep.value}`);
+  }else{
+    linhas.push(`${S.end.cidade}/${S.end.uf}`);
+    linhas.push(`<b>Kit digital</b> · CEP ${iCep.value}`);
+  }
+  $('#resumo').innerHTML = linhas.join('<br>');
+}
+
+$('#aceite').addEventListener('change', e=>{
+  $('#aceite-box').classList.toggle('on', e.target.checked);
+  $('#btn-enviar').disabled = !e.target.checked;
+});
+
+
+/* ─── envio ─────────────────────────────────────────────────── */
+$('#btn-enviar').addEventListener('click', async ()=>{
+  if(S.enviando || $('#pote').value) return;
+  S.enviando = true;
+  const b = $('#btn-enviar');
+  b.disabled = true; b.textContent = 'Enviando…';
+  $('#msg-envio').style.display = 'none';
+
+  const p = new URLSearchParams(location.search);
+  const payload = {
+    modo: S.modo, rota: S.rota,
+    nome: t(iNome.value),
+    whatsapp: iWhats.value.replace(/\D/g,''),
+    email: t(iEmail.value).toLowerCase(),
+    cep: iCep.value.replace(/\D/g,''),
+    logradouro:  S.modo==='fisico' ? t($('#rua').value)    : '',
+    numero:      S.modo==='fisico' ? t($('#numero').value) : '',
+    complemento: S.modo==='fisico' ? t($('#compl').value)  : '',
+    bairro:      S.modo==='fisico' ? t($('#bairro').value) : '',
+    cidade: S.end?.cidade || '', uf: S.end?.uf || '',
+    lat: S.end?.lat ?? null, lng: S.end?.lng ?? null,
+    distancia_km: S.dist, metodo_rota: S.metodo,
+    candidato: CFG.candidato, numero_urna: CFG.numero_urna,
+    aceite:true, aceite_em:new Date().toISOString(),
+    origem: p.get('utm_source') || document.referrer || 'direto',
+    utm_medium: p.get('utm_medium')||'', utm_campaign: p.get('utm_campaign')||'',
+    pagina: location.href
+  };
+
+  try{
+    if(CFG.endpoint){
+      let r;
+      try{
+        r = await fetch(CFG.endpoint,{
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+      }catch(rede){
+        // fetch so estoura assim quando o navegador barra: CORS ou sem rede
+        throw new Error('a página não conseguiu falar com o servidor (CORS ou conexão)');
+      }
+      if(!r.ok){
+        const d = await r.json().catch(() => ({}));
+        throw new Error(`${r.status} — ${d.erro || 'sem detalhe'}${d.detalhe ? ' · ' + d.detalhe : ''}`);
+      }
+    }else{
+      console.log('[SIMULAÇÃO] payload:', payload);
+      await new Promise(r=>setTimeout(r,700));
+    }
+    sucesso();
+  }catch(err){
+    console.error(err);
+    S.enviando = false;
+    b.disabled = false; b.textContent = 'Tentar de novo';
+    const m = $('#msg-envio');
+    m.textContent = 'Não salvou: ' + err.message;
+    m.style.display = 'block';
+    // fica no console para você copiar inteiro
+    console.error('[cadastro] falhou:', err, '\npayload:', payload);
+  }
+});
+
+function sucesso(){
+  if(S.modo === 'fisico'){
+    $('#ok-titulo').textContent = 'Kit impresso a caminho';
+    $('#ok-texto').textContent = `Seu endereço entrou no lote de envio. ${CFG.prazo} Avisamos pelo WhatsApp quando o pacote for postado.`;
+    $('#ok-links').innerHTML = CFG.link_grupo
+      ? `<a class="dl" href="${CFG.link_grupo}" target="_blank" rel="noopener"><span>Entrar no grupo de apoiadores</span><b>ABRIR</b></a>` : '';
+  }else{
+    $('#ok-titulo').textContent = 'Kit digital liberado';
+    $('#ok-texto').textContent = 'Está tudo aqui embaixo — e também mandamos pelo seu WhatsApp.';
+    let h = (CFG.links_digitais||[]).map(l=>
+      `<a class="dl" href="${l.url}" target="_blank" rel="noopener"><span>${l.rotulo}</span><b>BAIXAR</b></a>`).join('');
+    if(CFG.link_grupo) h += `<a class="dl" href="${CFG.link_grupo}" target="_blank" rel="noopener"><span>Entrar no grupo</span><b>ABRIR</b></a>`;
+    $('#ok-links').innerHTML = h || '<p class="sub">Os links chegam no seu WhatsApp em instantes.</p>';
+  }
+  $('#ok-selo').textContent = S.modo === 'fisico' ? '✓' : '↓';
+  ir(7, {semFoco:true});
+  btnVoltar.classList.remove('on');
+}
+
+$('#btn-compartilhar').addEventListener('click', ()=>{
+  const url = CFG.post_instagram || location.href;
+  const texto = CFG.share_texto.includes('{LINK}')
+    ? CFG.share_texto.replace('{LINK}', url)
+    : `${CFG.share_texto} ${url}`;
+  // api.whatsapp.com/send sem numero: o WhatsApp abre a lista de
+  // contatos para a pessoa escolher (ate 5) e enviar a mensagem pronta
+  const link = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(texto);
+  window.open(link, '_blank', 'noopener');
+});
+
+
+/* ─── sheet legal ───────────────────────────────────────────── */
+$('#btn-legal').addEventListener('click', ()=> $('#sheet').classList.add('on'));
+$('#fechar-sheet').addEventListener('click', ()=> $('#sheet').classList.remove('on'));
+$('#sheet').addEventListener('click', e=>{ if(e.target.id==='sheet') $('#sheet').classList.remove('on'); });
+
+/* trava gestos de scroll/zoom */
+document.addEventListener('gesturestart', e=>e.preventDefault());
+</script>
+</body>
+</html>
