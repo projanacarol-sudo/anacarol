@@ -10,10 +10,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --preto:#120F11; --preto-2:#1A1618; --preto-3:#232022;
-  --amarelo:#F9BE15; --verde:#22B573; --azul:#3D8BFF; --vermelho:#FF5A4E;
-  --branco:#fff; --cinza:rgba(255,255,255,.62); --cinza-2:rgba(255,255,255,.34);
-  --linha:rgba(255,255,255,.12);
+  /* Tema claro/teal do CRM (remapeado sobre as variáveis do template) */
+  --preto:#f4f7f8; --preto-2:#ffffff; --preto-3:#eef3f4;
+  --amarelo:#128C7E; --verde:#1c8a4e; --azul:#2b6cb0; --vermelho:#c0392b;
+  --branco:#14202a; --cinza:#66757e; --cinza-2:#93a0a6;
+  --linha:#e5e9ec;
   --d:'Montserrat',system-ui,sans-serif; --c:'Inter',system-ui,sans-serif;
 }
 *,*::before,*::after{box-sizing:border-box;}
@@ -37,7 +38,7 @@ a{color:var(--amarelo);}
 .campo input:focus,.campo select:focus{outline:none;border-color:var(--amarelo);}
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:7px;
-  background:var(--amarelo);color:var(--preto);border:0;border-radius:9px;
+  background:var(--amarelo);color:#fff;border:0;border-radius:9px;
   padding:11px 18px;font-family:var(--d);font-weight:800;font-size:14px;cursor:pointer;
 }
 .btn:active{transform:scale(.98);}
@@ -71,7 +72,7 @@ a{color:var(--amarelo);}
 .acoes{
   display:flex;gap:9px;flex-wrap:wrap;align-items:center;
   margin-bottom:14px;padding:12px 14px;border-radius:12px;
-  background:rgba(249,190,21,.09);border:1px solid rgba(249,190,21,.28);
+  background:rgba(18,140,126,.08);border:1px solid rgba(18,140,126,.28);
 }
 .acoes.off{display:none;}
 .acoes .sel{font-family:var(--d);font-weight:800;font-size:13px;margin-right:4px;}
@@ -88,8 +89,8 @@ th{
   font-family:var(--d);font-weight:700;font-size:10px;letter-spacing:.13em;
   text-transform:uppercase;color:var(--cinza);border-bottom:1px solid var(--linha);z-index:1;
 }
-td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top;}
-tr:hover td{background:rgba(255,255,255,.03);}
+td{padding:10px 12px;border-bottom:1px solid var(--linha);vertical-align:top;}
+tr:hover td{background:#f7fafb;}
 td.end{white-space:normal;max-width:280px;line-height:1.4;}
 .mono{font-family:ui-monospace,monospace;font-size:12px;}
 .dim{color:var(--cinza-2);}
@@ -98,13 +99,13 @@ td.end{white-space:normal;max-width:280px;line-height:1.4;}
   display:inline-block;padding:2px 8px;border-radius:20px;
   font-family:var(--d);font-weight:800;font-size:10px;letter-spacing:.06em;text-transform:uppercase;
 }
-.tag.fisico{background:rgba(249,190,21,.2);color:var(--amarelo);}
-.tag.digital{background:rgba(61,139,255,.2);color:var(--azul);}
-.tag.novo{background:rgba(255,255,255,.14);color:var(--branco);}
-.tag.separado{background:rgba(249,190,21,.2);color:var(--amarelo);}
-.tag.postado{background:rgba(34,181,115,.2);color:var(--verde);}
-.tag.entregue{background:rgba(34,181,115,.34);color:var(--verde);}
-.tag.cancelado{background:rgba(255,90,78,.18);color:var(--vermelho);}
+.tag.fisico{background:rgba(18,140,126,.12);color:#0d6b60;}
+.tag.digital{background:rgba(43,108,176,.12);color:#2b6cb0;}
+.tag.novo{background:#eef1f3;color:#66757e;}
+.tag.separado{background:rgba(224,165,58,.16);color:#b7791f;}
+.tag.postado{background:rgba(28,138,78,.14);color:#1c8a4e;}
+.tag.entregue{background:rgba(28,138,78,.24);color:#166b3c;}
+.tag.cancelado{background:rgba(192,57,43,.12);color:#c0392b;}
 
 .inp-linha{
   background:transparent;border:1px solid transparent;border-radius:6px;
