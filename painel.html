@@ -155,6 +155,7 @@
     <button data-tab="paginas">Páginas</button>
     <button data-tab="tarefas">Tarefas</button>
     <button data-tab="canais">Grupos e Redes</button>
+    <button data-tab="colaboradores">Colaboradores</button>
   </nav>
 
   <main>
@@ -224,6 +225,16 @@
     <section class="panel" id="panel-canais">
       <div class="box"><h3>Grupos de WhatsApp (SendFlow)</h3><div id="gruposWrap"></div></div>
       <div class="box"><h3>Redes sociais</h3><div id="socialWrap"></div></div>
+    </section>
+
+    <!-- ------- COLABORADORES ------- -->
+    <section class="panel" id="panel-colaboradores">
+      <div class="box">
+        <h3>Colaboradores</h3>
+        <p class="muted" style="font-size:13px;margin:4px 0 12px">Aprove novos cadastros, defina o nível de acesso e gere os logins da equipe.</p>
+        <button class="btn" id="btnColabsTab">Gerenciar colaboradores</button>
+        <span id="colabResumo" class="muted" style="font-size:13px;margin-left:10px"></span>
+      </div>
     </section>
   </main>
 </div>
@@ -312,7 +323,17 @@ $$("nav.tabs button").forEach(b => b.addEventListener("click", () => {
   if (b.dataset.tab==="paginas") loadPaginas();
   if (b.dataset.tab==="tarefas") loadTarefas();
   if (b.dataset.tab==="canais") loadCanais();
+  if (b.dataset.tab==="colaboradores") { abrirColabs(); resumoColabs(); }
 }));
+
+async function resumoColabs(){
+  try{
+    const { data } = await sb.from("colaboradores").select("status");
+    const pend=(data||[]).filter(c=>c.status==="pendente").length;
+    const el=$("#colabResumo");
+    if(el) el.textContent = pend ? `• ${pend} cadastro(s) aguardando aprovação` : "• nenhum cadastro pendente";
+  }catch(e){}
+}
 
 /* ---------- referências (origens, sequências, UFs) ---------- */
 async function loadRefs(){
@@ -1138,6 +1159,7 @@ async function editarTarefa(id){
 }
 
 $("#btnColabs").addEventListener("click",abrirColabs);
+$("#btnColabsTab").addEventListener("click",abrirColabs);
 async function abrirColabs(){
   const { data } = await sb.from("colaboradores").select("*").order("created_at",{ascending:false});
   const todos = data||[];
