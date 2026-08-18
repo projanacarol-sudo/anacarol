@@ -15,7 +15,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800;900&family=Inter:wght@400;500;600&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
 
 <style>
 /* ═══════════════════════════════════════════════════════════════
@@ -215,6 +215,34 @@ h2{
 }
 .btn:active{transform:scale(.975);background:var(--amarelo-2);}
 .btn:disabled{opacity:.3;pointer-events:none;}
+
+/* ══ Telas internas seguindo o layout da inicial (card + passos) ══ */
+.form-steps{
+  position:relative;z-index:5;
+  display:none;grid-template-columns:repeat(5,1fr);gap:0;
+  padding:9px 18px 12px;
+  background:linear-gradient(180deg,rgba(17,9,7,.55),transparent);
+}
+.form-steps.on{display:grid;}
+.form-steps::before{content:"";position:absolute;top:19px;left:20%;right:20%;height:1px;background:rgba(255,255,255,.16);}
+.form-steps .hero-step.done span{background:#e0a53a;color:#3a1c08;border-color:#e0a53a;}
+.form-steps .hero-step.active span{border-color:#e0a53a;color:#f0d59a;box-shadow:0 0 0 3px #1b0e0a,0 0 14px rgba(224,165,58,.35);}
+.form-steps .hero-step.active small{color:#e6bd68;}
+
+.tela:not([data-tela="0"]){justify-content:center;gap:16px;}
+.tela:not([data-tela="0"]) .tela-corpo{
+  flex:0 1 auto;overflow:visible;justify-content:flex-start;
+  padding:22px 18px;border-radius:18px;
+  border:1px solid rgba(240,213,154,.22);
+  background:
+    radial-gradient(120% 170% at 50% -80%,rgba(167,69,39,.20),transparent 55%),
+    linear-gradient(180deg,rgba(29,14,10,.96),rgba(17,9,7,.98));
+  box-shadow:0 14px 36px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.03);
+}
+.tela:not([data-tela="0"]) .tela-pe{padding-top:0;}
+/* marca d'água mais discreta atrás do card */
+.fundo-escuro .fita b{color:rgba(255,255,255,.028)!important;}
+.fundo-escuro .fita i{color:rgba(224,165,58,.055)!important;}
 .btn-ghost{
   background:transparent;color:var(--branco);
   border:1.5px solid rgba(255,255,255,.28);
@@ -309,7 +337,7 @@ h2{
 .tela[data-tela="0"]{padding:0;position:relative;overflow:hidden;}
 .santao-bg{
   position:absolute;inset:0;z-index:1;
-  background:#3a130c url('santao.jpg') top center / contain no-repeat;
+  background:#3a130c url('https://pub-d8c17953a575480084b80982d84262c2.r2.dev/bio%20ana/r2-1-santao.jpg') top center / contain no-repeat;
 }
 .abertura-pe{
   position:absolute;left:0;right:0;bottom:0;z-index:4;
@@ -487,6 +515,743 @@ h2{
 @media (prefers-reduced-motion:reduce){
   *{animation:none!important;transition-duration:.01ms!important;}
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   HERO V6 — composição fiel ao Santão + profundidade real
+   Base de coordenadas: arte original 1080 × 1350
+   ═══════════════════════════════════════════════════════════════ */
+.topo.hero-mode{
+  position:absolute; inset:0 0 auto 0; z-index:20;
+  pointer-events:none;
+}
+.topo.hero-mode .barra,
+.topo.hero-mode .topo-linha{opacity:0; visibility:hidden;}
+
+.tela[data-tela="0"]{
+  padding:0;
+  position:relative;
+  overflow:hidden;
+  background:#24100c;
+  display:flex;
+  flex-direction:column;
+}
+
+.hero-artboard{
+  position:relative;
+  flex:0 0 auto;
+  width:100%;
+  aspect-ratio:1080 / 1350;
+  overflow:hidden;
+  container-type:inline-size;
+  isolation:isolate;
+  background:#35150f;
+}
+
+.hero-poster{
+  position:absolute; inset:0;
+  width:100%; height:100%; object-fit:cover;
+  z-index:0;
+  filter:brightness(.84) saturate(.83) contrast(1.04);
+  transform:scale(1.004);
+}
+
+/* faz o Santão virar atmosfera, sem apagar a identidade */
+.hero-artboard::before{
+  content:"";
+  position:absolute; inset:0;
+  z-index:1;
+  pointer-events:none;
+  background:
+    radial-gradient(58% 42% at 51% 37%, rgba(255,210,155,.045), transparent 70%),
+    linear-gradient(to bottom, rgba(17,6,4,.03) 0%, rgba(22,7,4,.06) 57%, rgba(33,10,6,.12) 100%);
+  mix-blend-mode:screen;
+}
+.hero-artboard::after{
+  content:"";
+  position:absolute; left:0; right:0; bottom:-1px; height:15%;
+  z-index:6;
+  pointer-events:none;
+  background:linear-gradient(to bottom, transparent, rgba(38,13,9,.32) 70%, #24100c 100%);
+}
+
+/* posição calculada comparando a PNG ao retrato do Santão */
+.ana-halo,
+.ana-cutout{
+  position:absolute;
+  left:16.48%;
+  top:8.52%;
+  width:63.33%;
+  height:auto;
+  transform-origin:50% 50%;
+  pointer-events:none;
+  user-select:none;
+}
+.ana-halo{
+  z-index:2;
+  opacity:.30;
+  filter:blur(10px) brightness(1.18) sepia(.30) saturate(1.5);
+  transform:scale(1.014);
+}
+.ana-cutout{
+  z-index:3;
+  filter:
+    drop-shadow(0 12px 22px rgba(0,0,0,.26))
+    drop-shadow(0 0 1px rgba(255,231,197,.30));
+  animation:heroEntrada 950ms cubic-bezier(.18,.82,.22,1) both;
+}
+@keyframes heroEntrada{
+  from{opacity:0; transform:translateY(10px) scale(.993); filter:drop-shadow(0 8px 14px rgba(0,0,0,.18)) brightness(.94);}
+  to{opacity:1; transform:translateY(0) scale(1);}
+}
+
+/* Textos HTML ficam acima da pessoa. Sem caixas, sem fundos. */
+.hero-copy{
+  position:absolute;
+  z-index:5;
+  pointer-events:none;
+  user-select:none;
+}
+.hero-name{
+  left:9.8%; top:1.85%; width:61%;
+  font-family:var(--d);
+  color:#fff;
+  text-transform:uppercase;
+  font-weight:900;
+  letter-spacing:-.055em;
+  line-height:.84;
+  text-shadow:0 1px 1px rgba(0,0,0,.12);
+}
+.hero-name .ana{
+  display:block;
+  font-size:11.8cqw;
+  transform:scaleX(.98);
+  transform-origin:left center;
+}
+.hero-name .carolina{
+  display:block;
+  font-size:9.85cqw;
+  white-space:nowrap;
+  margin-top:1.2cqw;
+  transform:scaleX(.99);
+  transform-origin:left center;
+}
+.hero-oliveira{
+  left:9.45%; top:17.6%;
+  font-family:var(--d);
+  font-weight:300;
+  font-size:6.55cqw;
+  line-height:1;
+  color:#f1d79e;
+  letter-spacing:-.055em;
+  text-shadow:0 1px 2px rgba(0,0,0,.18);
+}
+.hero-vote{
+  left:8.35%; top:50.95%;
+  font-family:var(--d);
+  font-size:11.35cqw;
+  font-weight:900;
+  letter-spacing:-.06em;
+  line-height:.9;
+  color:#fff;
+}
+.hero-year{
+  left:7.4%; top:58.45%; width:84%;
+  font-family:var(--d);
+  font-size:29.3cqw;
+  font-weight:900;
+  letter-spacing:-.075em;
+  line-height:.80;
+  color:#f4d998;
+  white-space:nowrap;
+  text-shadow:0 1px 2px rgba(57,17,8,.16);
+  overflow:hidden;
+}
+.hero-year::after{
+  content:"";
+  position:absolute;
+  top:-40%; bottom:-35%; width:12%; left:-20%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.30),transparent);
+  transform:skewX(-16deg);
+  animation:yearShine 5.8s ease-in-out 1.1s infinite;
+}
+@keyframes yearShine{
+  0%,62%{left:-22%; opacity:0;}
+  70%{opacity:1;}
+  88%{left:118%; opacity:.75;}
+  100%{left:118%; opacity:0;}
+}
+.hero-legacy{
+  left:62.7%; top:50.45%; width:31%;
+  color:#fff;
+  transform:rotate(-.5deg);
+}
+.hero-legacy .pre{
+  display:block;
+  font-family:var(--d);
+  font-size:3.25cqw;
+  line-height:1;
+  font-weight:800;
+  letter-spacing:-.025em;
+  white-space:nowrap;
+}
+.hero-legacy .script{
+  display:block;
+  font-family:var(--m);
+  font-size:6.6cqw;
+  line-height:.88;
+  font-weight:700;
+  color:#f1d79e;
+  margin-top:.35cqw;
+  transform:rotate(-4deg) translateX(-.8cqw);
+  transform-origin:left center;
+  text-shadow:0 1px 1px rgba(0,0,0,.15);
+}
+.hero-federal{
+  left:10.65%; top:85.0%; width:78%;
+  font-family:var(--d);
+  font-size:4.25cqw;
+  font-weight:700;
+  letter-spacing:.015em;
+  color:#fff;
+  white-space:nowrap;
+  text-transform:uppercase;
+  text-align:center;
+}
+.hero-federal b{font-weight:900;color:#f4d998;}
+
+/* microanimações só nas camadas luminosas — os elementos não saem do alinhamento */
+.hero-glint{
+  position:absolute;
+  z-index:7;
+  pointer-events:none;
+  width:1.05cqw; height:1.05cqw;
+  border-radius:50%;
+  background:#ffe9ad;
+  box-shadow:0 0 1.5cqw rgba(255,216,124,.85),0 0 3cqw rgba(255,189,82,.40);
+  opacity:0;
+  animation:glint 4.6s ease-in-out infinite;
+}
+.hero-glint.g1{left:68%;top:16%;animation-delay:.7s;}
+.hero-glint.g2{left:87%;top:63%;animation-delay:2.15s;transform:scale(.7);}
+@keyframes glint{
+  0%,70%,100%{opacity:0;transform:scale(.35);}
+  76%{opacity:.92;transform:scale(1);}
+  82%{opacity:0;transform:scale(1.8);}
+}
+
+.hero-cta{
+  position:relative;
+  z-index:10;
+  flex:1 1 auto;
+  min-height:132px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  padding:10px var(--gut) calc(var(--sab) + 24px);
+  background:
+    radial-gradient(80% 160% at 50% -30%, rgba(182,75,45,.18), transparent 62%),
+    #24100c;
+}
+.hero-cta::before{
+  content:"";
+  position:absolute;
+  left:var(--gut); right:var(--gut); top:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(240,213,154,.46),transparent);
+}
+.hero-cta .num-sub{
+  margin:0 0 11px;
+  color:#f0d59a;
+  font-size:11px;
+  letter-spacing:.14em;
+}
+.hero-cta .btn{
+  border-radius:13px;
+  background:linear-gradient(180deg,#efd79f,#d7a655);
+  box-shadow:0 10px 28px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.36);
+}
+.hero-cta .btn:active{background:#dfbd78;}
+.hero-cta .pe-nota{color:rgba(255,255,255,.56);}
+
+@media (max-height:720px){
+  .hero-artboard{width:92%;margin:0 auto;}
+  .hero-cta{min-height:118px;padding-top:6px;padding-bottom:calc(var(--sab) + 18px);}
+  .hero-cta .pe-nota{margin-top:7px;}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .ana-cutout,.hero-year::after,.hero-glint{animation:none!important;}
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   HERO V7 — fundo editorial + retrato recortado em profundidade
+   ═══════════════════════════════════════════════════════════════ */
+.hero-artboard{
+  background:#210d09;
+  overflow:hidden;
+}
+.hero-poster{
+  inset:-3%; width:106%; height:106%;
+  object-fit:cover;
+  filter:blur(1.8px) brightness(.67) saturate(.92) contrast(1.05);
+  transform:scale(1.01);
+}
+.hero-artboard::before{
+  z-index:1;
+  background:
+    linear-gradient(180deg,rgba(11,5,4,.18) 0%,rgba(18,6,4,.04) 31%,rgba(19,6,4,.08) 60%,rgba(29,9,5,.48) 100%),
+    radial-gradient(72% 52% at 49% 34%,rgba(237,187,118,.12),transparent 68%),
+    linear-gradient(90deg,rgba(19,6,4,.28),transparent 23%,transparent 77%,rgba(19,6,4,.24));
+  mix-blend-mode:normal;
+}
+.hero-artboard::after{
+  height:22%; z-index:8;
+  background:linear-gradient(to bottom,transparent 0%,rgba(36,12,8,.16) 35%,#24100c 100%);
+}
+.ana-halo,.ana-cutout{
+  left:7.6%; top:2.2%; width:84.8%;
+}
+.ana-halo{
+  z-index:2; opacity:.42;
+  filter:blur(14px) brightness(1.08) sepia(.18) saturate(1.4);
+  transform:translateY(4px) scale(1.018);
+}
+.ana-cutout{
+  z-index:4;
+  filter:
+    brightness(1.035) contrast(1.04) saturate(1.02)
+    drop-shadow(0 20px 28px rgba(0,0,0,.34))
+    drop-shadow(0 0 1px rgba(255,225,184,.48));
+  animation:heroEntradaV7 1.05s cubic-bezier(.16,.84,.18,1) both, heroFloatV7 8s ease-in-out 1.2s infinite alternate;
+}
+@keyframes heroEntradaV7{
+  from{opacity:0;transform:translateY(14px) scale(.988)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes heroFloatV7{
+  from{transform:translate3d(0,0,0) scale(1)}
+  to{transform:translate3d(0,-3px,0) scale(1.004)}
+}
+/* vinheta de recorte atrás dos textos */
+.hero-artboard .hero-name,
+.hero-artboard .hero-oliveira,
+.hero-artboard .hero-year,
+.hero-artboard .hero-legacy,
+.hero-artboard .hero-federal{z-index:7;}
+.hero-name{
+  left:6.6%; top:4.4%; width:66%;
+  letter-spacing:-.06em;
+  line-height:.82;
+  text-shadow:0 4px 18px rgba(0,0,0,.28);
+}
+.hero-name .ana{font-size:12.2cqw;}
+.hero-name .carolina{font-size:9.95cqw;margin-top:1.25cqw;}
+.hero-oliveira{
+  left:6.8%; top:20.8%;
+  font-family:var(--m);
+  font-size:8.15cqw;
+  font-weight:700;
+  letter-spacing:-.035em;
+  color:#efd59a;
+  transform:rotate(-3deg);
+  text-shadow:0 4px 14px rgba(0,0,0,.30);
+}
+.hero-vote{
+  display:none;
+}
+.hero-year{
+  left:5.6%; top:62.0%; width:91%;
+  font-size:29.8cqw;
+  line-height:.78;
+  color:#efd59a;
+  opacity:.97;
+  text-shadow:0 7px 25px rgba(40,9,3,.34);
+  overflow:visible;
+}
+.hero-year::before{
+  content:"";position:absolute;left:0;right:4%;bottom:-1.8cqw;height:.34cqw;
+  background:linear-gradient(90deg,transparent,#efd59a 15%,#fff0c4 52%,#efd59a 84%,transparent);
+  opacity:.48;filter:blur(.08cqw);
+}
+.hero-legacy{
+  left:58.5%; top:52.5%; width:35%;
+  text-shadow:0 4px 16px rgba(0,0,0,.32);
+}
+.hero-legacy .pre{font-size:3.55cqw;}
+.hero-legacy .script{font-size:7.1cqw;color:#efd59a;}
+.hero-federal{
+  left:9%; top:84.2%; width:82%;
+  font-size:4.05cqw;
+  padding:1.7cqw 2cqw;
+  border-top:1px solid rgba(239,213,154,.44);
+  border-bottom:1px solid rgba(239,213,154,.22);
+  background:linear-gradient(90deg,transparent,rgba(49,14,8,.35),transparent);
+  text-shadow:0 2px 8px rgba(0,0,0,.28);
+}
+.hero-glint.g1{left:70%;top:15%;}
+.hero-glint.g2{left:88%;top:61%;}
+.hero-cta{
+  background:
+    radial-gradient(85% 170% at 50% -50%,rgba(156,59,34,.24),transparent 60%),
+    linear-gradient(180deg,#24100c 0%,#170b08 100%);
+}
+.hero-cta .btn{
+  color:#1b0c08;
+  background:linear-gradient(180deg,#f3dda9 0%,#d9a95a 100%);
+  box-shadow:0 12px 30px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.48),0 0 0 1px rgba(255,223,162,.15);
+}
+@media(max-height:720px){
+  .hero-artboard{width:88%;}
+  .hero-name{top:3.8%}
+  .hero-year{top:61.3%}
+}
+@media(prefers-reduced-motion:reduce){.ana-cutout{animation:none!important}}
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   HERO V8 — composição centralizada + CTA aproximado + logo oficial
+   ═══════════════════════════════════════════════════════════════ */
+.tela[data-tela="0"]{
+  align-items:center;
+  justify-content:flex-start;
+}
+.hero-artboard{
+  width:min(100%, 500px);
+  margin:0 auto;
+  flex:0 0 auto;
+}
+.hero-cta{
+  width:min(100%,500px);
+  flex:0 0 auto;
+  min-height:0;
+  margin:0 auto;
+  justify-content:center;
+  padding:8px 24px calc(var(--sab) + 17px);
+  background:
+    radial-gradient(86% 135% at 50% -28%,rgba(163,64,39,.16),transparent 62%),
+    #24100c;
+}
+.hero-cta .btn{
+  width:min(100%,430px);
+  margin:0 auto;
+  padding:15px 20px;
+}
+.hero-cta .num-sub{
+  text-align:center;
+  margin:0 0 8px;
+}
+.hero-cta .pe-nota{
+  margin-top:8px;
+}
+.hero-cta::before{
+  left:9%;right:9%;
+}
+.hero-podemos{
+  position:absolute;
+  z-index:9;
+  right:5.6%;
+  top:2.65%;
+  width:17.5%;
+  height:auto;
+  object-fit:contain;
+  filter:drop-shadow(0 3px 9px rgba(0,0,0,.24));
+  pointer-events:none;
+  user-select:none;
+  animation:logoEntrada .8s cubic-bezier(.18,.82,.22,1) .18s both;
+}
+@keyframes logoEntrada{
+  from{opacity:0;transform:translateY(-5px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@media (max-height:760px){
+  .hero-artboard{width:min(91%,460px);}
+  .hero-cta{padding-top:4px;padding-bottom:calc(var(--sab) + 12px);}
+  .hero-cta .btn{padding:13px 18px;}
+  .hero-cta .num-sub{margin-bottom:6px;}
+  .hero-cta .pe-nota{margin-top:6px;}
+}
+@media (max-height:680px){
+  .hero-artboard{width:min(82%,420px);}
+  .hero-cta .num-sub{font-size:10px;}
+  .hero-cta .pe-nota{font-size:11px;}
+}
+@media (prefers-reduced-motion:reduce){.hero-podemos{animation:none!important}}
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   HERO V9 — distribuição vertical + trilha de etapas
+   ═══════════════════════════════════════════════════════════════ */
+.tela[data-tela="0"]{
+  justify-content:space-between;
+  background:linear-gradient(180deg,#2b100b 0%,#1a0a07 100%);
+}
+.hero-artboard{
+  width:min(100%,500px);
+  margin:0 auto;
+  flex:0 1 auto;
+  max-height:calc(var(--app-h) - 252px - var(--sab));
+  aspect-ratio:1080/1350;
+}
+.hero-cta{
+  width:min(100%,500px);
+  margin:0 auto;
+  padding:0 18px calc(var(--sab) + 11px);
+  background:transparent;
+  position:relative;
+  z-index:12;
+}
+.hero-cta::before{display:none;}
+.hero-join-card{
+  position:relative;
+  width:100%;
+  padding:13px 14px 11px;
+  border:1px solid rgba(240,213,154,.28);
+  border-radius:18px;
+  background:
+    radial-gradient(120% 170% at 50% -80%,rgba(167,69,39,.28),transparent 55%),
+    linear-gradient(180deg,rgba(29,14,10,.96),rgba(17,9,7,.98));
+  box-shadow:0 14px 36px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.035);
+  backdrop-filter:blur(12px);
+}
+.hero-join-head{
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr) auto;
+  align-items:center;
+  gap:9px;
+  padding:0 2px 10px;
+}
+.hero-join-icon{
+  width:32px;height:32px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(224,165,58,.10);
+  border:1px solid rgba(240,213,154,.23);
+  color:#f0d59a;font-size:15px;
+}
+.hero-join-copy{min-width:0;}
+.hero-join-kicker{
+  margin:0 0 2px;
+  font:800 8.5px/1 var(--d);
+  letter-spacing:.18em;
+  color:#d8ad63;
+}
+.hero-join-title{
+  margin:0;
+  color:#fff;
+  font:600 13.2px/1.22 var(--c);
+  letter-spacing:-.015em;
+}
+.hero-join-title b{color:#f0d59a;font-weight:800;}
+.hero-join-note{
+  font:700 13px/.92 var(--m);
+  color:#e8bd6e;
+  text-align:right;
+  transform:rotate(-4deg);
+  white-space:nowrap;
+}
+.hero-steps{
+  position:relative;
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  align-items:start;
+  gap:0;
+  padding:2px 0 11px;
+}
+.hero-steps::before{
+  content:"";
+  position:absolute;
+  top:12px;left:10%;right:10%;height:1px;
+  background:linear-gradient(90deg,#d8aa55 0 8%,rgba(255,255,255,.22) 8% 100%);
+}
+.hero-step{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  min-width:0;
+}
+.hero-step span{
+  width:23px;height:23px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:#211713;
+  border:1px solid rgba(255,255,255,.20);
+  box-shadow:0 0 0 3px #1b0e0a;
+  color:rgba(255,255,255,.42);
+  font:800 10px/1 var(--d);
+}
+.hero-step small{
+  color:rgba(255,255,255,.60);
+  font:700 7.3px/1 var(--d);
+  letter-spacing:.025em;
+  white-space:nowrap;
+}
+.hero-step.active span{
+  color:#1a0c08;
+  border-color:#edc267;
+  background:linear-gradient(180deg,#f3d989,#d9a74c);
+  box-shadow:0 0 0 3px #1b0e0a,0 0 15px rgba(222,169,75,.18);
+}
+.hero-step.active small{color:#e6bd68;}
+.hero-start-btn{
+  min-height:44px;
+  padding:11px 15px!important;
+  border-radius:12px!important;
+  display:flex!important;
+  justify-content:space-between!important;
+  align-items:center!important;
+  font-size:13px!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.40)!important;
+}
+.hero-start-btn b{font-size:20px;font-weight:400;line-height:1;}
+.hero-cta .pe-nota{
+  margin:6px 0 0;
+  font-size:9.5px;
+  line-height:1.1;
+  color:rgba(255,255,255,.42);
+}
+@media (min-height:820px){
+  .hero-artboard{max-height:calc(var(--app-h) - 258px - var(--sab));}
+  .hero-join-card{padding-top:14px;}
+}
+@media (max-height:760px){
+  .hero-artboard{
+    width:min(94%,460px);
+    max-height:calc(var(--app-h) - 232px - var(--sab));
+  }
+  .hero-cta{padding-left:14px;padding-right:14px;padding-bottom:calc(var(--sab) + 8px);}
+  .hero-join-card{padding:10px 12px 9px;border-radius:16px;}
+  .hero-join-head{padding-bottom:8px;}
+  .hero-steps{padding-bottom:8px;}
+  .hero-join-note{font-size:11px;}
+  .hero-cta .pe-nota{margin-top:5px;}
+}
+@media (max-height:680px){
+  .hero-artboard{width:min(84%,420px);max-height:calc(var(--app-h) - 210px - var(--sab));}
+  .hero-join-icon{width:28px;height:28px;}
+  .hero-join-title{font-size:12px;}
+  .hero-step small{font-size:6.7px;}
+  .hero-start-btn{min-height:40px;padding:9px 13px!important;}
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   HERO V10 — background limpo em tela cheia + composição central
+   ═══════════════════════════════════════════════════════════════ */
+.tela[data-tela="0"]{
+  position:relative;
+  isolation:isolate;
+  justify-content:center;
+  align-items:center;
+  gap:8px;
+  padding:16px 0 calc(var(--sab) + 16px);
+  background:#24100c;
+}
+.tela[data-tela="0"]::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-3;
+  background-image:url("https://pub-d8c17953a575480084b80982d84262c2.r2.dev/bio%20ana/r2-2-hero-fundo-colagem.jpg");
+  background-size:cover;
+  background-position:center center;
+  background-repeat:no-repeat;
+}
+.tela[data-tela="0"]::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-2;
+  pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(12,5,4,.15) 0%,rgba(15,6,4,.04) 25%,rgba(18,7,5,.05) 63%,rgba(20,8,5,.30) 100%),
+    radial-gradient(100% 70% at 50% 48%,transparent 45%,rgba(20,7,4,.18) 100%);
+}
+.hero-artboard{
+  position:relative;
+  z-index:1;
+  width:min(calc(100% - 28px),470px);
+  height:auto;
+  max-height:calc(var(--app-h) - 246px - var(--sab));
+  aspect-ratio:922/1152;
+  flex:0 1 auto;
+  margin:0 auto;
+  overflow:hidden;
+  background:transparent;
+}
+.hero-poster{display:none!important;}
+.hero-artboard::before{
+  background:linear-gradient(180deg,rgba(25,8,5,.02),rgba(25,8,5,.04) 70%,rgba(25,8,5,.16) 100%);
+  mix-blend-mode:normal;
+}
+.hero-artboard::after{
+  height:11%;
+  background:linear-gradient(to bottom,transparent,rgba(28,9,6,.10));
+}
+.ana-halo,.ana-cutout{
+  left:7.8%;
+  top:4.3%;
+  width:84.5%;
+}
+.ana-halo{opacity:.24;filter:blur(12px) brightness(1.08) sepia(.15) saturate(1.25);}
+.ana-cutout{
+  filter:brightness(1.04) contrast(1.04) saturate(1.02) drop-shadow(0 20px 30px rgba(0,0,0,.32));
+}
+.hero-name{left:6.7%;top:4.4%;}
+.hero-oliveira{left:6.9%;top:20.7%;}
+.hero-year{left:5.7%;top:61.8%;}
+.hero-legacy{left:58.7%;top:52.3%;}
+.hero-federal{left:9%;top:84%;}
+.hero-podemos{right:5.7%;top:2.8%;width:17.2%;}
+.hero-cta{
+  position:relative;
+  z-index:3;
+  width:min(calc(100% - 28px),470px);
+  flex:0 0 auto;
+  margin:0 auto;
+  padding:0;
+  background:transparent;
+}
+.hero-join-card{
+  padding:11px 13px 10px;
+  border-radius:17px;
+  background:linear-gradient(180deg,rgba(28,13,9,.91),rgba(14,8,6,.95));
+  border-color:rgba(240,213,154,.30);
+  box-shadow:0 12px 30px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.04);
+}
+.hero-join-head{padding-bottom:8px;}
+.hero-steps{padding:1px 0 9px;}
+.hero-start-btn{min-height:42px!important;}
+.hero-cta .pe-nota{margin-top:5px;}
+@media (min-height:820px){
+  .tela[data-tela="0"]{padding-top:20px;padding-bottom:calc(var(--sab) + 20px);gap:10px;}
+  .hero-artboard{max-height:calc(var(--app-h) - 252px - var(--sab));}
+}
+@media (max-height:760px){
+  .tela[data-tela="0"]{padding-top:12px;padding-bottom:calc(var(--sab) + 12px);gap:6px;}
+  .hero-artboard{width:min(calc(100% - 34px),440px);max-height:calc(var(--app-h) - 222px - var(--sab));}
+  .hero-cta{width:min(calc(100% - 30px),450px);}
+}
+@media (max-height:680px){
+  .tela[data-tela="0"]{padding-top:9px;padding-bottom:calc(var(--sab) + 9px);}
+  .hero-artboard{width:min(calc(100% - 54px),405px);max-height:calc(var(--app-h) - 208px - var(--sab));}
+  .hero-join-head{padding-bottom:6px;}
+  .hero-steps{padding-bottom:7px;}
+}
+
+/* V11 — escala da candidata e CTA */
+.ana-cutout{left:1.5%!important;top:-1.5%!important;width:97%!important;}
+.ana-halo{left:1.5%!important;top:-1.5%!important;width:97%!important;}
+.hero-cta{width:min(calc(100% - 22px),490px)!important;}
+.hero-join-card{padding:15px 16px 13px!important;border-radius:19px!important;}
+.hero-join-head{padding-bottom:11px!important;}
+.hero-steps{padding:4px 2px 13px!important;}
+.hero-step span{width:29px!important;height:29px!important;font-size:12px!important;}
+.hero-step small{font-size:7.5px!important;margin-top:5px!important;}
+.hero-start-btn{min-height:50px!important;padding:13px 16px!important;font-size:12px!important;letter-spacing:.025em!important;}
+.hero-cta .pe-nota{margin-top:7px!important;}
+@media(max-height:760px){.hero-join-card{padding:12px 14px 10px!important}.hero-start-btn{min-height:46px!important}.hero-step span{width:27px!important;height:27px!important}}
 </style>
 </head>
 <body>
@@ -502,7 +1267,7 @@ h2{
   </div>
 
   <!-- topo -->
-  <div class="topo">
+  <div class="topo hero-mode">
     <div class="barra"><i id="progresso"></i></div>
     <div class="topo-linha">
       <button class="voltar" id="btn-voltar" aria-label="Voltar">←</button>
@@ -513,16 +1278,62 @@ h2{
     </div>
   </div>
 
+  <!-- passos (aparece nas telas internas, como na inicial) -->
+  <div class="form-steps" id="formSteps" aria-label="Etapas do cadastro">
+    <div class="hero-step" data-step="1"><span>1</span><small>CEP</small></div>
+    <div class="hero-step" data-step="2"><span>2</span><small>DADOS</small></div>
+    <div class="hero-step" data-step="3"><span>3</span><small>ENDEREÇO</small></div>
+    <div class="hero-step" data-step="4"><span>4</span><small>CONFIRME</small></div>
+    <div class="hero-step" data-step="5"><span>5</span><small>PRONTO</small></div>
+  </div>
+
   <!-- trilho -->
   <div class="trilho" id="trilho">
 
-    <!-- ░░ 0 · ABERTURA (arte do Santão) ░░ -->
+    <!-- ░░ 0 · ABERTURA — composição em camadas ░░ -->
     <section class="tela ativa" data-tela="0">
-      <div class="santao-bg" aria-label="Ana Carolina Oliveira — Vote 2026 para Deputada Federal"></div>
-      <div class="tela-pe abertura-pe">
-        <p class="num-sub" id="num-sub">Receba o material de campanha</p>
-        <button class="btn" data-ir="1">Quero meu material</button>
-        <p class="pe-nota">Leva menos de 1 minuto · sem custo</p>
+      <div class="hero-artboard" aria-label="Ana Carolina Oliveira — Vote 2026 para Deputada Federal">
+        <img class="hero-poster" src="https://pub-d8c17953a575480084b80982d84262c2.r2.dev/bio%20ana/r2-3-hero-poster.jpg" alt="" aria-hidden="true">
+        <img class="hero-podemos" src="https://pub-d8c17953a575480084b80982d84262c2.r2.dev/bio%20ana/r2-4-podemos.png" alt="Podemos — Mudar o Brasil">
+
+        <!-- profundidade: mesma foto, alinhada pixel a pixel sobre o Santão -->
+        <img class="ana-halo" src="https://pub-d8c17953a575480084b80982d84262c2.r2.dev/bio%20ana/r2-5-ana-recorte.png" alt="" aria-hidden="true">
+        <img class="ana-cutout" src="https://pub-d8c17953a575480084b80982d84262c2.r2.dev/bio%20ana/r2-5-ana-recorte.png" alt="Ana Carolina Oliveira">
+
+        <!-- textos reconstruídos em HTML e mantidos acima do retrato -->
+        <div class="hero-copy hero-name"><span class="ana">ANA</span><span class="carolina">CAROLINA</span></div>
+        <div class="hero-copy hero-oliveira">Oliveira</div>
+        <div class="hero-copy hero-vote">VOTE</div>
+        <div class="hero-copy hero-year">2026</div>
+        <div class="hero-copy hero-legacy"><span class="pre">Esse é o nosso</span><span class="script">Legado!</span></div>
+        <div class="hero-copy hero-federal">PARA <b>DEPUTADA FEDERAL</b></div>
+
+        <i class="hero-glint g1" aria-hidden="true"></i>
+        <i class="hero-glint g2" aria-hidden="true"></i>
+      </div>
+
+      <div class="hero-cta">
+        <div class="hero-join-card">
+          <div class="hero-join-head">
+            <div class="hero-join-icon" aria-hidden="true">✦</div>
+            <div class="hero-join-copy">
+              <p class="hero-join-kicker">FAÇA PARTE</p>
+              <p class="hero-join-title" id="num-sub">Receba o <b>material de campanha</b> em casa.</p>
+            </div>
+            <span class="hero-join-note">Rápido<br>e gratuito</span>
+          </div>
+
+          <div class="hero-steps" aria-label="Etapas do cadastro">
+            <div class="hero-step active"><span>1</span><small>CEP</small></div>
+            <div class="hero-step"><span>2</span><small>DADOS</small></div>
+            <div class="hero-step"><span>3</span><small>ENDEREÇO</small></div>
+            <div class="hero-step"><span>4</span><small>CONFIRME</small></div>
+            <div class="hero-step"><span>5</span><small>PRONTO</small></div>
+          </div>
+
+          <button class="btn hero-start-btn" data-ir="1"><span>QUERO RECEBER O MATERIAL DE APOIADOR</span><b aria-hidden="true">→</b></button>
+          <p class="pe-nota">Leva menos de 1 minuto · sem custo</p>
+        </div>
       </div>
     </section>
 
@@ -677,7 +1488,7 @@ h2{
 
   </div>
 
-  <div class="cnpj-fixo" aria-label="CNPJ da campanha">Propaganda eleitoral · CNPJ 68.492.046/0001-09</div>
+  <div class="cnpj-fixo" aria-label="CNPJ da campanha">Propaganda eleitoral · CNPJ 68.492.090/0001-19</div>
 
 </div>
 
@@ -704,8 +1515,8 @@ const CFG = {
 
   /* ── Identidade ─────────────────────────────────────────── */
   candidato:  "Ana Carolina Oliveira",
-  numero:     "____",          /* ⚠️ PREENCHER: número de urna (ex.: 19.000) */
-  numero_urna:"_____",         /* ⚠️ PREENCHER: número sem pontos */
+  numero:     "2026",
+  numero_urna:"2026",
   cargo:      "Deputada Federal",
   uf:         "SP",
   partido:    "PODEMOS",
@@ -714,7 +1525,7 @@ const CFG = {
 
   /* ⚠️ CONFERIR COM O JURÍDICO antes de publicar. */
   razao_social: "PODEMOS – ELEIÇÃO 2026 ANA CAROLINA OLIVEIRA",
-  cnpj:         "00.000.000/0001-00",
+  cnpj:         "68.492.090/0001-19",
   email_dpo:    "[contato@dominio.com.br]",
 
   /* ── Rota de entrega: raio a partir de um ponto ──────────
@@ -846,6 +1657,19 @@ function ir(n, opts={}){
   btnVoltar.classList.toggle('on', n > 0 && n < 7);
   fundo.classList.toggle('fundo-escuro', n > 0);
   document.querySelector('.topo').classList.remove('claro'); /* abertura já é escura (Santão) */
+  document.querySelector('.topo').classList.toggle('hero-mode', n === 0);
+
+  /* barra de passos (como na inicial) */
+  const _sm={1:1,2:1,3:2,4:2,5:3,6:4,7:5}, _st=_sm[n]||0;
+  const _fs=document.getElementById('formSteps');
+  if(_fs){
+    _fs.classList.toggle('on', n>=1 && n<=7);
+    _fs.querySelectorAll('.hero-step').forEach(el=>{
+      const s=+el.dataset.step;
+      el.classList.toggle('active', s===_st);
+      el.classList.toggle('done', s<_st);
+    });
+  }
 
   if(n === 6) montarResumo();
   if(!opts.semFoco){
