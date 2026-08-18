@@ -52,6 +52,7 @@ async function handleCapture(request, env, cors) {
   const pageSlug = clean(body.page);
   const optInEmail = truthy(body.opt_in_email ?? body.optin ?? body.consent);
   const textoOptin = clean(body.texto_optin);
+  const obs = clean(body.obs || body.observacao || body.assunto);
   const originUrl = clean(body.origem_url) || request.headers.get("referer") || "";
 
   if (!email_normalizado && !phone.e164) {
@@ -110,6 +111,10 @@ async function handleCapture(request, env, cors) {
   // tag da página de captura
   if (page && page.tag) {
     leadData.tags = Array.from(new Set(((lead && lead.tags) || []).concat([page.tag])));
+  }
+  // observação (ex.: assunto do Gabinete) — acumula histórico
+  if (obs) {
+    leadData.observacao = (lead && lead.observacao) ? `${lead.observacao} | ${obs}` : obs;
   }
 
   if (lead) {
