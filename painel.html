@@ -257,8 +257,10 @@
     <section class="panel" id="panel-email-gen">
       <div class="toolbar" style="align-items:center">
         <button class="btn" id="btnBuscarPosts">↻ Buscar posts do Instagram</button>
+        <button class="btn ghost" id="btnEditarVisual">🎨 Editar visual do e-mail</button>
         <span class="muted" id="emailBaseInfo" style="font-size:13px"></span>
       </div>
+      <div class="box" id="emailResumo" style="display:none;margin-bottom:14px"></div>
       <div class="box"><div id="postsWrap"><p class="muted" style="font-size:13px">Clique em "Buscar posts" para trazer as últimas publicações do Instagram da Ana.</p></div></div>
     </section>
 
@@ -1354,20 +1356,42 @@ async function criarLogin(email){
 
 /* ================= GERADOR DE E-MAIL ================= */
 let EMAIL_POSTS = [];
+let EMAIL_TPL = { titulo:'Ana Carolina Oliveira', subtitulo:'Deputada Federal 2026 · Podemos', cor_topo:'#7a2418', cor_botao:'#7a2418', texto_botao:'Ver no Instagram', logo_url:'', rodape:'Você recebe este e-mail por apoiar a campanha de Ana Carolina Oliveira.' };
+let EMAIL_TAGS = [];
 async function authHeader(){ const {data}=await sb.auth.getSession(); return {'Content-Type':'application/json','Authorization':'Bearer '+(data.session&&data.session.access_token)}; }
 
 async function loadEmailGen(){
+  try{ const {data:t}=await sb.from('email_template').select('*').eq('id',1).single(); if(t) EMAIL_TPL=Object.assign(EMAIL_TPL,t); }catch(e){}
+  try{ const {data:tg}=await sb.rpc('tags_leads'); EMAIL_TAGS=tg||[]; }catch(e){ EMAIL_TAGS=[]; }
   try{
     const {count}=await sb.from('leads').select('id',{count:'exact',head:true}).eq('opt_in_email',true).eq('unsubscribed_email',false);
-    $('#emailBaseInfo').textContent = (count!=null? Number(count).toLocaleString('pt-BR'):'—')+' contato(s) com opt-in receberão os envios.';
+    $('#emailBaseInfo').textContent = (count!=null? Number(count).toLocaleString('pt-BR'):'—')+' contato(s) com opt-in.';
   }catch(e){}
   try{
     const {data,error}=await sb.from('ig_email_posts').select('*').order('data',{ascending:false}).limit(60);
     if(error) throw error;
     EMAIL_POSTS=data||[];
-    try{ const {data:camps}=await sb.from('email_campaigns').select('*'); const map={}; (camps||[]).forEach(c=>map[c.post_id]=c); EMAIL_POSTS.forEach(p=>p._camp=map[p.id]||null); }catch(e){}
+    try{ const {data:camps}=await sb.from('email_campaigns').select('*'); const map={}; (camps||[]).forEach(c=>map[c.post_id]=c); EMAIL_POSTS.forEach(p=>p._camp=map[p.id]||null); renderResumoEmail(camps||[]); }catch(e){}
     renderPosts();
   }catch(e){ $('#postsWrap').innerHTML='<p class="muted" style="font-size:13px">Rode o SQL <b>19_gerador_email.sql</b> no Supabase para criar a tabela, depois clique em "Buscar posts".</p>'; }
+}
+
+function renderResumoEmail(camps){
+  const box=$('#emailResumo'); if(!box) return;
+  const ativos=(camps||[]).filter(c=>c && c.enviados>0);
+  if(!ativos.length){ box.style.display='none'; return; }
+  const s=(k)=>ativos.reduce((a,c)=>a+(c[k]||0),0);
+  const env=s('enviados'), ent=s('entregues'), ab=s('abertos'), cl=s('cliques'), bo=s('bounces');
+  const pct=(a,b)=> b? Math.min(100,Math.round(a/b*100))+'%':'—';
+  box.style.display='block';
+  box.innerHTML=`<h3 style="margin:0 0 10px;font-size:15px">Resumo geral · ${ativos.length} campanha(s)</h3>
+    <div class="emetric" style="max-width:760px">
+      <div><b>${env.toLocaleString('pt-BR')}</b><span>Enviados</span></div>
+      <div><b>${ent.toLocaleString('pt-BR')}</b><span>Entregues · ${pct(ent,env)}</span></div>
+      <div><b>${ab.toLocaleString('pt-BR')}</b><span>Aberturas · ${pct(ab,ent)}</span></div>
+      <div><b>${cl.toLocaleString('pt-BR')}</b><span>Cliques · ${pct(cl,ent)}</span></div>
+      <div><b>${bo.toLocaleString('pt-BR')}</b><span>Bounces · ${pct(bo,env)}</span></div>
+    </div>`;
 }
 
 function renderPosts(){
@@ -1387,7 +1411,8 @@ function cardHTMLemail(p){
       <div><b>${c.enviados}</b><span>Enviados</span></div>
       <div><b>${c.entregues}</b><span>Entregues · ${pct(c.entregues,c.enviados)}</span></div>
       <div><b>${c.abertos}</b><span>Aberturas · ${pct(c.abertos,c.entregues)}</span></div>
-    </div>` : '';
+    </div>
+    <div style="font-size:11.5px;color:var(--muted);margin:0 0 6px">👆 ${c.cliques||0} clique(s) · ${pct(c.cliques,c.entregues)} &nbsp;·&nbsp; ⚠ ${c.bounces||0} bounce(s)</div>` : '';
   const temGen = p.assunto||p.texto;
   return `<div class="ecard${foiEnviado?' sent':''}" data-id="${esc(p.id)}">
     ${sentbar}
@@ -1465,35 +1490,103 @@ function bindCardEmail(box){
 }
 
 function montarEmailHTML(d){
+  const t = EMAIL_TPL || {};
+  const topo = t.cor_topo || '#7a2418';
+  const botao = t.cor_botao || '#7a2418';
+  const cabecalho = t.logo_url
+    ? `<img src="${esc(t.logo_url)}" alt="${esc(t.titulo||'')}" style="max-height:64px;max-width:90%;display:block;margin:0 auto">`
+    : `<div style="color:#fff;font-size:20px;font-weight:800;letter-spacing:.3px">${esc(t.titulo||'Ana Carolina Oliveira')}</div>
+       <div style="color:#ffffffcc;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:2px">${esc(t.subtitulo||'')}</div>`;
   return `<!doctype html><html><body style="margin:0;background:#f4efe9;font-family:Arial,Helvetica,sans-serif;color:#241812">
   <span style="display:none;max-height:0;overflow:hidden">${esc(d.preview)}</span>
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4efe9;padding:20px 0"><tr><td align="center">
     <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:14px;overflow:hidden">
-      <tr><td style="background:linear-gradient(135deg,#9a3524,#7a2418);padding:22px 24px">
-        <div style="color:#fff;font-size:20px;font-weight:800;letter-spacing:.3px">Ana Carolina Oliveira</div>
-        <div style="color:#f0d59a;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase">Deputada Federal 2026 · Podemos</div>
-      </td></tr>
+      <tr><td style="background:${esc(topo)};padding:22px 24px;text-align:${t.logo_url?'center':'left'}">${cabecalho}</td></tr>
       ${d.img?`<tr><td><img src="${esc(d.img)}" width="600" style="width:100%;display:block" alt=""></td></tr>`:''}
       <tr><td style="padding:24px">
-        <h1 style="margin:0 0 12px;font-size:20px;color:#7a2418">${esc(d.assunto)}</h1>
+        <h1 style="margin:0 0 12px;font-size:20px;color:${esc(topo)}">${esc(d.assunto)}</h1>
         <div style="font-size:15px;line-height:1.6;color:#3a2a22;white-space:pre-line">${esc(d.texto)}</div>
         <div style="text-align:center;margin:24px 0 6px">
-          <a href="${esc(d.link)}" style="background:#7a2418;color:#fff;text-decoration:none;font-weight:800;padding:13px 24px;border-radius:10px;display:inline-block">Ver no Instagram</a>
+          <a href="${esc(d.link)}" style="background:${esc(botao)};color:#fff;text-decoration:none;font-weight:800;padding:13px 24px;border-radius:10px;display:inline-block">${esc(t.texto_botao||'Ver no Instagram')}</a>
         </div>
       </td></tr>
       <tr><td style="padding:16px 24px;border-top:1px solid #eee;background:#faf5ef">
         <div style="font-size:11.5px;color:#8a7a6e;line-height:1.6">
-          Você recebe este e-mail por apoiar a campanha de Ana Carolina Oliveira.<br>
+          ${esc(t.rodape||'')}<br>
           <a href="%UNSUB%" style="color:#8a7a6e">Descadastrar</a> · Podemos · Deputada Federal 2026
         </div>
       </td></tr>
     </table></td></tr></table></body></html>`;
 }
 
+function abrirEditorVisual(){
+  const t = EMAIL_TPL;
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ovv"><div class="modal" style="max-width:820px;width:96%">
+    <h3>Editar visual do e-mail</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+      <div>
+        <label style="font-size:12px;font-weight:800;color:var(--muted)">Título</label>
+        <input id="tvTitulo" value="${esc(t.titulo||'')}" style="width:100%;padding:9px;border:1px solid #cfd8dd;border-radius:8px;margin:4px 0 10px">
+        <label style="font-size:12px;font-weight:800;color:var(--muted)">Subtítulo</label>
+        <input id="tvSub" value="${esc(t.subtitulo||'')}" style="width:100%;padding:9px;border:1px solid #cfd8dd;border-radius:8px;margin:4px 0 10px">
+        <div style="display:flex;gap:12px">
+          <div><label style="font-size:12px;font-weight:800;color:var(--muted)">Cor do topo</label><br><input id="tvTopo" type="color" value="${esc(t.cor_topo||'#7a2418')}" style="width:52px;height:38px;border:0;background:none"></div>
+          <div><label style="font-size:12px;font-weight:800;color:var(--muted)">Cor do botão</label><br><input id="tvBotao" type="color" value="${esc(t.cor_botao||'#7a2418')}" style="width:52px;height:38px;border:0;background:none"></div>
+        </div>
+        <label style="font-size:12px;font-weight:800;color:var(--muted);margin-top:10px;display:block">Texto do botão</label>
+        <input id="tvTxtBotao" value="${esc(t.texto_botao||'Ver no Instagram')}" style="width:100%;padding:9px;border:1px solid #cfd8dd;border-radius:8px;margin:4px 0 10px">
+        <label style="font-size:12px;font-weight:800;color:var(--muted)">Logo / foto no topo (opcional)</label>
+        <div style="display:flex;gap:8px;align-items:center;margin:4px 0 10px">
+          <label class="btn-2" style="cursor:pointer;margin:0">Subir imagem<input type="file" id="tvLogoFile" accept="image/*" hidden></label>
+          ${t.logo_url?`<button class="btn-2" id="tvLogoDel" style="color:#c0392b">remover</button>`:''}
+          <span class="muted" id="tvLogoInfo" style="font-size:12px">${t.logo_url?'imagem definida':'usando texto'}</span>
+        </div>
+        <label style="font-size:12px;font-weight:800;color:var(--muted)">Rodapé</label>
+        <textarea id="tvRodape" style="width:100%;min-height:56px;padding:9px;border:1px solid #cfd8dd;border-radius:8px;margin:4px 0">${esc(t.rodape||'')}</textarea>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:800;color:var(--muted)">Prévia</label>
+        <iframe id="tvPrev" style="width:100%;height:420px;border:1px solid var(--line);border-radius:10px;background:#fff;margin-top:4px"></iframe>
+      </div>
+    </div>
+    <div class="actions" style="margin-top:14px"><button class="btn" id="tvSalvar">Salvar visual</button><button class="btn ghost" id="tvFechar">Fechar</button></div>
+  </div></div>`;
+  const c=()=>$('#modalRoot').innerHTML=''; $('#tvFechar').onclick=c; $('#ovv').onclick=e=>{if(e.target.id==='ovv')c();};
+  let logoUrl = t.logo_url||'';
+  const lerCampos=()=>({ titulo:$('#tvTitulo').value, subtitulo:$('#tvSub').value, cor_topo:$('#tvTopo').value, cor_botao:$('#tvBotao').value, texto_botao:$('#tvTxtBotao').value, logo_url:logoUrl, rodape:$('#tvRodape').value });
+  const previa=()=>{ EMAIL_TPL=Object.assign({},EMAIL_TPL,lerCampos());
+    const html=montarEmailHTML({assunto:'Assunto de exemplo',preview:'Prévia',texto:'Este é um exemplo do texto do informativo na voz da Ana.',img:'',link:'#'}).replace(/%UNSUB%/g,'#');
+    $('#tvPrev').srcdoc=html; };
+  ['tvTitulo','tvSub','tvTopo','tvBotao','tvTxtBotao','tvRodape'].forEach(id=>{ const el=$('#'+id); el.addEventListener('input',previa); });
+  $('#tvLogoFile').onchange=()=>{ const f=$('#tvLogoFile').files[0]; if(!f)return; const rd=new FileReader();
+    rd.onload=async()=>{ $('#tvLogoInfo').textContent='enviando...';
+      try{ const r=await fetch('/api/email/upload',{method:'POST',headers:await authHeader(),body:JSON.stringify({id:'template-logo',imagem:rd.result})}); const d=await r.json();
+        if(d&&d.ok){ logoUrl=d.url; $('#tvLogoInfo').textContent='imagem definida'; previa(); } else $('#tvLogoInfo').textContent='falha no upload'; }
+      catch(e){ $('#tvLogoInfo').textContent='erro'; } };
+    rd.readAsDataURL(f); };
+  if($('#tvLogoDel')) $('#tvLogoDel').onclick=()=>{ logoUrl=''; $('#tvLogoInfo').textContent='usando texto'; previa(); };
+  $('#tvSalvar').onclick=async()=>{
+    const dados=lerCampos();
+    try{ const {error}=await sb.from('email_template').update(dados).eq('id',1); if(error) throw error;
+      EMAIL_TPL=Object.assign({},EMAIL_TPL,dados); toast('Visual salvo!'); c();
+    }catch(e){ toast('Erro ao salvar: '+(e.message||'')); }
+  };
+  previa();
+}
+
+async function contarBase(tag){
+  try{
+    let q=sb.from('leads').select('id',{count:'exact',head:true}).eq('opt_in_email',true).eq('unsubscribed_email',false);
+    if(tag) q=q.contains('tags',[tag]);
+    const {count}=await q; return count??0;
+  }catch(e){ return '—'; }
+}
 async function abrirEnvioEmail(postId,d){
   if(!d.assunto||!d.texto){ toast('Gere o informativo antes de enviar.'); return; }
   const html=montarEmailHTML(d);
-  let count='—'; try{ const {count:c}=await sb.from('leads').select('id',{count:'exact',head:true}).eq('opt_in_email',true).eq('unsubscribed_email',false); count=c??'—'; }catch(e){}
+  let count=await contarBase(null);
+  const optsTags = ['<option value="">Todos com opt-in</option>'].concat(
+    (EMAIL_TAGS||[]).map(t=>`<option value="${esc(t.tag)}">${esc(t.tag)} (${t.n})</option>`)).join('');
   $('#modalRoot').innerHTML=`<div class="overlay" id="ove"><div class="modal" style="max-width:460px">
     <h3>Enviar e-mail</h3>
     <p class="muted" style="font-size:13px;margin:2px 0 10px">Assunto: <b>${esc(d.assunto)}</b></p>
@@ -1503,13 +1596,16 @@ async function abrirEnvioEmail(postId,d){
       <input id="eTeste" type="email" placeholder="seu@email.com" style="flex:1;padding:9px;border:1px solid #cfd8dd;border-radius:8px">
       <button class="btn-2" id="btnTeste">Enviar teste</button>
     </div>
+    <label style="font-size:12px;font-weight:800;color:var(--muted)">2) Público (tag)</label>
+    <select id="eTag" style="width:100%;padding:9px;border:1px solid #cfd8dd;border-radius:8px;margin:6px 0 8px">${optsTags}</select>
     <div class="prog" id="eProg" style="display:none"><i></i></div>
-    <label style="font-size:12px;font-weight:800;color:var(--muted)">2) Enviar para a base</label>
-    <p class="muted" style="font-size:12.5px;margin:4px 0 12px">${count} contato(s) com opt-in. <b>Isso não pode ser desfeito.</b></p>
-    <div class="actions"><button class="btn" id="btnMassa" style="background:#c0392b">Enviar para todos</button><button class="btn ghost" id="eClose">Fechar</button></div>
+    <p class="muted" style="font-size:12.5px;margin:4px 0 12px"><b id="eCount">${count}</b> contato(s) receberão. <b>Isso não pode ser desfeito.</b></p>
+    <div class="actions"><button class="btn" id="btnMassa" style="background:#c0392b">Enviar agora</button><button class="btn ghost" id="eClose">Fechar</button></div>
   </div></div>`;
   const emsg=(t,ok)=>{const e=$('#eMsg');e.style.display='block';e.style.background=ok?'#e6f7ee':'#fdecea';e.style.color=ok?'#1c8a4e':'#c0392b';e.textContent=t;};
   const close=()=>$('#modalRoot').innerHTML=''; $('#eClose').onclick=close; $('#ove').onclick=e=>{if(e.target.id==='ove')close();};
+  let baseCount=count;
+  $('#eTag').onchange=async()=>{ $('#eCount').textContent='...'; baseCount=await contarBase($('#eTag').value||null); $('#eCount').textContent=baseCount; };
   $('#btnTeste').onclick=async()=>{ const para=($('#eTeste').value||'').trim(); if(!para) return emsg('Digite um e-mail.',false);
     const b=$('#btnTeste'); b.disabled=true;
     try{ const r=await fetch('/api/email/enviar-teste',{method:'POST',headers:await authHeader(),body:JSON.stringify({assunto:d.assunto,html,para})}); const j=await r.json();
@@ -1517,20 +1613,22 @@ async function abrirEnvioEmail(postId,d){
     }catch(e){ emsg('Erro de conexão',false); } b.disabled=false;
   };
   $('#btnMassa').onclick=async()=>{
-    if(!confirm(`Enviar para ${count} pessoas? Isso NÃO pode ser desfeito.`)) return;
+    const tag=$('#eTag').value||null;
+    const alvo = tag ? `com a tag "${tag}"` : 'com opt-in';
+    if(!confirm(`Enviar para ${baseCount} pessoa(s) ${alvo}? Isso NÃO pode ser desfeito.`)) return;
     const txt=prompt('Para confirmar o envio em massa, digite: ENVIAR');
     if((txt||'').trim().toUpperCase()!=='ENVIAR'){ emsg('Confirmação incorreta — envio cancelado.',false); return; }
     const b=$('#btnMassa'); b.disabled=true; $('#eProg').style.display='block';
     let offset=0,total=0;
     try{
       while(true){
-        const r=await fetch('/api/email/enviar-massa',{method:'POST',headers:await authHeader(),body:JSON.stringify({assunto:d.assunto,html,offset,postId})});
+        const r=await fetch('/api/email/enviar-massa',{method:'POST',headers:await authHeader(),body:JSON.stringify({assunto:d.assunto,html,offset,postId,tag})});
         const j=await r.json();
         if(j.erro){ emsg('Erro: '+j.erro,false); break; }
         total+=(j.enviados_no_lote||0); offset=j.proximo_offset||offset;
-        const pct=(typeof count==='number'&&count)?Math.min(100,Math.round(total/count*100)):100;
+        const pct=(typeof baseCount==='number'&&baseCount)?Math.min(100,Math.round(total/baseCount*100)):100;
         $('#eProg').querySelector('i').style.width=pct+'%';
-        emsg(`Enviados ${total}${typeof count==='number'?(' de '+count):''}...`,true);
+        emsg(`Enviados ${total}${typeof baseCount==='number'?(' de '+baseCount):''}...`,true);
         if(j.acabou){ emsg(`Concluído! ${total} e-mail(s) enviado(s).`,true); break; }
       }
     }catch(e){ emsg('Erro de conexão no envio',false); }
@@ -1546,6 +1644,7 @@ $("#btnBuscarPosts") && $("#btnBuscarPosts").addEventListener('click',async()=>{
   b.disabled=false; b.textContent='↻ Buscar posts do Instagram';
   loadEmailGen();
 });
+$("#btnEditarVisual") && $("#btnEditarVisual").addEventListener('click', abrirEditorVisual);
 
 /* ================= CHART HELPERS ================= */
 function destroy(id){ if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];} }
