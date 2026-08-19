@@ -65,6 +65,26 @@ export async function onRequestPost({ request, env }) {
       const t = await res.text();
       return json({ ok: false, erro: "banco", detalhe: t.slice(0, 200) }, 500, h);
     }
+
+    // Também registra a pessoa como LEAD no CRM (Origem "LP materiais").
+    // Se já for lead: ganha a tag e vira QUENTE. Não bloqueia o cadastro.
+    try {
+      await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/apoiador_vira_lead`, {
+        method: "POST",
+        headers: {
+          apikey: env.SUPABASE_SERVICE_KEY,
+          Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
+          p_nome: nome, p_email: email, p_whatsapp: whatsapp,
+          p_uf: texto(b.uf, 2), p_cidade: texto(b.cidade, 100),
+          p_origem_nome: "LP materiais", p_tag: "Pediu Material",
+        }),
+      });
+    } catch (e) { /* virar lead não pode derrubar o cadastro do material */ }
+
     return json({ ok: true, modo }, 200, h);
   } catch (e) {
     return json({ ok: false, erro: "internal", detalhe: String(e).slice(0, 120) }, 500, h);
