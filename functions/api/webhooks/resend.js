@@ -64,6 +64,14 @@ async function handle(env, ev) {
       }
     }
   } catch (e) { console.log("stats post erro:", String(e)); }
+
+  // termômetro do lead: abertura/clique esquenta (frio→morno→quente), nunca esfria
+  try {
+    const t2 = mapTipo(tipo);
+    if (leadId && (t2 === "opened" || t2 === "clicked")) {
+      await sb(env, "POST", "/rpc/lead_engajou", { p_lead: leadId, p_tipo: t2 });
+    }
+  } catch (e) { console.log("engajamento lead erro:", String(e)); }
 }
 
 async function bump(env, post, campo) {

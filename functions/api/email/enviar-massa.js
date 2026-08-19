@@ -11,13 +11,15 @@ export async function onRequestPost(context) {
   if (!env.RESEND_API_KEY) return json({ erro: "falta RESEND_API_KEY" }, 200);
 
   let body = {}; try { body = await request.json(); } catch (e) {}
-  const { assunto, html, offset = 0, postId = null, tag = null } = body;
+  const { assunto, html, offset = 0, postId = null, tag = null, origem = null } = body;
   if (!assunto || !html) return json({ erro: "faltam assunto ou html" }, 200);
 
   // 1) 100 contatos com opt-in (LGPD): opt_in_email = true e não descadastrado.
-  //    Se veio uma tag, filtra só quem tem essa tag.
-  const filtroTag = tag ? `&tags=cs.{${encodeURIComponent(String(tag))}}` : "";
-  const q = `/leads?select=id,email&opt_in_email=eq.true&unsubscribed_email=eq.false&email_normalizado=not.is.null${filtroTag}&order=id&limit=100&offset=${offset}`;
+  //    Filtra por origem (preferencial) OU por tag, se vierem.
+  const filtro = origem
+    ? `&origem_id=eq.${encodeURIComponent(String(origem))}`
+    : (tag ? `&tags=cs.{${encodeURIComponent(String(tag))}}` : "");
+  const q = `/leads?select=id,email&opt_in_email=eq.true&unsubscribed_email=eq.false&email_normalizado=not.is.null${filtro}&order=id&limit=100&offset=${offset}`;
   let leads = [];
   try {
     const r = await fetch(`${env.SUPABASE_URL}/rest/v1${q}`, {

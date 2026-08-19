@@ -515,7 +515,7 @@ function estadoBarsOv(boxId,arr){
 
 /* ================= LEADS ================= */
 function leadFilters(){
-  let q = sb.from("leads").select("id,nome,email,telefone_e164,uf,origem_id,status_aquecimento,opt_in_email,tags,created_at",{count:"exact"});
+  let q = sb.from("leads").select("id,nome,email,telefone_e164,uf,origem_id,status_aquecimento,opt_in_email,tags,created_at,total_aberturas,total_cliques",{count:"exact"});
   const s = $("#fSearch").value.trim();
   if (s) q = q.or(`nome.ilike.%${s}%,email.ilike.%${s}%`);
   if ($("#fUf").value) q = q.eq("uf", $("#fUf").value);
@@ -542,7 +542,7 @@ function renderLeads(rows){
     <td>${esc(r.telefone_e164)||"<span class='muted'>—</span>"}</td>
     <td>${r.uf?esc(r.uf):"<span class='muted'>—</span>"}</td>
     <td>${esc(ORIGENS[r.origem_id]||"")}</td>
-    <td><span class="pill ${esc(r.status_aquecimento)}">${esc(r.status_aquecimento)}</span></td>
+    <td><span class="pill ${esc(r.status_aquecimento)}">${esc(r.status_aquecimento)}</span>${(r.total_aberturas||r.total_cliques)?`<br><span class="muted" style="font-size:10px">${r.total_aberturas||0} abriu · ${r.total_cliques||0} clicou</span>`:''}</td>
     <td>${r.opt_in_email?'<span class="pill ok">opt-in</span>':'<span class="muted">—</span>'}</td>
     <td><button class="lnk" data-edit="${r.id}">Editar</button></td>
   </tr>`).join("");
@@ -1452,12 +1452,14 @@ async function abrirAcessos(id){
 let EMAIL_POSTS = [];
 let EMAIL_TPL = { titulo:'Ana Carolina Oliveira', subtitulo:'Deputada Federal 2026 · Podemos', cor_topo:'#7a2418', cor_botao:'#7a2418', texto_botao:'Ver no Instagram', logo_url:'', rodape:'Você recebe este e-mail por apoiar a campanha de Ana Carolina Oliveira.', botoes:[] };
 let EMAIL_TAGS = [];
+let EMAIL_ORIGENS = [];
 async function authHeader(){ const {data}=await sb.auth.getSession(); return {'Content-Type':'application/json','Authorization':'Bearer '+(data.session&&data.session.access_token)}; }
 
 async function loadEmailGen(){
   if(!EMAIL_REFRESH){ EMAIL_REFRESH=setInterval(()=>{ const pan=document.getElementById('panel-email-gen'); if(pan && pan.classList.contains('active')) atualizarMetricas(); }, 30000); }
   try{ const {data:t}=await sb.from('email_template').select('*').eq('id',1).single(); if(t) EMAIL_TPL=Object.assign(EMAIL_TPL,t); }catch(e){}
   try{ const {data:tg}=await sb.rpc('tags_leads'); EMAIL_TAGS=tg||[]; }catch(e){ EMAIL_TAGS=[]; }
+  try{ const {data:og}=await sb.rpc('origens_leads'); EMAIL_ORIGENS=og||[]; }catch(e){ EMAIL_ORIGENS=[]; }
   try{
     const {count}=await sb.from('leads').select('id',{count:'exact',head:true}).eq('opt_in_email',true).eq('unsubscribed_email',false);
     $('#emailBaseInfo').textContent = (count!=null? Number(count).toLocaleString('pt-BR'):'—')+' contato(s) com opt-in.';
@@ -1716,10 +1718,12 @@ function abrirEditorVisual(){
   previa();
 }
 
-async function contarBase(tag){
+function parsePublico(v){ if(!v) return {}; if(v.indexOf('origem:')===0) return {origem:v.slice(7)}; if(v.indexOf('tag:')===0) return {tag:v.slice(4)}; return {}; }
+async function contarBase(pub){
   try{
     let q=sb.from('leads').select('id',{count:'exact',head:true}).eq('opt_in_email',true).eq('unsubscribed_email',false);
-    if(tag) q=q.contains('tags',[tag]);
+    if(pub&&pub.origem) q=q.eq('origem_id',pub.origem);
+    else if(pub&&pub.tag) q=q.contains('tags',[pub.tag]);
     const {count}=await q; return count??0;
   }catch(e){ return '—'; }
 }
@@ -1727,8 +1731,9 @@ async function abrirEnvioEmail(postId,d){
   if(!d.assunto||!d.texto){ toast('Gere o informativo antes de enviar.'); return; }
   const html=montarEmailHTML(d);
   let count=await contarBase(null);
-  const optsTags = ['<option value="">Todos com opt-in</option>'].concat(
-    (EMAIL_TAGS||[]).map(t=>`<option value="${esc(t.tag)}">${esc(t.tag)} (${t.n})</option>`)).join('');
+  const grpOrigem = (EMAIL_ORIGENS||[]).length ? `<optgroup label="Por origem do lead">${(EMAIL_ORIGENS||[]).map(o=>`<option value="origem:${esc(o.id)}">${esc(o.nome||'—')} (${o.n})</option>`).join('')}</optgroup>` : '';
+  const grpTag = (EMAIL_TAGS||[]).length ? `<optgroup label="Por tag">${(EMAIL_TAGS||[]).map(t=>`<option value="tag:${esc(t.tag)}">${esc(t.tag)} (${t.n})</option>`).join('')}</optgroup>` : '';
+  const optsTags = `<option value="">Todos com opt-in</option>${grpOrigem}${grpTag}`;
   $('#modalRoot').innerHTML=`<div class="overlay" id="ove"><div class="modal" style="max-width:460px">
     <h3>Enviar e-mail</h3>
     <p class="muted" style="font-size:13px;margin:2px 0 10px">Assunto: <b>${esc(d.assunto)}</b></p>
@@ -1739,7 +1744,7 @@ async function abrirEnvioEmail(postId,d){
       <button class="btn-2" id="btnTeste">Enviar teste</button>
     </div>
     <p class="muted" style="font-size:11.5px;margin:0 0 14px">O teste é só pra você conferir — <b>não entra nas métricas</b>.</p>
-    <label style="font-size:12px;font-weight:800;color:var(--muted)">2) Público (tag)</label>
+    <label style="font-size:12px;font-weight:800;color:var(--muted)">2) Público (por origem ou tag)</label>
     <select id="eTag" style="width:100%;padding:9px;border:1px solid #cfd8dd;border-radius:8px;margin:6px 0 8px">${optsTags}</select>
     <div class="prog" id="eProg" style="display:none"><i></i></div>
     <p class="muted" style="font-size:12.5px;margin:4px 0 12px"><b id="eCount">${count}</b> contato(s) receberão. <b>Isso não pode ser desfeito.</b></p>
@@ -1748,7 +1753,7 @@ async function abrirEnvioEmail(postId,d){
   const emsg=(t,ok)=>{const e=$('#eMsg');e.style.display='block';e.style.background=ok?'#e6f7ee':'#fdecea';e.style.color=ok?'#1c8a4e':'#c0392b';e.textContent=t;};
   const close=()=>$('#modalRoot').innerHTML=''; $('#eClose').onclick=close; $('#ove').onclick=e=>{if(e.target.id==='ove')close();};
   let baseCount=count;
-  $('#eTag').onchange=async()=>{ $('#eCount').textContent='...'; baseCount=await contarBase($('#eTag').value||null); $('#eCount').textContent=baseCount; };
+  $('#eTag').onchange=async()=>{ $('#eCount').textContent='...'; baseCount=await contarBase(parsePublico($('#eTag').value)); $('#eCount').textContent=baseCount; };
   $('#btnTeste').onclick=async()=>{ const para=($('#eTeste').value||'').trim(); if(!para) return emsg('Digite um e-mail.',false);
     const b=$('#btnTeste'); b.disabled=true;
     try{ const r=await fetch('/api/email/enviar-teste',{method:'POST',headers:await authHeader(),body:JSON.stringify({assunto:d.assunto,html,para})}); const j=await r.json();
@@ -1756,16 +1761,16 @@ async function abrirEnvioEmail(postId,d){
     }catch(e){ emsg('Erro de conexão',false); } b.disabled=false;
   };
   $('#btnMassa').onclick=async()=>{
-    const tag=$('#eTag').value||null;
-    const alvo = tag ? `com a tag "${tag}"` : 'com opt-in';
-    if(!confirm(`Enviar para ${baseCount} pessoa(s) ${alvo}? Isso NÃO pode ser desfeito.`)) return;
+    const pub=parsePublico($('#eTag').value);
+    const selTxt = $('#eTag').selectedOptions[0] ? $('#eTag').selectedOptions[0].textContent : 'Todos';
+    if(!confirm(`Enviar para ${baseCount} pessoa(s) (${selTxt})? Isso NÃO pode ser desfeito.`)) return;
     const txt=prompt('Para confirmar o envio em massa, digite: ENVIAR');
     if((txt||'').trim().toUpperCase()!=='ENVIAR'){ emsg('Confirmação incorreta — envio cancelado.',false); return; }
     const b=$('#btnMassa'); b.disabled=true; $('#eProg').style.display='block';
     let offset=0,total=0;
     try{
       while(true){
-        const r=await fetch('/api/email/enviar-massa',{method:'POST',headers:await authHeader(),body:JSON.stringify({assunto:d.assunto,html,offset,postId,tag})});
+        const r=await fetch('/api/email/enviar-massa',{method:'POST',headers:await authHeader(),body:JSON.stringify({assunto:d.assunto,html,offset,postId,tag:pub.tag||null,origem:pub.origem||null})});
         const j=await r.json();
         if(j.erro){ emsg('Erro: '+j.erro,false); break; }
         total+=(j.enviados_no_lote||0); offset=j.proximo_offset||offset;
