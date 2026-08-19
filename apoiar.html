@@ -1259,11 +1259,12 @@ h2{
 .sr-base{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%;}
 .sr-txt{position:absolute;display:block;height:auto;filter:drop-shadow(0 2px 6px rgba(0,0,0,.28));}
 .sr-nome{left:3%;top:2.5%;width:62%;}
-.sr-legado{right:5%;top:42%;width:40%;}
-.sr-2026{position:absolute;left:4%;top:46%;z-index:2;
-  font-family:'Archivo','Montserrat',system-ui,sans-serif;font-weight:900;font-size:20vw;line-height:.82;
+/* ordem no bloco de baixo: DEPUTADA (menor) em cima, 2026 embaixo com folga do card */
+.sr-dep{left:3%;top:37%;width:48%;}
+.sr-legado{right:6%;top:38%;width:33%;}
+.sr-2026{position:absolute;left:4%;top:52%;z-index:2;
+  font-family:'Archivo','Montserrat',system-ui,sans-serif;font-weight:900;font-size:18vw;line-height:.82;
   color:#f2e2b0;letter-spacing:-.03em;text-shadow:0 3px 12px rgba(0,0,0,.35);pointer-events:none;}
-.sr-dep{left:3%;top:57%;width:64%;}
 /* CTA compacto sobre o laranja de baixo */
 .hero-cta{position:absolute!important;left:0;right:0;bottom:0;z-index:6;flex:none!important;
   background:linear-gradient(to top,#a64216 48%,rgba(166,66,22,.7) 80%,transparent)!important;padding-top:16px!important;}
@@ -1272,7 +1273,7 @@ h2{
 .hero-steps{padding:1px 0 8px!important;}
 .hero-start-btn{min-height:46px!important;padding:12px 14px!important;}
 /* afasta o card do rodapé (margem em %) e reforça os textos do CTA */
-.hero-cta{bottom:4%!important;}
+.hero-cta{bottom:5%!important;}
 .hero-join-title{font-size:16.5px!important;line-height:1.28!important;}
 .hero-join-note{font-size:16px!important;line-height:1!important;}
 @media (min-width:520px){ .sr-nome{width:48%;} .sr-legado{width:30%;} .sr-dep{width:50%;} .sr-2026{font-size:150px;} }
