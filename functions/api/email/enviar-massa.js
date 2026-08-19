@@ -37,6 +37,7 @@ export async function onRequestPost(context) {
       subject: assunto,
       html: String(html).replace(/%UNSUB%/g, unsub),
       headers: { "List-Unsubscribe": `<${unsub}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+      tags: postId ? [{ name: "post", value: String(postId).slice(0, 60) }] : undefined,
     };
   });
 
@@ -47,6 +48,26 @@ export async function onRequestPost(context) {
   });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) return json({ erro: "Resend recusou o lote", detalhe: d, offset }, 200);
+
+  // métricas: liga cada email_id ao post e conta enviados
+  if (postId) {
+    try {
+      const ids = Array.isArray(d.data) ? d.data.map(x => x && x.id).filter(Boolean) : [];
+      if (ids.length) {
+        const rows = ids.map(eid => ({ email_id: eid, post_id: postId }));
+        await fetch(`${env.SUPABASE_URL}/rest/v1/email_sends?on_conflict=email_id`, {
+          method: "POST",
+          headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY, "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates,return=minimal" },
+          body: JSON.stringify(rows),
+        });
+      }
+      await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/email_campaign_bump`, {
+        method: "POST",
+        headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ p_post: postId, p_campo: "enviados", p_delta: validos.length }),
+      });
+    } catch (e) { /* métrica não bloqueia o envio */ }
+  }
 
   const proximo = offset + validos.length;
   const acabou = validos.length < 100;

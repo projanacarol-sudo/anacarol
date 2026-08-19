@@ -48,6 +48,26 @@ async function handle(env, ev) {
     await sb(env, "PATCH", `/leads?id=eq.${leadId}`, { unsubscribed_email: true, opt_in_email: false });
     await pausarFunis(env, leadId);
   }
+
+  // métricas por post (Gerador de E-mail): entrega/abertura/clique, sem duplicar
+  try {
+    const eid = data.email_id || data.id;
+    const t = mapTipo(tipo);
+    if (eid && ["delivered", "opened", "clicked", "bounced"].includes(t)) {
+      const rows = await sb(env, "GET", `/email_sends?email_id=eq.${encodeURIComponent(eid)}&select=post_id,entregue,aberto,clicou&limit=1`);
+      const s = rows[0];
+      if (s && s.post_id) {
+        if (t === "delivered" && !s.entregue) { await sb(env, "PATCH", `/email_sends?email_id=eq.${encodeURIComponent(eid)}`, { entregue: true }); await bump(env, s.post_id, "entregues"); }
+        else if (t === "opened" && !s.aberto) { await sb(env, "PATCH", `/email_sends?email_id=eq.${encodeURIComponent(eid)}`, { aberto: true }); await bump(env, s.post_id, "abertos"); }
+        else if (t === "clicked" && !s.clicou) { await sb(env, "PATCH", `/email_sends?email_id=eq.${encodeURIComponent(eid)}`, { clicou: true }); await bump(env, s.post_id, "cliques"); }
+        else if (t === "bounced") { await bump(env, s.post_id, "bounces"); }
+      }
+    }
+  } catch (e) { console.log("stats post erro:", String(e)); }
+}
+
+async function bump(env, post, campo) {
+  await sb(env, "POST", "/rpc/email_campaign_bump", { p_post: post, p_campo: campo, p_delta: 1 });
 }
 
 function mapTipo(t) {

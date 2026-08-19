@@ -97,6 +97,12 @@
 .hidden{display:none!important}
 .prog{height:8px;background:#e5e9ec;border-radius:6px;overflow:hidden;margin:10px 0}
 .prog i{display:block;height:100%;width:0;background:var(--brand);transition:width .3s}
+.ecard.sent{border-color:#bfe6cf;box-shadow:0 0 0 1px #bfe6cf inset}
+.ecard .sentbar{background:#e6f7ee;color:#1c8a4e;font-weight:800;font-size:11px;letter-spacing:.4px;text-transform:uppercase;padding:6px 12px;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px}
+.emetric{display:flex;gap:8px;margin:2px 0 4px}
+.emetric>div{flex:1;background:#f4f7f8;border:1px solid var(--line);border-radius:8px;padding:7px 6px;text-align:center}
+.emetric b{display:block;font-size:17px;font-weight:800;color:var(--ink);line-height:1.1}
+.emetric span{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
   .divider{height:1px;background:var(--line);margin:16px 0}
   .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f1c22;color:#fff;padding:11px 18px;border-radius:10px;font-size:13.5px;z-index:60;opacity:0;transition:opacity .2s}
   .toast.show{opacity:1}
@@ -1358,7 +1364,9 @@ async function loadEmailGen(){
   try{
     const {data,error}=await sb.from('ig_email_posts').select('*').order('data',{ascending:false}).limit(60);
     if(error) throw error;
-    EMAIL_POSTS=data||[]; renderPosts();
+    EMAIL_POSTS=data||[];
+    try{ const {data:camps}=await sb.from('email_campaigns').select('*'); const map={}; (camps||[]).forEach(c=>map[c.post_id]=c); EMAIL_POSTS.forEach(p=>p._camp=map[p.id]||null); }catch(e){}
+    renderPosts();
   }catch(e){ $('#postsWrap').innerHTML='<p class="muted" style="font-size:13px">Rode o SQL <b>19_gerador_email.sql</b> no Supabase para criar a tabela, depois clique em "Buscar posts".</p>'; }
 }
 
@@ -1370,12 +1378,23 @@ function renderPosts(){
 }
 
 function cardHTMLemail(p){
-  const enviado = p.enviado_em ? '<span class="selo">✓ enviado</span>':'';
+  const c = p._camp;
+  const foiEnviado = !!p.enviado_em || (c && c.enviados>0);
+  const dt = p.enviado_em ? new Date(p.enviado_em).toLocaleDateString('pt-BR') : '';
+  const pct=(a,b)=> b? Math.min(100,Math.round((a/b)*100))+'%' : '—';
+  const sentbar = foiEnviado ? `<div class="sentbar">✓ Enviado${dt?(' em '+dt):''}</div>` : '';
+  const metricas = (c && c.enviados>0) ? `<div class="emetric">
+      <div><b>${c.enviados}</b><span>Enviados</span></div>
+      <div><b>${c.entregues}</b><span>Entregues · ${pct(c.entregues,c.enviados)}</span></div>
+      <div><b>${c.abertos}</b><span>Aberturas · ${pct(c.abertos,c.entregues)}</span></div>
+    </div>` : '';
   const temGen = p.assunto||p.texto;
-  return `<div class="ecard" data-id="${esc(p.id)}">
+  return `<div class="ecard${foiEnviado?' sent':''}" data-id="${esc(p.id)}">
+    ${sentbar}
     <img class="thumb" src="${esc(p.imagem||'')}" alt="" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'">
     <div class="body">
-      <div class="stats">${enviado}<span>❤ ${p.curtidas??'—'}</span><span>💬 ${p.comentarios??'—'}</span>${p.link?`<a class="lnk" href="${esc(p.link)}" target="_blank">ver post</a>`:''}</div>
+      ${metricas}
+      <div class="stats"><span>❤ ${p.curtidas??'—'}</span><span>💬 ${p.comentarios??'—'}</span>${p.link?`<a class="lnk" href="${esc(p.link)}" target="_blank">ver post</a>`:''}</div>
       <div class="legenda">${esc((p.legenda||'').slice(0,180))}</div>
       <button class="btn sm gerar">✨ ${temGen?'Regerar':'Gerar informativo'}</button>
       <div class="gen ${temGen?'':'hidden'}">
