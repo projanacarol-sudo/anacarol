@@ -1665,20 +1665,38 @@ document.title = `${CFG.candidato} ${CFG.numero} — Material de campanha`;
 })();
 
 
-/* ─── altura real (teclado do celular) ──────────────────────── */
+/* ─── altura real + reancoragem na área visível (teclado do celular) ─────
+   No iOS, ao focar um input o Safari ROLA a página inteira pra mostrar o
+   campo. Como o #app é position:fixed, ele (e o fundo) sobem junto.
+   Solução: a cada resize/scroll do visualViewport, colamos o #app exatamente
+   sobre a área visível (top = offsetTop, height = height). Assim o fundo
+   nunca "sobe". */
 let _baseH = 0;
+const _vv = window.visualViewport;
 function alturaApp(){
-  const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+  const h = (_vv && _vv.height) || window.innerHeight;
   document.documentElement.style.setProperty('--app-h', h + 'px');
-  _baseH = Math.max(_baseH, h);
-  // teclado provavelmente aberto quando a área visível cai bastante:
-  // libera espaço escondendo a barra de passos + subtítulo e encolhendo o topo
   const app = document.getElementById('app');
+  if(app && _vv){
+    app.style.top    = _vv.offsetTop + 'px';
+    app.style.left   = _vv.offsetLeft + 'px';
+    app.style.right  = 'auto';
+    app.style.width  = _vv.width + 'px';
+    app.style.height = h + 'px';
+  }
+  _baseH = Math.max(_baseH, h);
+  // teclado provavelmente aberto quando a área visível cai bastante
   if(app) app.classList.toggle('kb', h < _baseH - 130);
 }
 alturaApp();
 window.addEventListener('resize', alturaApp);
-if(window.visualViewport) window.visualViewport.addEventListener('resize', alturaApp);
+window.addEventListener('orientationchange', ()=>{ _baseH = 0; setTimeout(alturaApp, 60); });
+if(_vv){
+  _vv.addEventListener('resize', alturaApp);
+  _vv.addEventListener('scroll', alturaApp);
+}
+/* trava extra: se o Safari rolar a página mesmo assim, devolvemos ao topo */
+window.addEventListener('scroll', ()=>{ if(window.scrollY) window.scrollTo(0,0); }, { passive:true });
 
 
 /* ─── estado + navegação ────────────────────────────────────── */
