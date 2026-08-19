@@ -113,6 +113,11 @@ td.end{white-space:normal;max-width:280px;line-height:1.4;}
 }
 .inp-linha:hover{border-color:var(--linha);}
 .inp-linha:focus{outline:none;border-color:var(--amarelo);background:var(--preto);}
+.btn-del{margin-left:8px;border:1px solid rgba(192,57,43,.35);background:rgba(192,57,43,.08);
+  color:var(--vermelho);width:22px;height:22px;line-height:1;border-radius:6px;cursor:pointer;
+  font-size:12px;vertical-align:middle;padding:0;}
+.btn-del:hover{background:var(--vermelho);color:#fff;border-color:var(--vermelho);}
+.btn-del:disabled{opacity:.5;cursor:default;}
 
 .vazio{padding:40px 20px;text-align:center;color:var(--cinza-2);}
 .carregando{padding:40px;text-align:center;color:var(--cinza-2);}
@@ -320,11 +325,27 @@ async function carregar(){
   try{
     const { data, error } = await sb.from('apoiadores').select('*').order('criado_em', { ascending:false });
     if(error) throw new Error(error.message);
-    TODOS = data || [];
+    TODOS = dedupe(data || []);   // lista sempre limpa: sem duplicados por WhatsApp/e-mail
     aplicarFiltros();
   }catch(e){
     $('#corpo').innerHTML = `<tr><td colspan="12" class="vazio">Erro: ${e.message}</td></tr>`;
   }
+}
+
+/* remove duplicados (mantém o mais recente — a lista já vem por criado_em desc).
+   Chave: WhatsApp OU e-mail. Se qualquer um bater com um já visto, é duplicado. */
+function dedupe(rows){
+  const vistos = new Set(); const out = [];
+  for(const l of rows){
+    const w = String(l.whatsapp || '').replace(/\D/g,'');
+    const e = String(l.email || '').trim().toLowerCase();
+    const kw = w ? 'w:'+w : null, ke = e ? 'e:'+e : null;
+    if((kw && vistos.has(kw)) || (ke && vistos.has(ke))) continue;
+    if(kw) vistos.add(kw);
+    if(ke) vistos.add(ke);
+    out.push(l);
+  }
+  return out;
 }
 
 function passaFiltro(l){
@@ -414,8 +435,31 @@ function desenharTabela(){
       <td class="mono dim">${esc(l.lote || '—')}</td>
       <td><input class="inp-linha campo-edit" data-campo="rastreio" data-id="${l.id}"
                  value="${esc(l.rastreio || '')}" placeholder="—"></td>
-      <td class="dim mono">${fmtData(l.criado_em)}</td>
+      <td class="dim mono">${fmtData(l.criado_em)}
+        <button class="btn-del" data-id="${l.id}" title="Excluir do romaneio">✕</button></td>
     </tr>`).join('');
+
+  $$('.btn-del').forEach(b => b.addEventListener('click', async e => {
+    const id = e.currentTarget.dataset.id;
+    const row = TODOS.find(x => x.id === id);
+    if(!confirm(`Excluir "${row ? row.nome : ''}" do romaneio?\n(Isso NÃO remove o lead do CRM.)`)) return;
+    e.currentTarget.disabled = true;
+    try{
+      const { data:{ session } } = await sb.auth.getSession();
+      const r = await fetch('/api/apoiador-excluir', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + (session ? session.access_token : '') },
+        body: JSON.stringify({ id })
+      });
+      const d = await r.json().catch(() => ({}));
+      if(!r.ok || !d.ok) throw new Error(d.erro || ('HTTP ' + r.status));
+      TODOS = TODOS.filter(x => x.id !== id);
+      aplicarFiltros();
+    }catch(err){
+      e.currentTarget.disabled = false;
+      alert('Não excluiu: ' + err.message);
+    }
+  }));
 
   $$('.chk').forEach(c => c.addEventListener('change', e => {
     const id = e.target.dataset.id;

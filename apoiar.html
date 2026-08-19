@@ -1699,11 +1699,43 @@ function ir(n, opts={}){
 document.getElementById('fundo').classList.add('fundo-escuro');
 
 document.querySelectorAll('[data-ir]').forEach(b=>{
-  b.addEventListener('click', ()=>{
+  b.addEventListener('click', async ()=>{
     const destino = +b.dataset.ir;
-    if(validarTela(S.tela)) ir(destino);
+    if(!validarTela(S.tela)) return;
+    // ao sair da tela de contato (whats+email), checa se já se cadastrou
+    if(S.tela === 4 && CFG.endpoint){
+      const txt0 = b.textContent;
+      b.disabled = true; b.textContent = 'Verificando…';
+      const dup = await checarDuplicado();
+      b.disabled = false; b.textContent = txt0;
+      if(dup){ jaCadastrado(); return; }
+    }
+    ir(destino);
   });
 });
+
+/* checa duplicidade por WhatsApp OU e-mail (não trava o fluxo se falhar) */
+async function checarDuplicado(){
+  try{
+    const w = iWhats.value.replace(/\D/g,'');
+    const e = t(iEmail.value).toLowerCase();
+    const r = await fetch(`/api/apoiador-checar?whats=${encodeURIComponent(w)}&email=${encodeURIComponent(e)}`);
+    if(!r.ok) return false;
+    const d = await r.json();
+    return !!d.existe;
+  }catch(_){ return false; }
+}
+
+/* tela de "você já está cadastrado" (reaproveita a tela de sucesso) */
+function jaCadastrado(){
+  $('#ok-selo').textContent = '✓';
+  $('#ok-titulo').textContent = 'Você já está cadastrado';
+  $('#ok-texto').textContent = 'Você já se cadastrou para receber nosso material, e ele já está a caminho. Vamos te avisar quando formos entregar.';
+  $('#ok-links').innerHTML = CFG.link_grupo
+    ? `<a class="dl" href="${CFG.link_grupo}" target="_blank" rel="noopener"><span>Entrar no grupo de apoiadores</span><b>ABRIR</b></a>` : '';
+  ir(7, {semFoco:true});
+  btnVoltar.classList.remove('on');
+}
 
 btnVoltar.addEventListener('click', ()=>{
   let anterior = S.tela - 1;
