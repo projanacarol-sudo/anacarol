@@ -1,0 +1,29 @@
+-- =====================================================================
+-- CRM Ana — Gerador de E-mail: coleta diária dos posts do Instagram
+-- Chama a Function /api/email/apify 1x por dia (traz posts novos p/ a aba).
+-- Reutiliza a mesma ENGINE_KEY do cron de números (11_apify_cron.sql).
+-- EDITE a URL e a ENGINE_KEY e rode uma vez. (roda 5 min depois do de números)
+-- =====================================================================
+--
+-- select cron.schedule('apify-email-posts', '35 6 * * *', $cron$
+--   select net.http_post(
+--     url     := 'https://anacarol.pages.dev/api/email/apify?limit=12',
+--     headers := jsonb_build_object(
+--       'Content-Type','application/json',
+--       'x-engine-key','SUA_ENGINE_KEY'
+--     )
+--   );
+-- $cron$);
+--
+-- Ver / remover:
+--   select * from cron.job;
+--   select cron.unschedule('apify-email-posts');
+--
+-- Testar AGORA (puxa os posts na hora):
+--   select net.http_post(
+--     url     := 'https://anacarol.pages.dev/api/email/apify?limit=12',
+--     headers := jsonb_build_object('Content-Type','application/json','x-engine-key','SUA_ENGINE_KEY')
+--   );
+--   -- e confira o retorno:
+--   select status_code, content, created from net._http_response order by created desc limit 3;
+-- =====================================================================

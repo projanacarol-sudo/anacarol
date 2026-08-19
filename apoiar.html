@@ -1252,6 +1252,14 @@ h2{
 .hero-start-btn{min-height:50px!important;padding:13px 16px!important;font-size:12px!important;letter-spacing:.025em!important;}
 .hero-cta .pe-nota{margin-top:7px!important;}
 @media(max-height:760px){.hero-join-card{padding:12px 14px 10px!important}.hero-start-btn{min-height:46px!important}.hero-step span{width:27px!important;height:27px!important}}
+/* ══ Abertura com as CAMADAS REAIS do Santão (PSD) — override ══ */
+.tela[data-tela="0"]{display:block!important;background:#a64216!important;}
+.tela[data-tela="0"]::before,.tela[data-tela="0"]::after{display:none!important;content:none!important;}
+.santao-real{position:absolute;left:0;top:0;width:100%;z-index:1;}
+.santao-real .sl{position:absolute;left:0;top:0;width:100%;height:auto;display:block;}
+.santao-real .sl.base{position:relative;}
+.hero-cta{position:absolute!important;left:0;right:0;bottom:0;z-index:6;flex:none!important;
+  background:linear-gradient(to top,#a64216 42%,rgba(166,66,22,.72) 74%,transparent)!important;padding-top:26px!important;}
 </style>
 </head>
 <body>
@@ -1292,24 +1300,12 @@ h2{
 
     <!-- ░░ 0 · ABERTURA — composição em camadas ░░ -->
     <section class="tela ativa" data-tela="0">
-      <div class="hero-artboard" aria-label="Ana Carolina Oliveira — Vote 2026 para Deputada Federal">
-        <img class="hero-poster" src="https://pub-d8c17953a575480084b80982d84262c2.r2.dev/bio%20ana/r2-3-hero-poster.jpg" alt="" aria-hidden="true">
-        <img class="hero-podemos" src="https://pub-d8c17953a575480084b80982d84262c2.r2.dev/bio%20ana/r2-4-podemos.png" alt="Podemos — Mudar o Brasil">
-
-        <!-- profundidade: mesma foto, alinhada pixel a pixel sobre o Santão -->
-        <img class="ana-halo" src="https://pub-d8c17953a575480084b80982d84262c2.r2.dev/bio%20ana/r2-5-ana-recorte.png" alt="" aria-hidden="true">
-        <img class="ana-cutout" src="https://pub-d8c17953a575480084b80982d84262c2.r2.dev/bio%20ana/r2-5-ana-recorte.png" alt="Ana Carolina Oliveira">
-
-        <!-- textos reconstruídos em HTML e mantidos acima do retrato -->
-        <div class="hero-copy hero-name"><span class="ana">ANA</span><span class="carolina">CAROLINA</span></div>
-        <div class="hero-copy hero-oliveira">Oliveira</div>
-        <div class="hero-copy hero-vote">VOTE</div>
-        <div class="hero-copy hero-year">2026</div>
-        <div class="hero-copy hero-legacy"><span class="pre">Esse é o nosso</span><span class="script">Legado!</span></div>
-        <div class="hero-copy hero-federal">PARA <b>DEPUTADA FEDERAL</b></div>
-
-        <i class="hero-glint g1" aria-hidden="true"></i>
-        <i class="hero-glint g2" aria-hidden="true"></i>
+      <div class="santao-real" aria-label="Ana Carolina Oliveira — Candidata a Deputada Federal por São Paulo">
+        <img class="sl base" src="artes/fundo-carol.webp" alt="Ana Carolina Oliveira">
+        <img class="sl txt" src="artes/nome.webp" alt="" aria-hidden="true">
+        <img class="sl txt" src="artes/legado.webp" alt="" aria-hidden="true">
+        <img class="sl txt" src="artes/deputada.webp" alt="" aria-hidden="true">
+        <!-- 2026 e Podemos entram como camadas aqui quando chegarem -->
       </div>
 
       <div class="hero-cta">

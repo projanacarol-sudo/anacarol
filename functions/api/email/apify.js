@@ -5,10 +5,13 @@
  *
  * Vars: APIFY_TOKEN, IG_HANDLE, SUPABASE_URL, SUPABASE_SERVICE_KEY, SUPABASE_ANON_KEY
  */
+export async function onRequestPost(context) { return onRequestGet(context); }
+
 export async function onRequestGet(context) {
   const { request, env } = context;
-  const auth = await requireAuth(request, env);
-  if (!auth) return json({ erro: "nao_autorizado" }, 401);
+  // aceita a chave do cron (x-engine-key) OU o login do painel (Bearer)
+  const okCron = (request.headers.get("x-engine-key") || "") === (env.ENGINE_KEY || "\0");
+  if (!okCron && !(await requireAuth(request, env))) return json({ erro: "nao_autorizado" }, 401);
 
   const url = new URL(request.url);
   const handle = (url.searchParams.get("user") || env.IG_HANDLE || "").replace(/^@/, "").trim();
