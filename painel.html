@@ -258,6 +258,7 @@
       <div class="toolbar" style="align-items:center">
         <button class="btn" id="btnBuscarPosts">↻ Buscar posts do Instagram</button>
         <button class="btn ghost" id="btnEditarVisual">🎨 Editar visual do e-mail</button>
+        <button class="btn ghost" id="btnAtualizarMetricas">↻ Atualizar métricas</button>
         <span class="muted" id="emailBaseInfo" style="font-size:13px"></span>
       </div>
       <div class="box" id="emailResumo" style="display:none;margin-bottom:14px"></div>
@@ -1454,6 +1455,7 @@ let EMAIL_TAGS = [];
 async function authHeader(){ const {data}=await sb.auth.getSession(); return {'Content-Type':'application/json','Authorization':'Bearer '+(data.session&&data.session.access_token)}; }
 
 async function loadEmailGen(){
+  if(!EMAIL_REFRESH){ EMAIL_REFRESH=setInterval(()=>{ const pan=document.getElementById('panel-email-gen'); if(pan && pan.classList.contains('active')) atualizarMetricas(); }, 30000); }
   try{ const {data:t}=await sb.from('email_template').select('*').eq('id',1).single(); if(t) EMAIL_TPL=Object.assign(EMAIL_TPL,t); }catch(e){}
   try{ const {data:tg}=await sb.rpc('tags_leads'); EMAIL_TAGS=tg||[]; }catch(e){ EMAIL_TAGS=[]; }
   try{
@@ -1487,6 +1489,17 @@ function renderResumoEmail(camps){
     </div>`;
 }
 
+let EMAIL_REFRESH=null;
+function cssEsc(s){ return (window.CSS&&CSS.escape)?CSS.escape(String(s)):String(s).replace(/["\\]/g,'\\$&'); }
+async function atualizarMetricas(){
+  try{
+    const {data:camps}=await sb.from('email_campaigns').select('*'); const map={}; (camps||[]).forEach(c=>map[c.post_id]=c);
+    EMAIL_POSTS.forEach(p=>p._camp=map[p.id]||null);
+    renderResumoEmail(camps||[]);
+    EMAIL_POSTS.forEach(p=>{ const el=document.querySelector('.ecard[data-id="'+cssEsc(p.id)+'"] .card-metrics'); if(el) el.innerHTML=metricasBlockHTML(p); });
+  }catch(e){}
+}
+
 function renderPosts(){
   const w=$('#postsWrap');
   if(!EMAIL_POSTS.length){ w.innerHTML='<p class="muted" style="font-size:13px">Nenhum post ainda. Clique em "Buscar posts do Instagram".</p>'; return; }
@@ -1494,23 +1507,28 @@ function renderPosts(){
   w.querySelectorAll('.ecard').forEach(bindCardEmail);
 }
 
-function cardHTMLemail(p){
-  const c = p._camp;
-  const foiEnviado = !!p.enviado_em || (c && c.enviados>0);
-  const dt = p.enviado_em ? new Date(p.enviado_em).toLocaleDateString('pt-BR') : '';
+function metricasBlockHTML(p){
+  const c=p._camp; const foiEnviado=!!p.enviado_em||(c&&c.enviados>0);
   const pct=(a,b)=> b? Math.min(100,Math.round((a/b)*100))+'%' : '—';
-  const sentbar = foiEnviado ? `<div class="sentbar">✓ Enviado${dt?(' em '+dt):''}</div>` : '';
-  let metricas = '';
   if(c && c.enviados>0){
-    metricas = `<div class="emetric">
+    return `<div class="emetric">
       <div><b>${c.enviados}</b><span>Enviados</span></div>
       <div><b>${c.entregues}</b><span>Entregues · ${pct(c.entregues,c.enviados)}</span></div>
       <div><b>${c.abertos}</b><span>Aberturas · ${pct(c.abertos,c.entregues)}</span></div>
     </div>
     <div style="font-size:11.5px;color:var(--muted);margin:0 0 6px">👆 ${c.cliques||0} clique(s) · ${pct(c.cliques,c.entregues)} &nbsp;·&nbsp; ⚠ ${c.bounces||0} bounce(s)</div>`;
-  } else if(foiEnviado){
-    metricas = `<div style="font-size:11.5px;color:#9a6a00;background:#fff4e5;border:1px solid #ffe0a3;border-radius:8px;padding:7px 9px;margin:2px 0 8px">Enviado — as métricas de entrega/abertura aparecem aqui quando o SQL <b>20</b> estiver rodado e o <b>webhook do Resend</b> ativo.</div>`;
   }
+  if(foiEnviado){
+    return `<div style="font-size:11.5px;color:#9a6a00;background:#fff4e5;border:1px solid #ffe0a3;border-radius:8px;padding:7px 9px;margin:2px 0 8px">Enviado — as métricas aparecem em <b>envios reais</b> feitos após o SQL 20 (o botão "teste" não conta).</div>`;
+  }
+  return '';
+}
+function cardHTMLemail(p){
+  const c = p._camp;
+  const foiEnviado = !!p.enviado_em || (c && c.enviados>0);
+  const dt = p.enviado_em ? new Date(p.enviado_em).toLocaleDateString('pt-BR') : '';
+  const sentbar = foiEnviado ? `<div class="sentbar">✓ Enviado${dt?(' em '+dt):''}</div>` : '';
+  const metricas = `<div class="card-metrics">${metricasBlockHTML(p)}</div>`;
   const temGen = p.assunto||p.texto;
   return `<div class="ecard${foiEnviado?' sent':''}" data-id="${esc(p.id)}">
     ${sentbar}
@@ -1716,10 +1734,11 @@ async function abrirEnvioEmail(postId,d){
     <p class="muted" style="font-size:13px;margin:2px 0 10px">Assunto: <b>${esc(d.assunto)}</b></p>
     <div id="eMsg" style="display:none;padding:9px;border-radius:8px;font-size:13px;font-weight:700;margin:8px 0"></div>
     <label style="font-size:12px;font-weight:800;color:var(--muted)">1) Enviar teste para você</label>
-    <div style="display:flex;gap:8px;margin:6px 0 16px">
+    <div style="display:flex;gap:8px;margin:6px 0 4px">
       <input id="eTeste" type="email" placeholder="seu@email.com" style="flex:1;padding:9px;border:1px solid #cfd8dd;border-radius:8px">
       <button class="btn-2" id="btnTeste">Enviar teste</button>
     </div>
+    <p class="muted" style="font-size:11.5px;margin:0 0 14px">O teste é só pra você conferir — <b>não entra nas métricas</b>.</p>
     <label style="font-size:12px;font-weight:800;color:var(--muted)">2) Público (tag)</label>
     <select id="eTag" style="width:100%;padding:9px;border:1px solid #cfd8dd;border-radius:8px;margin:6px 0 8px">${optsTags}</select>
     <div class="prog" id="eProg" style="display:none"><i></i></div>
@@ -1769,6 +1788,7 @@ $("#btnBuscarPosts") && $("#btnBuscarPosts").addEventListener('click',async()=>{
   loadEmailGen();
 });
 $("#btnEditarVisual") && $("#btnEditarVisual").addEventListener('click', abrirEditorVisual);
+$("#btnAtualizarMetricas") && $("#btnAtualizarMetricas").addEventListener('click', ()=>{ atualizarMetricas(); toast('Métricas atualizadas.'); });
 
 /* ================= CHART HELPERS ================= */
 function destroy(id){ if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];} }
