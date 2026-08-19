@@ -1252,14 +1252,26 @@ h2{
 .hero-start-btn{min-height:50px!important;padding:13px 16px!important;font-size:12px!important;letter-spacing:.025em!important;}
 .hero-cta .pe-nota{margin-top:7px!important;}
 @media(max-height:760px){.hero-join-card{padding:12px 14px 10px!important}.hero-start-btn{min-height:46px!important}.hero-step span{width:27px!important;height:27px!important}}
-/* ══ Abertura com as CAMADAS REAIS do Santão (PSD) — override ══ */
+/* ══ Abertura: fundo+Carol FIXO (cover) + textos em % (camadas reais do PSD) ══ */
 .tela[data-tela="0"]{display:block!important;background:#a64216!important;}
 .tela[data-tela="0"]::before,.tela[data-tela="0"]::after{display:none!important;content:none!important;}
-.santao-real{position:absolute;left:0;top:0;width:100%;z-index:1;}
-.santao-real .sl{position:absolute;left:0;top:0;width:100%;height:auto;display:block;}
-.santao-real .sl.base{position:relative;}
+.santao-real{position:absolute;inset:0;z-index:1;overflow:hidden;}
+.sr-base{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%;}
+.sr-txt{position:absolute;display:block;height:auto;filter:drop-shadow(0 2px 6px rgba(0,0,0,.28));}
+.sr-nome{left:3%;top:2.5%;width:62%;}
+.sr-legado{right:5%;top:45%;width:40%;}
+.sr-2026{position:absolute;left:4%;top:50%;z-index:2;
+  font-family:'Archivo','Montserrat',system-ui,sans-serif;font-weight:900;font-size:21vw;line-height:.82;
+  color:#f2e2b0;letter-spacing:-.03em;text-shadow:0 3px 12px rgba(0,0,0,.35);pointer-events:none;}
+.sr-dep{left:3%;top:63%;width:66%;}
+/* CTA compacto sobre o laranja de baixo */
 .hero-cta{position:absolute!important;left:0;right:0;bottom:0;z-index:6;flex:none!important;
-  background:linear-gradient(to top,#a64216 42%,rgba(166,66,22,.72) 74%,transparent)!important;padding-top:26px!important;}
+  background:linear-gradient(to top,#a64216 48%,rgba(166,66,22,.7) 80%,transparent)!important;padding-top:16px!important;}
+.hero-join-card{padding:11px 13px 10px!important;}
+.hero-join-head{padding-bottom:8px!important;}
+.hero-steps{padding:1px 0 8px!important;}
+.hero-start-btn{min-height:44px!important;padding:11px 14px!important;}
+@media (min-width:520px){ .sr-nome{width:48%;} .sr-legado{width:30%;} .sr-dep{width:50%;} .sr-2026{font-size:150px;} }
 </style>
 </head>
 <body>
@@ -1301,11 +1313,12 @@ h2{
     <!-- ░░ 0 · ABERTURA — composição em camadas ░░ -->
     <section class="tela ativa" data-tela="0">
       <div class="santao-real" aria-label="Ana Carolina Oliveira — Candidata a Deputada Federal por São Paulo">
-        <img class="sl base" src="artes/fundo-carol.webp" alt="Ana Carolina Oliveira">
-        <img class="sl txt" src="artes/nome.webp" alt="" aria-hidden="true">
-        <img class="sl txt" src="artes/legado.webp" alt="" aria-hidden="true">
-        <img class="sl txt" src="artes/deputada.webp" alt="" aria-hidden="true">
-        <!-- 2026 e Podemos entram como camadas aqui quando chegarem -->
+        <img class="sr-base" src="artes/fundo-carol.webp" alt="Ana Carolina Oliveira">
+        <img class="sr-txt sr-nome" src="artes/nome.webp" alt="" aria-hidden="true">
+        <img class="sr-txt sr-legado" src="artes/legado.webp" alt="" aria-hidden="true">
+        <div class="sr-2026" aria-hidden="true">2026</div>
+        <img class="sr-txt sr-dep" src="artes/deputada.webp" alt="" aria-hidden="true">
+        <!-- Podemos entra aqui quando você mandar a camada -->
       </div>
 
       <div class="hero-cta">
