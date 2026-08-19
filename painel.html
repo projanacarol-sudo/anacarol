@@ -378,8 +378,48 @@ async function boot(){
   $("#login").classList.add("hidden");
   $("#app").classList.remove("hidden");
   $("#whoami").textContent = data.user ? data.user.email : "";
+  await loadMyAcl(); aplicarAcl();
   await loadRefs();
   loadOverview();
+}
+
+/* ============ CONTROLE DE ACESSO (ACL) ============ */
+let MY_ACL = null; // null = admin / acesso total
+function aclScreens(){ return $$("nav.tabs button").map(b=>({key:b.dataset.tab, nome:b.textContent.trim()})); }
+async function loadMyAcl(){
+  MY_ACL=null;
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    const email=session&&session.user&&session.user.email; if(!email) return;
+    const {data}=await sb.from("colaboradores").select("nivel,permissoes").ilike("email",email).limit(1);
+    const c=data&&data[0];
+    if(!c || c.nivel==="admin") { MY_ACL=null; return; }  // admin ou dono (não cadastrado) = tudo
+    MY_ACL=c.permissoes||{};
+  }catch(e){ MY_ACL=null; }
+}
+function aclVer(key){ if(!MY_ACL) return true; const p=MY_ACL[key]; return p ? p.ver!==false : false; }
+function aclEditar(key){ if(!MY_ACL) return true; const p=MY_ACL[key]; return p ? p.editar===true : false; }
+function aplicarAcl(){
+  if(!MY_ACL){ return; } // admin vê tudo
+  $$("nav.tabs button").forEach(b=>{ b.style.display = aclVer(b.dataset.tab) ? "" : "none"; });
+  const ativo=document.querySelector("nav.tabs button.active");
+  if(ativo && !aclVer(ativo.dataset.tab)){
+    const primeiro=$$("nav.tabs button").find(b=>b.style.display!=="none");
+    if(primeiro) primeiro.click();
+  }
+}
+function aplicarEdicao(key){
+  const pan=$("#panel-"+key); if(!pan) return;
+  const ro = !!MY_ACL && !aclEditar(key);
+  pan.querySelectorAll(".toolbar .btn").forEach(x=>{ x.style.display = ro ? "none" : ""; });
+  let banner=pan.querySelector(".ro-banner");
+  if(ro && !banner){
+    banner=document.createElement("div"); banner.className="ro-banner";
+    banner.textContent="👁 Somente leitura — você não tem permissão para editar esta tela.";
+    banner.style.cssText="background:#fff4e5;color:#9a6a00;border:1px solid #ffe0a3;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;margin-bottom:12px";
+    pan.insertBefore(banner, pan.firstChild);
+  }
+  if(!ro && banner) banner.remove();
 }
 
 /* ---------- tabs ---------- */
@@ -396,6 +436,7 @@ $$("nav.tabs button").forEach(b => b.addEventListener("click", () => {
   if (b.dataset.tab==="colaboradores") { abrirColabs(); resumoColabs(); }
   if (b.dataset.tab==="romaneio") { const f=$("#romaneioFrame"); if(f && !f.src) f.src="romaneio.html"; }
   if (b.dataset.tab==="email-gen") loadEmailGen();
+  aplicarEdicao(b.dataset.tab);
 }));
 
 async function resumoColabs(){
@@ -1254,7 +1295,7 @@ async function abrirColabs(){
   const linhaAtivo=c=>`<tr>
     <td><span class="av" style="background:${esc(c.cor)};width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;color:#fff;font-size:9px;font-weight:800;vertical-align:middle">${iniciais(c.nome)}</span> ${esc(c.nome)} ${nivelBadge(c.nivel)}</td>
     <td>${esc(c.email)||""}</td>
-    <td>${c.email?`<button class="lnk" data-login="${esc(c.email)}">criar login</button> · `:""}<button class="lnk" data-dc="${c.id}" style="color:#c0392b">excluir</button></td></tr>`;
+    <td><button class="lnk" data-acl="${c.id}">acessos</button> · ${c.email?`<button class="lnk" data-login="${esc(c.email)}">criar login</button> · `:""}<button class="lnk" data-dc="${c.id}" style="color:#c0392b">excluir</button></td></tr>`;
 
   const linkCad = `${location.origin}/cadastro.html`;
   $("#modalRoot").innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:720px">
@@ -1289,6 +1330,7 @@ async function abrirColabs(){
   $$("[data-copy]").forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.dataset.copy).then(()=>toast("Link copiado"));});
   $$("[data-dc]").forEach(b=>b.onclick=async()=>{if(!confirm("Excluir colaborador?"))return;await sb.from("colaboradores").delete().eq("id",b.dataset.dc);abrirColabs();});
   $$("[data-login]").forEach(b=>b.onclick=()=>criarLogin(b.dataset.login));
+  $$("[data-acl]").forEach(b=>b.onclick=()=>abrirAcessos(b.dataset.acl));
   $$("[data-rec]").forEach(b=>b.onclick=async()=>{if(!confirm("Recusar este cadastro?"))return;await sb.from("colaboradores").update({status:"recusado",ativo:false}).eq("id",b.dataset.rec);abrirColabs();});
   $$("[data-ap]").forEach(b=>b.onclick=()=>{
     const niv=(document.querySelector(`[data-niv="${b.dataset.ap}"]`)||{}).value||"colaborador";
@@ -1354,9 +1396,60 @@ async function criarLogin(email){
   }catch(e){ toast("Erro de conexão"); }
 }
 
+/* ============ MODAL: CONTROLE DE ACESSO POR COLABORADOR ============ */
+async function abrirAcessos(id){
+  let colab=null;
+  try{ const {data}=await sb.from("colaboradores").select("*").eq("id",id).limit(1); colab=data&&data[0]; }catch(e){}
+  if(!colab){ toast("Colaborador não encontrado"); return; }
+  const perm=colab.permissoes||{};
+  const vazio=Object.keys(perm).length===0;
+  const screens=aclScreens();
+  const rows=screens.map(s=>{
+    const p=perm[s.key]||{};
+    const ver = vazio ? true : p.ver===true;
+    const ed  = p.editar===true;
+    return `<tr>
+      <td style="font-weight:600">${esc(s.nome)}</td>
+      <td style="text-align:center"><input type="checkbox" class="swk" data-k="${esc(s.key)}" data-t="ver" ${ver?'checked':''} style="width:20px;height:20px;cursor:pointer"></td>
+      <td style="text-align:center"><input type="checkbox" class="swk" data-k="${esc(s.key)}" data-t="editar" ${ed?'checked':''} style="width:20px;height:20px;cursor:pointer"></td>
+    </tr>`;
+  }).join("");
+  $("#modalRoot").innerHTML=`<div class="overlay" id="ova"><div class="modal" style="max-width:520px">
+    <h3>Acessos — ${esc(colab.nome)}</h3>
+    <p class="muted" style="font-size:12.5px;margin:2px 0 6px">Nível: <b>${colab.nivel==='admin'?'Admin (acesso total)':'Colaborador'}</b>. Marque o que ele pode <b>ver</b> e o que pode <b>editar/operar</b> em cada tela.</p>
+    <div style="display:flex;gap:12px;font-size:12px;margin-bottom:6px">
+      <a class="lnk" id="aclVerTodos">ver: todos</a><a class="lnk" id="aclVerNenhum">ver: nenhum</a>
+      <a class="lnk" id="aclEdTodos">editar: todos</a><a class="lnk" id="aclEdNenhum">editar: nenhum</a>
+    </div>
+    <div style="max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:10px">
+    <table style="width:100%;border-collapse:collapse;font-size:13.5px">
+      <thead><tr>
+        <th style="text-align:left;padding:9px 12px;background:#eef3f4;font-size:11px;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);position:sticky;top:0">Tela / função</th>
+        <th style="padding:9px 8px;background:#eef3f4;font-size:11px;text-transform:uppercase;color:var(--muted);position:sticky;top:0">Ver</th>
+        <th style="padding:9px 8px;background:#eef3f4;font-size:11px;text-transform:uppercase;color:var(--muted);position:sticky;top:0">Editar</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    ${colab.nivel==='admin'?'<p class="muted" style="font-size:12px;margin-top:8px">⚠ Este colaborador é <b>Admin</b> e tem acesso total independente das chaves abaixo.</p>':''}
+    <div class="actions"><button class="btn" id="aclSalvar">Salvar acessos</button><button class="btn ghost" id="aclFechar">Fechar</button></div>
+  </div></div>`;
+  const box=$("#modalRoot");
+  const close=()=>box.innerHTML=""; $("#aclFechar").onclick=close; $("#ova").onclick=e=>{if(e.target.id==='ova')close();};
+  const marcar=(tipo,val)=>box.querySelectorAll(`.swk[data-t="${tipo}"]`).forEach(el=>el.checked=val);
+  $("#aclVerTodos").onclick=()=>marcar('ver',true); $("#aclVerNenhum").onclick=()=>marcar('ver',false);
+  $("#aclEdTodos").onclick=()=>marcar('editar',true); $("#aclEdNenhum").onclick=()=>marcar('editar',false);
+  $("#aclSalvar").onclick=async()=>{
+    const novo={};
+    box.querySelectorAll("input.swk").forEach(el=>{ const k=el.dataset.k; (novo[k]=novo[k]||{ver:false,editar:false})[el.dataset.t]=el.checked; });
+    try{ const {error}=await sb.from("colaboradores").update({permissoes:novo}).eq("id",id); if(error) throw error;
+      toast("Acessos salvos."); close();
+    }catch(e){ toast("Erro ao salvar: "+(e.message||"")); }
+  };
+}
+
 /* ================= GERADOR DE E-MAIL ================= */
 let EMAIL_POSTS = [];
-let EMAIL_TPL = { titulo:'Ana Carolina Oliveira', subtitulo:'Deputada Federal 2026 · Podemos', cor_topo:'#7a2418', cor_botao:'#7a2418', texto_botao:'Ver no Instagram', logo_url:'', rodape:'Você recebe este e-mail por apoiar a campanha de Ana Carolina Oliveira.' };
+let EMAIL_TPL = { titulo:'Ana Carolina Oliveira', subtitulo:'Deputada Federal 2026 · Podemos', cor_topo:'#7a2418', cor_botao:'#7a2418', texto_botao:'Ver no Instagram', logo_url:'', rodape:'Você recebe este e-mail por apoiar a campanha de Ana Carolina Oliveira.', botoes:[] };
 let EMAIL_TAGS = [];
 async function authHeader(){ const {data}=await sb.auth.getSession(); return {'Content-Type':'application/json','Authorization':'Bearer '+(data.session&&data.session.access_token)}; }
 
@@ -1407,12 +1500,17 @@ function cardHTMLemail(p){
   const dt = p.enviado_em ? new Date(p.enviado_em).toLocaleDateString('pt-BR') : '';
   const pct=(a,b)=> b? Math.min(100,Math.round((a/b)*100))+'%' : '—';
   const sentbar = foiEnviado ? `<div class="sentbar">✓ Enviado${dt?(' em '+dt):''}</div>` : '';
-  const metricas = (c && c.enviados>0) ? `<div class="emetric">
+  let metricas = '';
+  if(c && c.enviados>0){
+    metricas = `<div class="emetric">
       <div><b>${c.enviados}</b><span>Enviados</span></div>
       <div><b>${c.entregues}</b><span>Entregues · ${pct(c.entregues,c.enviados)}</span></div>
       <div><b>${c.abertos}</b><span>Aberturas · ${pct(c.abertos,c.entregues)}</span></div>
     </div>
-    <div style="font-size:11.5px;color:var(--muted);margin:0 0 6px">👆 ${c.cliques||0} clique(s) · ${pct(c.cliques,c.entregues)} &nbsp;·&nbsp; ⚠ ${c.bounces||0} bounce(s)</div>` : '';
+    <div style="font-size:11.5px;color:var(--muted);margin:0 0 6px">👆 ${c.cliques||0} clique(s) · ${pct(c.cliques,c.entregues)} &nbsp;·&nbsp; ⚠ ${c.bounces||0} bounce(s)</div>`;
+  } else if(foiEnviado){
+    metricas = `<div style="font-size:11.5px;color:#9a6a00;background:#fff4e5;border:1px solid #ffe0a3;border-radius:8px;padding:7px 9px;margin:2px 0 8px">Enviado — as métricas de entrega/abertura aparecem aqui quando o SQL <b>20</b> estiver rodado e o <b>webhook do Resend</b> ativo.</div>`;
+  }
   const temGen = p.assunto||p.texto;
   return `<div class="ecard${foiEnviado?' sent':''}" data-id="${esc(p.id)}">
     ${sentbar}
@@ -1506,9 +1604,7 @@ function montarEmailHTML(d){
       <tr><td style="padding:24px">
         <h1 style="margin:0 0 12px;font-size:20px;color:${esc(topo)}">${esc(d.assunto)}</h1>
         <div style="font-size:15px;line-height:1.6;color:#3a2a22;white-space:pre-line">${esc(d.texto)}</div>
-        <div style="text-align:center;margin:24px 0 6px">
-          <a href="${esc(d.link)}" style="background:${esc(botao)};color:#fff;text-decoration:none;font-weight:800;padding:13px 24px;border-radius:10px;display:inline-block">${esc(t.texto_botao||'Ver no Instagram')}</a>
-        </div>
+        <div style="text-align:center;margin:22px 0 6px">${botoesHTML(t, botao, d.link)}</div>
       </td></tr>
       <tr><td style="padding:16px 24px;border-top:1px solid #eee;background:#faf5ef">
         <div style="font-size:11.5px;color:#8a7a6e;line-height:1.6">
@@ -1517,6 +1613,19 @@ function montarEmailHTML(d){
         </div>
       </td></tr>
     </table></td></tr></table></body></html>`;
+}
+
+function botoesTemplate(t){
+  const arr = (Array.isArray(t.botoes) && t.botoes.length) ? t.botoes
+    : [{ texto: t.texto_botao || 'Ver no Instagram', link:'', cor: t.cor_botao || t.cor_topo || '#7a2418' }];
+  return arr.filter(b=>b && (b.texto||'').trim());
+}
+function botoesHTML(t, corPadrao, linkPost){
+  return botoesTemplate(t).map(b=>{
+    const url = (b.link && b.link.trim()) ? b.link : (linkPost || '#');
+    const cor = b.cor || corPadrao;
+    return `<a href="${esc(url)}" style="background:${esc(cor)};color:#fff;text-decoration:none;font-weight:800;padding:13px 24px;border-radius:10px;display:inline-block;margin:5px 6px">${esc(b.texto||'Saiba mais')}</a>`;
+  }).join('');
 }
 
 function abrirEditorVisual(){
@@ -1529,12 +1638,10 @@ function abrirEditorVisual(){
         <input id="tvTitulo" value="${esc(t.titulo||'')}" style="width:100%;padding:9px;border:1px solid #cfd8dd;border-radius:8px;margin:4px 0 10px">
         <label style="font-size:12px;font-weight:800;color:var(--muted)">Subtítulo</label>
         <input id="tvSub" value="${esc(t.subtitulo||'')}" style="width:100%;padding:9px;border:1px solid #cfd8dd;border-radius:8px;margin:4px 0 10px">
-        <div style="display:flex;gap:12px">
-          <div><label style="font-size:12px;font-weight:800;color:var(--muted)">Cor do topo</label><br><input id="tvTopo" type="color" value="${esc(t.cor_topo||'#7a2418')}" style="width:52px;height:38px;border:0;background:none"></div>
-          <div><label style="font-size:12px;font-weight:800;color:var(--muted)">Cor do botão</label><br><input id="tvBotao" type="color" value="${esc(t.cor_botao||'#7a2418')}" style="width:52px;height:38px;border:0;background:none"></div>
-        </div>
-        <label style="font-size:12px;font-weight:800;color:var(--muted);margin-top:10px;display:block">Texto do botão</label>
-        <input id="tvTxtBotao" value="${esc(t.texto_botao||'Ver no Instagram')}" style="width:100%;padding:9px;border:1px solid #cfd8dd;border-radius:8px;margin:4px 0 10px">
+        <div style="margin-bottom:6px"><label style="font-size:12px;font-weight:800;color:var(--muted)">Cor do topo</label><br><input id="tvTopo" type="color" value="${esc(t.cor_topo||'#7a2418')}" style="width:52px;height:38px;border:0;background:none"></div>
+        <label style="font-size:12px;font-weight:800;color:var(--muted)">Botões</label>
+        <div id="tvBotoes" style="margin:4px 0 6px"></div>
+        <button class="btn-2 sm" id="tvAddBtn" style="margin-bottom:12px">+ Adicionar botão</button>
         <label style="font-size:12px;font-weight:800;color:var(--muted)">Logo / foto no topo (opcional)</label>
         <div style="display:flex;gap:8px;align-items:center;margin:4px 0 10px">
           <label class="btn-2" style="cursor:pointer;margin:0">Subir imagem<input type="file" id="tvLogoFile" accept="image/*" hidden></label>
@@ -1553,11 +1660,28 @@ function abrirEditorVisual(){
   </div></div>`;
   const c=()=>$('#modalRoot').innerHTML=''; $('#tvFechar').onclick=c; $('#ovv').onclick=e=>{if(e.target.id==='ovv')c();};
   let logoUrl = t.logo_url||'';
-  const lerCampos=()=>({ titulo:$('#tvTitulo').value, subtitulo:$('#tvSub').value, cor_topo:$('#tvTopo').value, cor_botao:$('#tvBotao').value, texto_botao:$('#tvTxtBotao').value, logo_url:logoUrl, rodape:$('#tvRodape').value });
+  let botoes = botoesTemplate(t).map(b=>({texto:b.texto||'',link:b.link||'',cor:b.cor||'#7a2418'}));
+  if(!botoes.length) botoes=[{texto:'Ver no Instagram',link:'',cor:'#7a2418'}];
+  const lerCampos=()=>({ titulo:$('#tvTitulo').value, subtitulo:$('#tvSub').value, cor_topo:$('#tvTopo').value, logo_url:logoUrl, rodape:$('#tvRodape').value,
+    botoes: botoes.filter(b=>(b.texto||'').trim()), cor_botao:(botoes[0]&&botoes[0].cor)||'#7a2418', texto_botao:(botoes[0]&&botoes[0].texto)||'' });
   const previa=()=>{ EMAIL_TPL=Object.assign({},EMAIL_TPL,lerCampos());
-    const html=montarEmailHTML({assunto:'Assunto de exemplo',preview:'Prévia',texto:'Este é um exemplo do texto do informativo na voz da Ana.',img:'',link:'#'}).replace(/%UNSUB%/g,'#');
+    const html=montarEmailHTML({assunto:'Assunto de exemplo',preview:'Prévia',texto:'Este é um exemplo do texto do informativo na voz da Ana.',img:'',link:'https://instagram.com/anacarolinaoliveira_oficial'}).replace(/%UNSUB%/g,'#');
     $('#tvPrev').srcdoc=html; };
-  ['tvTitulo','tvSub','tvTopo','tvBotao','tvTxtBotao','tvRodape'].forEach(id=>{ const el=$('#'+id); el.addEventListener('input',previa); });
+  function renderBotoes(){
+    $('#tvBotoes').innerHTML = botoes.map((b,i)=>`<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+      <input class="bt-texto" data-i="${i}" placeholder="Texto" value="${esc(b.texto)}" style="flex:1;min-width:0;padding:8px;border:1px solid #cfd8dd;border-radius:8px">
+      <input class="bt-link" data-i="${i}" placeholder="Link (vazio = post)" value="${esc(b.link)}" style="flex:1.2;min-width:0;padding:8px;border:1px solid #cfd8dd;border-radius:8px">
+      <input class="bt-cor" data-i="${i}" type="color" value="${esc(b.cor||'#7a2418')}" style="width:40px;height:34px;border:0;background:none;flex:0 0 auto">
+      <button class="lnk bt-del" data-i="${i}" style="color:#c0392b;flex:0 0 auto">×</button>
+    </div>`).join('');
+    $('#tvBotoes').querySelectorAll('.bt-texto').forEach(el=>el.oninput=()=>{botoes[+el.dataset.i].texto=el.value;previa();});
+    $('#tvBotoes').querySelectorAll('.bt-link').forEach(el=>el.oninput=()=>{botoes[+el.dataset.i].link=el.value;previa();});
+    $('#tvBotoes').querySelectorAll('.bt-cor').forEach(el=>el.oninput=()=>{botoes[+el.dataset.i].cor=el.value;previa();});
+    $('#tvBotoes').querySelectorAll('.bt-del').forEach(el=>el.onclick=()=>{botoes.splice(+el.dataset.i,1); if(!botoes.length)botoes=[{texto:'',link:'',cor:'#7a2418'}]; renderBotoes(); previa();});
+  }
+  $('#tvAddBtn').onclick=()=>{ botoes.push({texto:'Saiba mais',link:'',cor:$('#tvTopo').value||'#7a2418'}); renderBotoes(); previa(); };
+  renderBotoes();
+  ['tvTitulo','tvSub','tvTopo','tvRodape'].forEach(id=>{ const el=$('#'+id); el.addEventListener('input',previa); });
   $('#tvLogoFile').onchange=()=>{ const f=$('#tvLogoFile').files[0]; if(!f)return; const rd=new FileReader();
     rd.onload=async()=>{ $('#tvLogoInfo').textContent='enviando...';
       try{ const r=await fetch('/api/email/upload',{method:'POST',headers:await authHeader(),body:JSON.stringify({id:'template-logo',imagem:rd.result})}); const d=await r.json();
