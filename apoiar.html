@@ -43,6 +43,9 @@
   --sat:env(safe-area-inset-top,0px);
   --sab:env(safe-area-inset-bottom,0px);
   --app-h:100dvh;
+  /* 1% da altura VISÍVEL (encolhe com o teclado, ao contrário do vh no iOS).
+     usado no lugar de vh pra tudo se ajustar ao ecrã e comprimir com o teclado */
+  --vh:calc(var(--app-h) / 100);
   --gut:22px;
 }
 
@@ -62,7 +65,9 @@ button,input{font:inherit;color:inherit;}
 
 /* ── palco ─────────────────────────────────────────────────── */
 #app{
-  position:fixed;inset:0;
+  position:fixed;top:0;left:0;right:0;   /* ancorado no topo — NÃO usar bottom/inset:0,
+                                             senão o height é ignorado e o app não encolhe
+                                             quando o teclado abre (campo some da tela) */
   height:var(--app-h);
   overflow:hidden;
   display:flex;flex-direction:column;
@@ -206,7 +211,7 @@ h2{
 /* ── botões ────────────────────────────────────────────────── */
 .btn{
   display:flex;align-items:center;justify-content:center;gap:8px;
-  width:100%;padding:17px 20px;
+  width:100%;padding:clamp(13px,calc(2.4*var(--vh)),17px) 20px;
   background:var(--amarelo);color:var(--preto);
   border:0;border-radius:14px;
   font-family:var(--d);font-weight:800;font-size:16px;letter-spacing:.01em;
@@ -229,10 +234,12 @@ h2{
 .form-steps .hero-step.active span{border-color:#e0a53a;color:#f0d59a;box-shadow:0 0 0 3px #1b0e0a,0 0 14px rgba(224,165,58,.35);}
 .form-steps .hero-step.active small{color:#e6bd68;}
 
-.tela:not([data-tela="0"]){justify-content:center;gap:16px;}
+/* telas internas: SEM rolagem — tudo proporcional à altura (--app-h) pra
+   caber em qualquer ecrã e comprimir junto quando o teclado abre */
+.tela:not([data-tela="0"]){justify-content:center;gap:clamp(10px,calc(2.2*var(--vh)),18px);}
 .tela:not([data-tela="0"]) .tela-corpo{
   flex:0 1 auto;overflow:visible;justify-content:flex-start;
-  padding:22px 18px;border-radius:18px;
+  padding:clamp(14px,calc(2.6*var(--vh)),22px) 18px;border-radius:18px;
   border:1px solid rgba(240,213,154,.22);
   background:
     radial-gradient(120% 170% at 50% -80%,rgba(167,69,39,.20),transparent 55%),
@@ -240,6 +247,19 @@ h2{
   box-shadow:0 14px 36px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.03);
 }
 .tela:not([data-tela="0"]) .tela-pe{padding-top:0;}
+/* título/subtítulo internos comprimem com a altura visível (teclado) */
+.tela:not([data-tela="0"]) .olho{margin-bottom:clamp(2px,calc(.5*var(--vh)),4px);}
+.tela:not([data-tela="0"]) h2{
+  font-size:clamp(20px,calc(3.5*var(--vh)),32px);
+  margin-bottom:clamp(4px,calc(1*var(--vh)),8px);
+}
+.tela:not([data-tela="0"]) .sub{
+  font-size:clamp(13px,calc(2*var(--vh)),15px);line-height:1.4;
+}
+/* teclado aberto: libera espaço (esconde passos+subtítulo, encolhe o topo) */
+#app.kb .form-steps{display:none!important;}
+#app.kb .tela:not([data-tela="0"]) .sub{display:none;}
+#app.kb .topo{padding-top:6px!important;padding-bottom:4px!important;}
 /* marca d'água mais discreta atrás do card */
 .fundo-escuro .fita b{color:rgba(255,255,255,.028)!important;}
 .fundo-escuro .fita i{color:rgba(224,165,58,.055)!important;}
@@ -259,15 +279,15 @@ h2{
 .campo label{
   display:block;font-family:var(--d);font-weight:700;
   font-size:10px;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--cinza);margin-bottom:6px;
+  color:var(--cinza);margin-bottom:clamp(3px,calc(.8*var(--vh)),6px);
 }
 .campo input{
   width:100%;
   background:transparent;border:0;
   border-bottom:2px solid rgba(255,255,255,.22);
-  padding:9px 0;
+  padding:clamp(6px,calc(1.2*var(--vh)),9px) 0;
   font-family:var(--d);font-weight:700;
-  font-size:21px;letter-spacing:-.01em;
+  font-size:clamp(17px,calc(2.5*var(--vh)),21px);letter-spacing:-.01em;
   color:var(--branco);
   border-radius:0;
   transition:border-color .2s ease;
@@ -288,8 +308,8 @@ h2{
 .dica.alerta{color:var(--amarelo);}
 .dica.ruim{color:#FF7A70;}
 
-.dupla{display:grid;grid-template-columns:1fr;gap:20px;}
-.dupla-2{display:grid;grid-template-columns:1fr 1.35fr;gap:16px;}
+.dupla{display:grid;grid-template-columns:1fr;gap:clamp(12px,calc(2.6*var(--vh)),20px);}
+.dupla-2{display:grid;grid-template-columns:1fr 1.35fr;gap:clamp(10px,calc(2.2*var(--vh)),16px);}
 
 /* ── tela 0: arte de campanha ──────────────────────────────── */
 .abertura{position:relative;justify-content:flex-start;padding-bottom:0;}
@@ -360,7 +380,7 @@ h2{
 .veredito{align-items:flex-start;}
 .slam{
   align-self:stretch;
-  padding:16px 18px;margin:0 0 16px;
+  padding:clamp(10px,calc(2.2*var(--vh)),16px) 18px;margin:0 0 clamp(10px,calc(2*var(--vh)),16px);
   animation:bate .42s cubic-bezier(.2,1.4,.35,1) both;
 }
 .slam.fisico{background:var(--preto);}
@@ -381,17 +401,17 @@ h2{
 .slam.fisico .slam-tit{color:var(--amarelo);}
 .local{
   font-family:var(--d);font-weight:700;font-size:14px;
-  color:var(--branco);margin:0 0 6px;
+  color:var(--branco);margin:0 0 clamp(3px,calc(.8*var(--vh)),6px);
 }
-.lista-kit{list-style:none;margin:12px 0 0;padding:0;}
+.lista-kit{list-style:none;margin:clamp(8px,calc(1.6*var(--vh)),12px) 0 0;padding:0;}
 .lista-kit li{
-  font-size:14px;color:var(--cinza);
-  padding:7px 0 7px 22px;position:relative;
+  font-size:clamp(13px,calc(1.9*var(--vh)),15px);color:var(--cinza);
+  padding:clamp(5px,calc(1.35*var(--vh)),8px) 0 clamp(5px,calc(1.35*var(--vh)),8px) 22px;position:relative;
   border-top:1px solid rgba(255,255,255,.10);
 }
 .lista-kit li:first-child{border-top:0;}
 .lista-kit li::before{
-  content:"";position:absolute;left:2px;top:14px;
+  content:"";position:absolute;left:2px;top:50%;transform:translateY(-50%);
   width:7px;height:7px;background:var(--amarelo);border-radius:2px;
 }
 
@@ -399,7 +419,8 @@ h2{
 .cartao-end{
   background:rgba(255,255,255,.07);
   border:1px solid rgba(255,255,255,.14);
-  border-radius:12px;padding:14px 16px;margin:0 0 18px;
+  border-radius:12px;padding:clamp(10px,calc(1.9*var(--vh)),14px) 16px;
+  margin:0 0 clamp(10px,calc(2.2*var(--vh)),18px);
 }
 .cartao-end .rot{
   font-family:var(--d);font-weight:700;font-size:10px;letter-spacing:.16em;
@@ -1643,9 +1664,15 @@ document.title = `${CFG.candidato} ${CFG.numero} — Material de campanha`;
 
 
 /* ─── altura real (teclado do celular) ──────────────────────── */
+let _baseH = 0;
 function alturaApp(){
   const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
   document.documentElement.style.setProperty('--app-h', h + 'px');
+  _baseH = Math.max(_baseH, h);
+  // teclado provavelmente aberto quando a área visível cai bastante:
+  // libera espaço escondendo a barra de passos + subtítulo e encolhendo o topo
+  const app = document.getElementById('app');
+  if(app) app.classList.toggle('kb', h < _baseH - 130);
 }
 alturaApp();
 window.addEventListener('resize', alturaApp);
