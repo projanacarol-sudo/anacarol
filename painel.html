@@ -80,6 +80,23 @@
   .modal .chk input{width:auto}
   .modal .actions{display:flex;gap:8px;margin-top:20px}
   .modal .actions .btn{flex:1;justify-content:center}
+
+/* ── Gerador de E-mail ── */
+.egrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.ecard{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.ecard .thumb{width:100%;height:150px;object-fit:cover;background:#eef1f3;display:block}
+.ecard .body{padding:12px;display:flex;flex-direction:column;gap:8px;flex:1}
+.ecard .legenda{font-size:12.5px;color:#3a4750;line-height:1.4;max-height:54px;overflow:hidden}
+.ecard .stats{font-size:12px;color:var(--muted);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.ecard .selo{background:#e6f7ee;color:#1c8a4e;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:999px}
+.ecard label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:3px}
+.ecard input,.ecard textarea{width:100%;border:1px solid #cfd8dd;border-radius:8px;padding:8px;font-size:13px;font-family:inherit}
+.ecard textarea{min-height:70px;resize:vertical}
+.ecard .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ecard .btn.sm,.ecard .btn-2.sm{padding:7px 11px;font-size:12.5px}
+.hidden{display:none!important}
+.prog{height:8px;background:#e5e9ec;border-radius:6px;overflow:hidden;margin:10px 0}
+.prog i{display:block;height:100%;width:0;background:var(--brand);transition:width .3s}
   .divider{height:1px;background:var(--line);margin:16px 0}
   .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f1c22;color:#fff;padding:11px 18px;border-radius:10px;font-size:13.5px;z-index:60;opacity:0;transition:opacity .2s}
   .toast.show{opacity:1}
@@ -155,6 +172,7 @@
     <button data-tab="email">E-mail / Funil</button>
     <button data-tab="paginas">Páginas</button>
     <button data-tab="tarefas">Tarefas</button>
+    <button data-tab="email-gen">Gerador de E-mail</button>
     <button data-tab="canais">Grupos e Redes</button>
     <button data-tab="colaboradores">Colaboradores</button>
     <button data-tab="romaneio">Romaneio Materiais</button>
@@ -227,6 +245,15 @@
     <section class="panel" id="panel-canais">
       <div class="box"><h3>Grupos de WhatsApp (SendFlow)</h3><div id="gruposWrap"></div></div>
       <div class="box"><h3>Redes sociais</h3><div id="socialWrap"></div></div>
+    </section>
+
+    <!-- ------- GERADOR DE E-MAIL ------- -->
+    <section class="panel" id="panel-email-gen">
+      <div class="toolbar" style="align-items:center">
+        <button class="btn" id="btnBuscarPosts">↻ Buscar posts do Instagram</button>
+        <span class="muted" id="emailBaseInfo" style="font-size:13px"></span>
+      </div>
+      <div class="box"><div id="postsWrap"><p class="muted" style="font-size:13px">Clique em "Buscar posts" para trazer as últimas publicações do Instagram da Ana.</p></div></div>
     </section>
 
     <!-- ------- ROMANEIO MATERIAIS ------- -->
@@ -360,6 +387,7 @@ $$("nav.tabs button").forEach(b => b.addEventListener("click", () => {
   if (b.dataset.tab==="canais") loadCanais();
   if (b.dataset.tab==="colaboradores") { abrirColabs(); resumoColabs(); }
   if (b.dataset.tab==="romaneio") { const f=$("#romaneioFrame"); if(f && !f.src) f.src="romaneio.html"; }
+  if (b.dataset.tab==="email-gen") loadEmailGen();
 }));
 
 async function resumoColabs(){
@@ -1317,6 +1345,188 @@ async function criarLogin(email){
     else toast("Erro ao criar login ("+(res.error||"")+")");
   }catch(e){ toast("Erro de conexão"); }
 }
+
+/* ================= GERADOR DE E-MAIL ================= */
+let EMAIL_POSTS = [];
+async function authHeader(){ const {data}=await sb.auth.getSession(); return {'Content-Type':'application/json','Authorization':'Bearer '+(data.session&&data.session.access_token)}; }
+
+async function loadEmailGen(){
+  try{
+    const {count}=await sb.from('leads').select('id',{count:'exact',head:true}).eq('opt_in_email',true).eq('unsubscribed_email',false);
+    $('#emailBaseInfo').textContent = (count!=null? Number(count).toLocaleString('pt-BR'):'—')+' contato(s) com opt-in receberão os envios.';
+  }catch(e){}
+  try{
+    const {data,error}=await sb.from('ig_email_posts').select('*').order('data',{ascending:false}).limit(60);
+    if(error) throw error;
+    EMAIL_POSTS=data||[]; renderPosts();
+  }catch(e){ $('#postsWrap').innerHTML='<p class="muted" style="font-size:13px">Rode o SQL <b>19_gerador_email.sql</b> no Supabase para criar a tabela, depois clique em "Buscar posts".</p>'; }
+}
+
+function renderPosts(){
+  const w=$('#postsWrap');
+  if(!EMAIL_POSTS.length){ w.innerHTML='<p class="muted" style="font-size:13px">Nenhum post ainda. Clique em "Buscar posts do Instagram".</p>'; return; }
+  w.innerHTML='<div class="egrid">'+EMAIL_POSTS.map(cardHTMLemail).join('')+'</div>';
+  w.querySelectorAll('.ecard').forEach(bindCardEmail);
+}
+
+function cardHTMLemail(p){
+  const enviado = p.enviado_em ? '<span class="selo">✓ enviado</span>':'';
+  const temGen = p.assunto||p.texto;
+  return `<div class="ecard" data-id="${esc(p.id)}">
+    <img class="thumb" src="${esc(p.imagem||'')}" alt="" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'">
+    <div class="body">
+      <div class="stats">${enviado}<span>❤ ${p.curtidas??'—'}</span><span>💬 ${p.comentarios??'—'}</span>${p.link?`<a class="lnk" href="${esc(p.link)}" target="_blank">ver post</a>`:''}</div>
+      <div class="legenda">${esc((p.legenda||'').slice(0,180))}</div>
+      <button class="btn sm gerar">✨ ${temGen?'Regerar':'Gerar informativo'}</button>
+      <div class="gen ${temGen?'':'hidden'}">
+        <div><label>Assunto</label><input data-f="assunto" value="${esc(p.assunto||'')}"></div>
+        <div><label>Preview</label><input data-f="preview" value="${esc(p.preview||'')}"></div>
+        <div><label>Texto do e-mail</label><textarea data-f="texto">${esc(p.texto||'')}</textarea></div>
+        <div class="row" style="margin-top:6px">
+          <label class="btn-2 sm" style="cursor:pointer;margin:0">Imagem<input type="file" accept="image/*" class="file" hidden></label>
+          <button class="btn-2 sm preview">👁 Visualizar</button>
+          <button class="btn sm enviar">🚀 Enviar</button>
+        </div>
+      </div>
+    </div></div>`;
+}
+
+function bindCardEmail(box){
+  const id=box.dataset.id;
+  const post=()=>EMAIL_POSTS.find(x=>x.id===id)||{};
+  const dados=()=>({
+    assunto:(box.querySelector('[data-f=assunto]').value||'').trim(),
+    preview:(box.querySelector('[data-f=preview]').value||'').trim(),
+    texto:(box.querySelector('[data-f=texto]').value||'').trim(),
+    img: post().imagem_upload||post().imagem||'',
+    link: post().link||'https://www.instagram.com/anacarolinaoliveira_oficial/'
+  });
+
+  box.querySelector('.gerar').onclick=async(e)=>{
+    const b=e.target; b.disabled=true; b.textContent='Gerando...';
+    try{
+      const r=await fetch('/api/email/gerar',{method:'POST',headers:await authHeader(),body:JSON.stringify({id,legenda:post().legenda})});
+      const d=await r.json();
+      if(d&&d.assunto){
+        Object.assign(post(),{assunto:d.assunto,preview:d.preview,texto:d.texto,prompt_imagem:d.prompt_imagem});
+        box.querySelector('.gen').classList.remove('hidden');
+        box.querySelector('[data-f=assunto]').value=d.assunto;
+        box.querySelector('[data-f=preview]').value=d.preview;
+        box.querySelector('[data-f=texto]').value=d.texto;
+        toast('Informativo gerado!');
+      } else if(d&&d.cru){ toast('A IA fugiu do formato — clique de novo.'); console.log('IA cru:',d.cru); }
+      else toast('Erro: '+((d&&d.erro)||'desconhecido'));
+    }catch(err){ toast('Erro de conexão'); }
+    b.disabled=false; b.textContent='✨ Regerar';
+  };
+
+  ['assunto','preview','texto'].forEach(f=>{ const el=box.querySelector(`[data-f=${f}]`);
+    if(el) el.addEventListener('change',async()=>{ if(post()) post()[f]=el.value;
+      try{ await fetch('/api/email/editar',{method:'POST',headers:await authHeader(),body:JSON.stringify({id,campo:f,valor:el.value})}); }catch(e){} }); });
+
+  const file=box.querySelector('.file');
+  file.onchange=()=>{ const f=file.files[0]; if(!f)return; const rd=new FileReader();
+    rd.onload=async()=>{ toast('Enviando imagem...');
+      try{ const r=await fetch('/api/email/upload',{method:'POST',headers:await authHeader(),body:JSON.stringify({id,imagem:rd.result})}); const d=await r.json();
+        if(d&&d.ok){ if(post())post().imagem_upload=d.url; box.querySelector('.thumb').src=d.url; box.querySelector('.thumb').style.visibility='visible'; toast('Imagem atualizada!'); } else toast('Falha no upload: '+((d&&d.erro)||'')); }
+      catch(e){ toast('Erro no upload'); } };
+    rd.readAsDataURL(f); };
+
+  box.querySelector('.preview').onclick=()=>{
+    const html=montarEmailHTML(dados()).replace(/%UNSUB%/g,'#');
+    $('#modalRoot').innerHTML=`<div class="overlay" id="ovp"><div class="modal" style="max-width:660px">
+      <h3>Prévia do e-mail</h3>
+      <iframe style="width:100%;height:62vh;border:1px solid var(--line);border-radius:10px;background:#fff"></iframe>
+      <div class="actions"><button class="btn ghost" id="pClose">Fechar</button></div></div></div>`;
+    $('#modalRoot').querySelector('iframe').srcdoc=html;
+    const c=()=>$('#modalRoot').innerHTML=''; $('#pClose').onclick=c; $('#ovp').onclick=e=>{if(e.target.id==='ovp')c();};
+  };
+
+  box.querySelector('.enviar').onclick=()=>abrirEnvioEmail(id,dados());
+}
+
+function montarEmailHTML(d){
+  return `<!doctype html><html><body style="margin:0;background:#f4efe9;font-family:Arial,Helvetica,sans-serif;color:#241812">
+  <span style="display:none;max-height:0;overflow:hidden">${esc(d.preview)}</span>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4efe9;padding:20px 0"><tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:14px;overflow:hidden">
+      <tr><td style="background:linear-gradient(135deg,#9a3524,#7a2418);padding:22px 24px">
+        <div style="color:#fff;font-size:20px;font-weight:800;letter-spacing:.3px">Ana Carolina Oliveira</div>
+        <div style="color:#f0d59a;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase">Deputada Federal 2026 · Podemos</div>
+      </td></tr>
+      ${d.img?`<tr><td><img src="${esc(d.img)}" width="600" style="width:100%;display:block" alt=""></td></tr>`:''}
+      <tr><td style="padding:24px">
+        <h1 style="margin:0 0 12px;font-size:20px;color:#7a2418">${esc(d.assunto)}</h1>
+        <div style="font-size:15px;line-height:1.6;color:#3a2a22;white-space:pre-line">${esc(d.texto)}</div>
+        <div style="text-align:center;margin:24px 0 6px">
+          <a href="${esc(d.link)}" style="background:#7a2418;color:#fff;text-decoration:none;font-weight:800;padding:13px 24px;border-radius:10px;display:inline-block">Ver no Instagram</a>
+        </div>
+      </td></tr>
+      <tr><td style="padding:16px 24px;border-top:1px solid #eee;background:#faf5ef">
+        <div style="font-size:11.5px;color:#8a7a6e;line-height:1.6">
+          Você recebe este e-mail por apoiar a campanha de Ana Carolina Oliveira.<br>
+          <a href="%UNSUB%" style="color:#8a7a6e">Descadastrar</a> · Podemos · Deputada Federal 2026
+        </div>
+      </td></tr>
+    </table></td></tr></table></body></html>`;
+}
+
+async function abrirEnvioEmail(postId,d){
+  if(!d.assunto||!d.texto){ toast('Gere o informativo antes de enviar.'); return; }
+  const html=montarEmailHTML(d);
+  let count='—'; try{ const {count:c}=await sb.from('leads').select('id',{count:'exact',head:true}).eq('opt_in_email',true).eq('unsubscribed_email',false); count=c??'—'; }catch(e){}
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ove"><div class="modal" style="max-width:460px">
+    <h3>Enviar e-mail</h3>
+    <p class="muted" style="font-size:13px;margin:2px 0 10px">Assunto: <b>${esc(d.assunto)}</b></p>
+    <div id="eMsg" style="display:none;padding:9px;border-radius:8px;font-size:13px;font-weight:700;margin:8px 0"></div>
+    <label style="font-size:12px;font-weight:800;color:var(--muted)">1) Enviar teste para você</label>
+    <div style="display:flex;gap:8px;margin:6px 0 16px">
+      <input id="eTeste" type="email" placeholder="seu@email.com" style="flex:1;padding:9px;border:1px solid #cfd8dd;border-radius:8px">
+      <button class="btn-2" id="btnTeste">Enviar teste</button>
+    </div>
+    <div class="prog" id="eProg" style="display:none"><i></i></div>
+    <label style="font-size:12px;font-weight:800;color:var(--muted)">2) Enviar para a base</label>
+    <p class="muted" style="font-size:12.5px;margin:4px 0 12px">${count} contato(s) com opt-in. <b>Isso não pode ser desfeito.</b></p>
+    <div class="actions"><button class="btn" id="btnMassa" style="background:#c0392b">Enviar para todos</button><button class="btn ghost" id="eClose">Fechar</button></div>
+  </div></div>`;
+  const emsg=(t,ok)=>{const e=$('#eMsg');e.style.display='block';e.style.background=ok?'#e6f7ee':'#fdecea';e.style.color=ok?'#1c8a4e':'#c0392b';e.textContent=t;};
+  const close=()=>$('#modalRoot').innerHTML=''; $('#eClose').onclick=close; $('#ove').onclick=e=>{if(e.target.id==='ove')close();};
+  $('#btnTeste').onclick=async()=>{ const para=($('#eTeste').value||'').trim(); if(!para) return emsg('Digite um e-mail.',false);
+    const b=$('#btnTeste'); b.disabled=true;
+    try{ const r=await fetch('/api/email/enviar-teste',{method:'POST',headers:await authHeader(),body:JSON.stringify({assunto:d.assunto,html,para})}); const j=await r.json();
+      emsg(j.ok?'Teste enviado! Confira sua caixa.':'Falhou: '+(j.erro||''),!!j.ok);
+    }catch(e){ emsg('Erro de conexão',false); } b.disabled=false;
+  };
+  $('#btnMassa').onclick=async()=>{
+    if(!confirm(`Enviar para ${count} pessoas? Isso NÃO pode ser desfeito.`)) return;
+    const txt=prompt('Para confirmar o envio em massa, digite: ENVIAR');
+    if((txt||'').trim().toUpperCase()!=='ENVIAR'){ emsg('Confirmação incorreta — envio cancelado.',false); return; }
+    const b=$('#btnMassa'); b.disabled=true; $('#eProg').style.display='block';
+    let offset=0,total=0;
+    try{
+      while(true){
+        const r=await fetch('/api/email/enviar-massa',{method:'POST',headers:await authHeader(),body:JSON.stringify({assunto:d.assunto,html,offset,postId})});
+        const j=await r.json();
+        if(j.erro){ emsg('Erro: '+j.erro,false); break; }
+        total+=(j.enviados_no_lote||0); offset=j.proximo_offset||offset;
+        const pct=(typeof count==='number'&&count)?Math.min(100,Math.round(total/count*100)):100;
+        $('#eProg').querySelector('i').style.width=pct+'%';
+        emsg(`Enviados ${total}${typeof count==='number'?(' de '+count):''}...`,true);
+        if(j.acabou){ emsg(`Concluído! ${total} e-mail(s) enviado(s).`,true); break; }
+      }
+    }catch(e){ emsg('Erro de conexão no envio',false); }
+    b.disabled=false; setTimeout(loadEmailGen,1200);
+  };
+}
+
+$("#btnBuscarPosts") && $("#btnBuscarPosts").addEventListener('click',async()=>{
+  const b=$('#btnBuscarPosts'); b.disabled=true; b.textContent='Buscando...';
+  try{ const r=await fetch('/api/email/apify?limit=12',{headers:await authHeader()}); const j=await r.json();
+    if(j.erro) toast('Erro: '+j.erro); else toast((j.total||0)+' post(s) trazido(s).');
+  }catch(e){ toast('Erro de conexão'); }
+  b.disabled=false; b.textContent='↻ Buscar posts do Instagram';
+  loadEmailGen();
+});
 
 /* ================= CHART HELPERS ================= */
 function destroy(id){ if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];} }
