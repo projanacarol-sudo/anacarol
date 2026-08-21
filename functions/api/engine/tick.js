@@ -142,7 +142,7 @@ async function enviaResend(env, lead, seq, step, leadId) {
   if (!from) throw new Error("sem remetente (RESEND_FROM ou funil.from_email)");
   // usa o e-mail normalizado (válido) e valida antes de chamar o Resend
   const to = String(lead.email_normalizado || lead.email || "").trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(to)) throw new Error("e-mail invalido: " + to);
+  if (!/^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$/.test(to)) throw new Error("e-mail invalido: " + to);
   const unsub = `${env.PUBLIC_BASE || ""}/api/unsub?l=${encodeURIComponent(leadId)}`;
   const html = montarHtml(step.corpo_html || "", lead, unsub);
 

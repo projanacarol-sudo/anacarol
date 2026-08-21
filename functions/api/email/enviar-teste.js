@@ -11,7 +11,7 @@ export async function onRequestPost(context) {
   const { assunto, html } = body;
   const para = String(body.para || "").trim().toLowerCase();
   if (!assunto || !html || !para) return json({ erro: "faltam assunto, html ou para" }, 200);
-  const RX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const RX = /^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$/;
   if (!RX.test(para)) return json({ erro: "e-mail de teste inválido", para }, 200);
 
   const htmlFinal = String(html).replace(/%UNSUB%/g, `${env.PUBLIC_BASE || ""}/api/unsub?l=teste`);

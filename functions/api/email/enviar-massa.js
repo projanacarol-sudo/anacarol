@@ -30,7 +30,7 @@ export async function onRequestPost(context) {
 
   // trava de segurança: 1 único `to` inválido derruba o LOTE inteiro no Resend.
   // A base (fase 32) já mantém o pool limpo; aqui garantimos de novo, barato.
-  const RX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const RX = /^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$/;   // estrito: barra *, acento, etc.
   const validos = leads
     .map(l => ({ id: l.id, email: String(l.email_normalizado || l.email || "").trim().toLowerCase() }))
     .filter(l => RX.test(l.email));
@@ -62,29 +62,59 @@ export async function onRequestPost(context) {
     body: JSON.stringify(payload),
   });
   const d = await r.json().catch(() => ({}));
-  if (!r.ok) return json({
-    erro: "Resend recusou o lote", detalhe: d, offset,
-    versao: "v74", from_usado: env.RESEND_FROM || null,
-    exemplo_to: validos.slice(0, 5).map(v => v.email),   // o que foi realmente enviado
-    total_no_lote: validos.length,
-  }, 200);
+
+  // ids aceitos (pra métricas). Se o batch passou, pega deles.
+  let sentIds = r.ok && Array.isArray(d.data) ? d.data.map(x => x && x.id).filter(Boolean) : [];
+  let recusados = [];
+
+  // FALLBACK: o batch é tudo-ou-nada — 1 endereço que o Resend rejeite derruba
+  // os 100. Reenvia UM A UM, pula os recusados e os tira do pool de envio
+  // (email_normalizado = null) pra não repetir nos próximos disparos.
+  if (!r.ok) {
+    for (const l of validos) {
+      const unsub = `${base}/api/unsub?l=${encodeURIComponent(l.id)}`;
+      const one = {
+        from: env.RESEND_FROM, to: [l.email], subject: assunto,
+        html: String(html).replace(/%UNSUB%/g, unsub),
+        headers: { "List-Unsubscribe": `<${unsub}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+        tags: postId ? [{ name: "post", value: String(postId).slice(0, 60) }] : undefined,
+      };
+      try {
+        const rr = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify(one),
+        });
+        const dd = await rr.json().catch(() => ({}));
+        if (rr.ok && dd.id) sentIds.push(dd.id); else recusados.push(l);
+      } catch (e) { recusados.push(l); }
+    }
+    if (recusados.length) {
+      console.log("[enviar-massa v74] recusados pelo Resend:", recusados.map(x => x.email).join(", "));
+      try {
+        const ids = recusados.map(x => x.id).join(",");
+        await fetch(`${env.SUPABASE_URL}/rest/v1/leads?id=in.(${ids})`, {
+          method: "PATCH",
+          headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY, "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify({ email_normalizado: null }),
+        });
+      } catch (e) {}
+    }
+  }
 
   // métricas: liga cada email_id ao post e conta enviados
-  if (postId) {
+  if (postId && sentIds.length) {
     try {
-      const ids = Array.isArray(d.data) ? d.data.map(x => x && x.id).filter(Boolean) : [];
-      if (ids.length) {
-        const rows = ids.map(eid => ({ email_id: eid, post_id: postId }));
-        await fetch(`${env.SUPABASE_URL}/rest/v1/email_sends?on_conflict=email_id`, {
-          method: "POST",
-          headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY, "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates,return=minimal" },
-          body: JSON.stringify(rows),
-        });
-      }
+      const rows = sentIds.map(eid => ({ email_id: eid, post_id: postId }));
+      await fetch(`${env.SUPABASE_URL}/rest/v1/email_sends?on_conflict=email_id`, {
+        method: "POST",
+        headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY, "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates,return=minimal" },
+        body: JSON.stringify(rows),
+      });
       await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/email_campaign_bump`, {
         method: "POST",
         headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY, "Content-Type": "application/json" },
-        body: JSON.stringify({ p_post: postId, p_campo: "enviados", p_delta: validos.length }),
+        body: JSON.stringify({ p_post: postId, p_campo: "enviados", p_delta: sentIds.length }),
       });
     } catch (e) { /* métrica não bloqueia o envio */ }
   }
@@ -103,7 +133,7 @@ export async function onRequestPost(context) {
     } catch (e) {}
   }
 
-  return json({ ok: true, enviados_no_lote: validos.length, proximo_offset: proximo, acabou }, 200);
+  return json({ ok: true, enviados_no_lote: sentIds.length, recusados: recusados.length, proximo_offset: proximo, acabou }, 200);
 }
 
 async function requireAuth(request, env) {
