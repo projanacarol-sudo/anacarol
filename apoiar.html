@@ -72,6 +72,15 @@ button,input{font:inherit;color:inherit;}
   overflow:hidden;
   display:flex;flex-direction:column;
 }
+/* DESKTOP: moldura de celular centralizada (dimensões vêm do JS) */
+#app.desktop{
+  border-radius:28px;
+  box-shadow:0 30px 90px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.05);
+}
+@media (min-width:700px){
+  body{ background:
+    radial-gradient(120% 90% at 50% -10%, #4a2412 0%, #1a0f0b 55%, #0c0908 100%) fixed; }
+}
 
 /* fundo: gradiente da campanha + marca d'água VOTE */
 .fundo{position:absolute;inset:0;z-index:0;overflow:hidden;transition:opacity .5s ease;}
@@ -1683,11 +1692,26 @@ function alturaApp(){
   document.documentElement.style.setProperty('--app-h', h + 'px');
   const app = document.getElementById('app');
   if(app && _vv){
-    app.style.top    = _vv.offsetTop + 'px';
-    app.style.left   = _vv.offsetLeft + 'px';
-    app.style.right  = 'auto';
-    app.style.width  = _vv.width + 'px';
-    app.style.height = h + 'px';
+    const full = _vv.width;
+    if(full >= 700){
+      /* DESKTOP: moldura tipo celular, centralizada (não estica o mobile) */
+      const appW = 460;
+      const appH = Math.min(_vv.height - 40, 920);
+      app.style.width  = appW + 'px';
+      app.style.height = appH + 'px';
+      app.style.left   = (_vv.offsetLeft + (full - appW)/2) + 'px';
+      app.style.top    = (_vv.offsetTop + (_vv.height - appH)/2) + 'px';
+      app.style.right  = 'auto';
+      app.classList.add('desktop');
+      document.documentElement.style.setProperty('--app-h', appH + 'px');
+    }else{
+      app.style.top    = _vv.offsetTop + 'px';
+      app.style.left   = _vv.offsetLeft + 'px';
+      app.style.right  = 'auto';
+      app.style.width  = full + 'px';
+      app.style.height = h + 'px';
+      app.classList.remove('desktop');
+    }
   }
   _baseH = Math.max(_baseH, h);
   // teclado provavelmente aberto quando a área visível cai bastante

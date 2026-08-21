@@ -195,6 +195,16 @@ async function sb(env, method, path, payload, prefer) {
 }
 
 async function findLead(env, emailNorm, e164) {
+  // unifica duplicado cruzado (e-mail x telefone) e devolve o lead canônico
+  try {
+    const r = await sb(env, "POST", "/rpc/lead_por_contato",
+      { v_email: emailNorm || null, v_e164: e164 || null });
+    const id = Array.isArray(r) ? r[0] : r;
+    if (id) {
+      const rows = await sb(env, "GET", `/leads?id=eq.${encodeURIComponent(id)}&select=*&limit=1`);
+      if (rows[0]) return rows[0];
+    }
+  } catch (e) { /* se a RPC falhar, cai no fallback simples */ }
   if (emailNorm) {
     const r = await sb(env, "GET",
       `/leads?email_normalizado=eq.${encodeURIComponent(emailNorm)}&select=*&limit=1`);

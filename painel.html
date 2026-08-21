@@ -194,6 +194,14 @@
         <div class="box"><h3>🔥 Aquecimento dos leads</h3><canvas id="chartFunil"></canvas></div>
       </div>
       <div class="box resumo" id="resumoOv"></div>
+      <div class="box" id="boxQualidade">
+        <h3 style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <span>🧹 Qualidade da base</span>
+          <button class="btn ghost" id="btnHigiene" style="font-size:13px;padding:6px 12px;">Organizar agora</button>
+        </h3>
+        <div id="qualGrid" class="placar" style="margin-top:6px;"></div>
+        <div id="qualMsg" class="dim" style="font-size:13px;margin-top:8px;"></div>
+      </div>
     </section>
 
     <!-- ------- LEADS ------- -->
@@ -493,7 +501,52 @@ async function loadOverview(){
     <div class="rz">✓ <b>${fmt(o.com_telefone)}</b> com WhatsApp para disparo 1 a 1.</div>
     <div class="rz">✓ <b>${esc(t0.uf||"—")}</b> lidera com <b>${fmt(t0.total||0)}</b> leads.</div>
     <div class="rz">✓ <b>${fmt(o.novos_30d)}</b> novos leads nos últimos 30 dias.</div>`;
+
+  loadQualidade();
 }
+
+/* ===== Qualidade da base ===== */
+function qCard(l,v){ return `<div class="kpi"><div class="lbl">${esc(l)}</div><div class="val" data-c="${Number(v||0)}">0</div></div>`; }
+function renderQualidade(q){
+  if(!q){ $("#qualGrid").innerHTML='<div class="empty">Sem dados.</div>'; return; }
+  $("#qualGrid").innerHTML = [
+    qCard("Total", q.total),
+    qCard("Com e-mail", q.com_email),
+    qCard("Com telefone", q.com_telefone),
+    qCard("Sem contato", q.sem_contato),
+    qCard("Sem origem", q.sem_origem),
+    qCard("Sem tags", q.sem_tags),
+    qCard("Dup. e-mail", q.dup_email),
+    qCard("Dup. telefone", q.dup_telefone),
+  ].join("");
+  animAll();
+  const dup=(Number(q.dup_email||0)+Number(q.dup_telefone||0));
+  $("#qualMsg").innerHTML = dup>0
+    ? `⚠️ <b>${dup}</b> duplicado(s) detectado(s) — clique em "Organizar agora" para unificar e normalizar.`
+    : `✓ Base sem duplicados óbvios. A higienização também roda sozinha no cron.`;
+}
+async function loadQualidade(){
+  try{
+    const r = await fetch("/api/higiene", { headers: await authHeader() });
+    const d = await r.json();
+    if(d && d.ok) renderQualidade(d.qualidade);
+  }catch(e){ $("#qualMsg").textContent = "Não foi possível carregar a qualidade da base."; }
+}
+async function organizarBase(){
+  const b = $("#btnHigiene"); if(b.disabled) return;
+  b.disabled = true; const t0=b.textContent; b.textContent = "Organizando…";
+  $("#qualMsg").textContent = "Unificando duplicados e normalizando…";
+  try{
+    const r = await fetch("/api/higiene", { method:"POST", headers: await authHeader() });
+    const d = await r.json();
+    if(!r.ok || !d.ok) throw new Error(d.erro||("HTTP "+r.status));
+    renderQualidade(d.qualidade);
+    const f = d.resultado && d.resultado.fundidos;
+    $("#qualMsg").innerHTML = `✓ Pronto. <b>${fmt(Number(f||0))}</b> lead(s) unificado(s). Base normalizada.`;
+  }catch(e){ $("#qualMsg").textContent = "Falhou: " + e.message; }
+  finally{ b.disabled = false; b.textContent = t0; }
+}
+document.addEventListener("click", e=>{ if(e.target && e.target.id==="btnHigiene") organizarBase(); });
 function kpi(l,v,sub){
   const isNum=typeof v==="number";
   const shown=isNum?"0":esc(String(v==null?"":v));
