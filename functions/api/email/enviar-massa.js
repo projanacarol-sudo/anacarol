@@ -52,13 +52,22 @@ export async function onRequestPost(context) {
     };
   });
 
+  // LOG do que será enviado (aparece no Cloudflare → Functions → Real-time Logs)
+  console.log("[enviar-massa v74] from:", env.RESEND_FROM,
+    "| qtd:", validos.length, "| to:", validos.map(v => v.email).join(", "));
+
   const r = await fetch("https://api.resend.com/emails/batch", {
     method: "POST",
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   const d = await r.json().catch(() => ({}));
-  if (!r.ok) return json({ erro: "Resend recusou o lote", detalhe: d, offset }, 200);
+  if (!r.ok) return json({
+    erro: "Resend recusou o lote", detalhe: d, offset,
+    versao: "v74", from_usado: env.RESEND_FROM || null,
+    exemplo_to: validos.slice(0, 5).map(v => v.email),   // o que foi realmente enviado
+    total_no_lote: validos.length,
+  }, 200);
 
   // métricas: liga cada email_id ao post e conta enviados
   if (postId) {

@@ -37,7 +37,7 @@ async function tick(env) {
   const devidos = await sb(env, "GET",
     `/lead_sequence_state?status=eq.ativo&proximo_envio_em=lte.${nowISO}` +
     `&select=id,lead_id,sequence_id,current_step_id,tentativas,ultimo_envio_em,` +
-    `leads(email,nome,unsubscribed_email),email_sequences(from_nome,from_email,ativo)` +
+    `leads(email,email_normalizado,nome,unsubscribed_email),email_sequences(from_nome,from_email,ativo)` +
     `&order=proximo_envio_em.asc&limit=${LOTE}`);
 
   let enviados = 0, concluidos = 0, pulados = 0, falhas = 0, acoes = 0;
@@ -140,6 +140,9 @@ async function enviaResend(env, lead, seq, step, leadId) {
     ? (seq.from_nome ? `${seq.from_nome} <${seq.from_email}>` : seq.from_email)
     : env.RESEND_FROM;
   if (!from) throw new Error("sem remetente (RESEND_FROM ou funil.from_email)");
+  // usa o e-mail normalizado (válido) e valida antes de chamar o Resend
+  const to = String(lead.email_normalizado || lead.email || "").trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(to)) throw new Error("e-mail invalido: " + to);
   const unsub = `${env.PUBLIC_BASE || ""}/api/unsub?l=${encodeURIComponent(leadId)}`;
   const html = montarHtml(step.corpo_html || "", lead, unsub);
 
@@ -147,7 +150,7 @@ async function enviaResend(env, lead, seq, step, leadId) {
     method: "POST",
     headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      from, to: [lead.email], subject: subjEval(step.assunto || "", lead), html,
+      from, to: [to], subject: subjEval(step.assunto || "", lead), html,
       headers: { "List-Unsubscribe": `<${unsub}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
     }),
   });
