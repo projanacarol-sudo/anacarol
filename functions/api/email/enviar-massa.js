@@ -19,7 +19,7 @@ export async function onRequestPost(context) {
   const filtro = origem
     ? `&origem_id=eq.${encodeURIComponent(String(origem))}`
     : (tag ? `&tags=cs.{${encodeURIComponent(String(tag))}}` : "");
-  const q = `/leads?select=id,email&opt_in_email=eq.true&unsubscribed_email=eq.false&email_normalizado=not.is.null${filtro}&order=id&limit=100&offset=${offset}`;
+  const q = `/leads?select=id,email,email_normalizado&opt_in_email=eq.true&unsubscribed_email=eq.false&email_normalizado=not.is.null${filtro}&order=id&limit=100&offset=${offset}`;
   let leads = [];
   try {
     const r = await fetch(`${env.SUPABASE_URL}/rest/v1${q}`, {
@@ -28,8 +28,14 @@ export async function onRequestPost(context) {
     leads = (await r.json()) || [];
   } catch (e) { return json({ erro: "falha ao ler contatos", detalhe: e.message, offset }, 200); }
 
-  const validos = leads.filter(l => l.email && l.email.includes("@"));
-  if (validos.length === 0) return json({ ok: true, acabou: true, offset }, 200);
+  // a base já mantém só e-mails válidos em email_normalizado (fase 32),
+  // então o envio é direto — sem validar por lote.
+  const validos = leads
+    .map(l => ({ id: l.id, email: String(l.email_normalizado || "").trim() }))
+    .filter(l => l.email);
+  if (validos.length === 0) {
+    return json({ ok: true, enviados_no_lote: 0, proximo_offset: offset + leads.length, acabou: leads.length < 100 }, 200);
+  }
 
   // 2) monta o lote (Resend batch: até 100), com unsub por destinatário
   const base = env.PUBLIC_BASE || "";
@@ -73,8 +79,8 @@ export async function onRequestPost(context) {
     } catch (e) { /* métrica não bloqueia o envio */ }
   }
 
-  const proximo = offset + validos.length;
-  const acabou = validos.length < 100;
+  const proximo = offset + leads.length;   // avança pelos LIDOS (não pelos válidos), senão para cedo
+  const acabou = leads.length < 100;
 
   // marca o post como enviado ao terminar
   if (acabou && postId) {
