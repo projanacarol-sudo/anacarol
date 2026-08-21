@@ -238,7 +238,7 @@ h2{
    caber em qualquer ecrã e comprimir junto quando o teclado abre */
 .tela:not([data-tela="0"]){justify-content:center;gap:clamp(10px,calc(2.2*var(--vh)),18px);}
 .tela:not([data-tela="0"]) .tela-corpo{
-  flex:0 1 auto;overflow:visible;justify-content:flex-start;
+  flex:0 0 auto;overflow:visible;justify-content:flex-start;  /* NÃO encolher: mantém altura do conteúdo p/ o auto-fit medir certo */
   padding:clamp(14px,calc(2.6*var(--vh)),22px) 18px;border-radius:18px;
   border:1px solid rgba(240,213,154,.22);
   background:
@@ -1692,6 +1692,8 @@ function alturaApp(){
   _baseH = Math.max(_baseH, h);
   // teclado provavelmente aberto quando a área visível cai bastante
   if(app) app.classList.toggle('kb', h < _baseH - 130);
+  // re-ajusta a escala da tela ativa pra caber na nova altura
+  if(typeof reajustarAtiva === 'function') requestAnimationFrame(reajustarAtiva);
 }
 alturaApp();
 window.addEventListener('resize', alturaApp);
@@ -1702,6 +1704,8 @@ if(_vv){
 }
 /* trava extra: se o Safari rolar a página mesmo assim, devolvemos ao topo */
 window.addEventListener('scroll', ()=>{ if(window.scrollY) window.scrollTo(0,0); }, { passive:true });
+/* refaz o ajuste quando a fonte carrega (a medição muda com a fonte certa) */
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{ if(typeof reajustarAtiva==='function') reajustarAtiva(); });
 
 
 /* ─── estado + navegação ────────────────────────────────────── */
@@ -1711,6 +1715,26 @@ const trilho = $('#trilho');
 const telas  = [...document.querySelectorAll('.tela')];
 const fundo  = $('#fundo');
 const btnVoltar = $('#btn-voltar');
+
+/* auto-ajuste: se o conteúdo da tela passar da altura visível, aplica uma
+   escala pra caber TUDO (sem rolagem) em qualquer aparelho. Garante que nada
+   fique cortado nem atrás do botão. */
+function ajustarTela(n){
+  const tela = telas[n];
+  if(!tela || n === 0) return;               // tela 0 é a arte, não mexe
+  tela.style.transform = '';                 // mede sem escala
+  const cs  = getComputedStyle(tela);
+  const gap = parseFloat(cs.rowGap || cs.gap) || 0;
+  let need  = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  const kids = [...tela.children].filter(el => getComputedStyle(el).display !== 'none');
+  kids.forEach((el,i)=>{ need += el.getBoundingClientRect().height; if(i>0) need += gap; });
+  const avail = tela.clientHeight;
+  if(need > avail + 1){
+    tela.style.transformOrigin = '50% 50%';
+    tela.style.transform = 'scale(' + Math.max(0.6, avail / need) + ')';
+  }
+}
+function reajustarAtiva(){ if(window.S) ajustarTela(S.tela); }
 
 function ir(n, opts={}){
   if(n === S.tela) return;
@@ -1740,6 +1764,9 @@ function ir(n, opts={}){
   }
 
   if(n === 6) montarResumo();
+  // ajusta a escala pra caber tudo (depois do layout assentar)
+  requestAnimationFrame(()=> ajustarTela(n));
+  setTimeout(()=> ajustarTela(n), 120);
   if(!opts.semFoco){
     setTimeout(()=>{
       const alvo = telas[n].querySelector('input:not([readonly]):not(.pote)');
