@@ -182,6 +182,7 @@
     <button data-tab="canais">Grupos e Redes</button>
     <button data-tab="colaboradores">Colaboradores</button>
     <button data-tab="romaneio">Romaneio Materiais</button>
+    <button data-tab="impacto">Impacto</button>
   </nav>
 
   <main>
@@ -277,6 +278,18 @@
     <section class="panel" id="panel-romaneio">
       <iframe id="romaneioFrame" title="Romaneio de materiais"
         style="width:100%;height:calc(100vh - 116px);border:0;border-radius:12px;background:#f4f7f8;display:block"></iframe>
+    </section>
+
+    <!-- ------- IMPACTO (Silêncio que Grita) ------- -->
+    <section class="panel" id="panel-impacto">
+      <div class="placar" id="impKpis"></div>
+      <div class="box">
+        <h3 style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <span>💛 Projeto Silêncio que Grita — ações realizadas</span>
+          <select id="impAno" style="font-size:13px;padding:6px 10px;border-radius:8px;"></select>
+        </h3>
+        <div id="impTabela" style="overflow:auto;"></div>
+      </div>
     </section>
 
     <!-- ------- COLABORADORES ------- -->
@@ -445,8 +458,52 @@ $$("nav.tabs button").forEach(b => b.addEventListener("click", () => {
   if (b.dataset.tab==="colaboradores") { abrirColabs(); resumoColabs(); }
   if (b.dataset.tab==="romaneio") { const f=$("#romaneioFrame"); if(f && !f.src) f.src="romaneio.html"; }
   if (b.dataset.tab==="email-gen") loadEmailGen();
+  if (b.dataset.tab==="impacto") loadImpacto();
   aplicarEdicao(b.dataset.tab);
 }));
+
+/* ---------- Impacto (Silêncio que Grita) ---------- */
+let IMPACTO=[];
+async function loadImpacto(){
+  if(!IMPACTO.length){
+    const { data } = await sb.from("impacto_psqg").select("*").order("ano",{ascending:false}).order("id");
+    IMPACTO = data || [];
+    const anos = [...new Set(IMPACTO.map(r=>r.ano))].sort((a,b)=>b-a);
+    $("#impAno").innerHTML = '<option value="">Todos os anos</option>' + anos.map(a=>`<option value="${a}">${a}</option>`).join("");
+    $("#impAno").onchange = renderImpacto;
+  }
+  renderImpacto();
+}
+function renderImpacto(){
+  const ano = $("#impAno").value;
+  const arr = ano ? IMPACTO.filter(r=>String(r.ano)===String(ano)) : IMPACTO;
+  const totalK = arr.reduce((s,r)=>s+(Number(r.criancas)||0),0);
+  const acoes = arr.length;
+  const inst = new Set(arr.map(r=>(r.instituicao||"").trim().toLowerCase()).filter(Boolean)).size;
+  const cidades = new Set(arr.map(r=>(r.local_txt||"").trim().toLowerCase()).filter(Boolean)).size;
+  $("#impKpis").innerHTML = [
+    kpi("Crianças e adolescentes", totalK),
+    kpi("Ações realizadas", acoes),
+    kpi("Instituições / ambientes", inst),
+    kpi("Locais alcançados", cidades),
+  ].join("");
+  animAll();
+  const linhas = arr.map(r=>`<tr>
+    <td>${esc(r.ano)}</td><td>${esc(r.data_txt||"")}</td>
+    <td><b>${esc(r.instituicao||"")}</b></td><td>${esc(r.local_txt||"")}</td>
+    <td style="text-align:right">${r.criancas!=null?fmt(r.criancas):"—"}</td>
+    <td>${esc(r.pais||"")}</td><td>${esc(r.educadores||"")}</td>
+    <td>${esc(r.responsavel||"")}</td><td class="muted">${esc(r.contato||"")}</td>
+  </tr>`).join("");
+  $("#impTabela").innerHTML = `<table class="tbl" style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr style="text-align:left;border-bottom:1px solid rgba(0,0,0,.12)">
+      <th>Ano</th><th>Data</th><th>Instituição / ambiente</th><th>Local</th>
+      <th style="text-align:right">Crianças</th><th>Pais</th><th>Educ.</th><th>Responsável</th><th>Contato</th>
+    </tr></thead><tbody>${linhas||'<tr><td colspan="9" class="muted">Sem dados.</td></tr>'}</tbody></table>`;
+  $$("#impTabela tbody tr").forEach(tr=>{ tr.style.borderBottom="1px solid rgba(0,0,0,.06)"; });
+  $$("#impTabela td").forEach(td=>{ td.style.padding="7px 8px"; });
+  $$("#impTabela th").forEach(th=>{ th.style.padding="8px"; });
+}
 
 async function resumoColabs(){
   try{
