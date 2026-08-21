@@ -8,8 +8,11 @@ export async function onRequestPost(context) {
   if (!env.RESEND_API_KEY) return json({ erro: "falta RESEND_API_KEY" }, 200);
 
   let body = {}; try { body = await request.json(); } catch (e) {}
-  const { assunto, html, para } = body;
+  const { assunto, html } = body;
+  const para = String(body.para || "").trim().toLowerCase();
   if (!assunto || !html || !para) return json({ erro: "faltam assunto, html ou para" }, 200);
+  const RX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  if (!RX.test(para)) return json({ erro: "e-mail de teste inválido", para }, 200);
 
   const htmlFinal = String(html).replace(/%UNSUB%/g, `${env.PUBLIC_BASE || ""}/api/unsub?l=teste`);
   const r = await fetch("https://api.resend.com/emails", {

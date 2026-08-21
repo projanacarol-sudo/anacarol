@@ -28,11 +28,12 @@ export async function onRequestPost(context) {
     leads = (await r.json()) || [];
   } catch (e) { return json({ erro: "falha ao ler contatos", detalhe: e.message, offset }, 200); }
 
-  // a base já mantém só e-mails válidos em email_normalizado (fase 32),
-  // então o envio é direto — sem validar por lote.
+  // trava de segurança: 1 único `to` inválido derruba o LOTE inteiro no Resend.
+  // A base (fase 32) já mantém o pool limpo; aqui garantimos de novo, barato.
+  const RX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   const validos = leads
-    .map(l => ({ id: l.id, email: String(l.email_normalizado || "").trim() }))
-    .filter(l => l.email);
+    .map(l => ({ id: l.id, email: String(l.email_normalizado || l.email || "").trim().toLowerCase() }))
+    .filter(l => RX.test(l.email));
   if (validos.length === 0) {
     return json({ ok: true, enviados_no_lote: 0, proximo_offset: offset + leads.length, acabou: leads.length < 100 }, 200);
   }
