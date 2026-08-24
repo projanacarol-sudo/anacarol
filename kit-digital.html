@@ -15,13 +15,17 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" />
 <style>
 :root{
-  --preto:#120F11; --preto-2:#1C181A; --laranja:#CC532A; --amarelo:#F9BE15; --marinho:#232A3B;
-  --creme:#FBF7EF; --creme-2:#F3EDE1; --linha:#E4DCCB; --ink:#120F11; --ink-soft:#5B534F;
+  /* paleta Ana Carolina (mesma da página APOIAR) */
+  --preto:#0c0908; --preto-2:#17100F; --laranja:#9a3524; --amarelo:#e0a53a; --amarelo-2:#f0d59a;
+  --marinho:#231712;
+  --creme:#0c0908; --creme-2:#17100F; --linha:rgba(255,255,255,.12);
+  --ink:#FFFFFF; --ink-soft:rgba(255,255,255,.62);
   --w50:rgba(255,255,255,.5); --w12:rgba(255,255,255,.12);
   --pill:9999px; --font:"Poppins",ui-sans-serif,system-ui,sans-serif;
 }
 *,*::before,*::after{ box-sizing:border-box } *{ margin:0; padding:0 }
-body{ background:var(--creme); color:var(--ink); font-family:var(--font); line-height:1.55;
+body{ color:var(--ink); font-family:var(--font); line-height:1.55;
+  background:linear-gradient(160deg, #0c0908 0%, #17100F 60%, #241611 100%) fixed;
   -webkit-font-smoothing:antialiased; min-height:100vh; display:flex; flex-direction:column }
 img{ display:block; max-width:100% } a{ color:inherit; text-decoration:none }
 button{ font:inherit; color:inherit; background:none; border:none; cursor:pointer }
@@ -34,8 +38,9 @@ svg{ display:block; flex-shrink:0 } ul{ list-style:none }
   font-weight:900; font-size:.9rem; letter-spacing:.04em; text-transform:uppercase; padding:1rem 1.6rem;
   transition:transform .16s, background-color .16s }
 .btn:hover{ transform:translateY(-2px) }
-.btn-lar{ background:var(--laranja); color:#fff } .btn-lar:hover{ background:#e06034 }
-.btn-preto{ background:var(--preto); color:#fff }
+.btn-lar{ background:var(--laranja); color:#fff } .btn-lar:hover{ background:#b23f2b }
+.btn-preto{ background:rgba(255,255,255,.08); color:#fff; border:1px solid var(--linha) }
+.btn-preto:hover{ background:rgba(255,255,255,.14) }
 .btn-linha{ border:2px solid currentColor }
 .btn:disabled{ opacity:.4; cursor:not-allowed; transform:none }
 
@@ -58,7 +63,7 @@ h1{ margin-top:.8rem; font-weight:900; text-transform:uppercase; letter-spacing:
   background:var(--creme-2); border:1px solid var(--linha) }
 .aba{ padding:.6rem 1.3rem; border-radius:var(--pill); font-size:.78rem; font-weight:900;
   letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); transition:.15s }
-.aba.on{ background:var(--preto); color:#fff }
+.aba.on{ background:var(--amarelo); color:var(--preto) }
 
 .editor{ display:grid; gap:2rem; margin-top:1.5rem }
 @media (min-width:860px){ .editor{ grid-template-columns:1fr 19rem; gap:3rem; align-items:start } }
@@ -77,8 +82,8 @@ h1{ margin-top:.8rem; font-weight:900; text-transform:uppercase; letter-spacing:
 .molduras{ display:flex; flex-wrap:wrap; gap:.6rem; margin-bottom:1.5rem }
 .mini{ width:4.2rem; text-align:center }
 .mini img{ width:4.2rem; height:4.2rem; object-fit:contain; border-radius:.7rem; padding:.2rem;
-  background:var(--creme-2); border:2px solid var(--linha); transition:.15s }
-.mini.on img{ border-color:var(--laranja); background:#fff }
+  background:rgba(255,255,255,.05); border:2px solid var(--linha); transition:.15s }
+.mini.on img{ border-color:var(--amarelo); background:rgba(255,255,255,.1) }
 .mini span{ display:block; margin-top:.3rem; font-size:.66rem; font-weight:800; color:var(--ink-soft) }
 .enviar{ width:100%; cursor:pointer }
 .ctrl{ margin-top:1.5rem; padding:1.1rem; border:1px solid var(--linha); border-radius:1rem; background:var(--creme-2) }
@@ -88,11 +93,11 @@ h1{ margin-top:.8rem; font-weight:900; text-transform:uppercase; letter-spacing:
 .ctrl-bts{ display:flex; align-items:center; gap:.5rem }
 .ctrl-bts input[type=range]{ flex:1; accent-color:var(--laranja) }
 .bt{ display:grid; place-items:center; width:2.9rem; height:2.9rem; flex-shrink:0;
-  border-radius:.7rem; background:#fff; border:2px solid var(--linha);
-  font-size:1.3rem; font-weight:900; line-height:1; color:var(--preto);
+  border-radius:.7rem; background:rgba(255,255,255,.06); border:2px solid var(--linha);
+  font-size:1.3rem; font-weight:900; line-height:1; color:#fff;
   transition:.12s; user-select:none; -webkit-user-select:none; touch-action:manipulation }
-.bt:hover{ border-color:var(--laranja); color:var(--laranja) }
-.bt:active{ transform:scale(.94); background:var(--amarelo) }
+.bt:hover{ border-color:var(--amarelo); color:var(--amarelo) }
+.bt:active{ transform:scale(.94); background:var(--amarelo); color:var(--preto) }
 .bt-larg{ flex:1; width:auto } .bt-centro{ font-size:2rem }
 .dpad{ display:grid; grid-template-columns:repeat(3,2.9rem); grid-template-rows:repeat(3,2.9rem);
   gap:.4rem; justify-content:center }
@@ -121,7 +126,7 @@ h1{ margin-top:.8rem; font-weight:900; text-transform:uppercase; letter-spacing:
 .folha .btn{ width:100%; margin-top:.6rem } .folha .btn svg{ width:1.1rem; height:1.1rem }
 .alvos{ display:grid; gap:.6rem; margin:1.2rem 0 1rem }
 .alvo{ display:flex; align-items:center; gap:.9rem; width:100%; padding:.9rem 1rem; border-radius:.9rem;
-  border:2px solid var(--linha); background:#fff; text-align:left; transition:.14s }
+  border:2px solid var(--linha); background:var(--preto-2); color:#fff; text-align:left; transition:.14s }
 .alvo:active{ transform:scale(.98) }
 .alvo-wa:hover{ border-color:#25D366 } .alvo-ig:hover{ border-color:#E1306C }
 .alvo-i{ display:grid; place-items:center; width:2.6rem; height:2.6rem; border-radius:.7rem; flex-shrink:0 }
@@ -130,6 +135,11 @@ h1{ margin-top:.8rem; font-weight:900; text-transform:uppercase; letter-spacing:
 .alvo-t b{ display:block; font-size:.92rem; font-weight:900; letter-spacing:-.01em }
 .alvo-t span{ display:block; margin-top:.1rem; font-size:.76rem; color:var(--ink-soft) }
 
+.artes{ display:grid; grid-template-columns:repeat(auto-fill,minmax(9rem,1fr)); gap:1rem; margin-top:.9rem }
+.arte{ background:var(--creme-2); border:1px solid var(--linha); border-radius:1rem; overflow:hidden }
+.arte img{ width:100%; aspect-ratio:1; object-fit:cover; background:var(--marinho); display:block }
+.arte button{ width:100%; padding:.7rem; font-size:.72rem; font-weight:900; letter-spacing:.08em; text-transform:uppercase; color:var(--amarelo) }
+.arte button:hover{ color:#fff; background:rgba(255,255,255,.06) }
 .rodape{ background:var(--preto); color:var(--w50); padding-block:2rem; font-size:.75rem; text-align:center }
 .rodape strong{ display:block; color:rgba(255,255,255,.75); font-weight:700; margin-bottom:.5rem }
 .rodape a{ color:var(--amarelo) }
@@ -209,6 +219,11 @@ h1{ margin-top:.8rem; font-weight:900; text-transform:uppercase; letter-spacing:
         <button class="btn btn-linha" type="button" id="trocar" hidden>Trocar foto</button>
       </div>
     </div>
+
+    <section style="margin-top:3.2rem">
+      <span class="rot">Artes para baixar e compartilhar</span>
+      <div class="artes" id="artes"></div>
+    </section>
   </div>
 </main>
 
@@ -225,18 +240,28 @@ h1{ margin-top:.8rem; font-weight:900; text-transform:uppercase; letter-spacing:
 </div>
 
 <script>
-/* Molduras hospedadas no MESMO domínio (sem CORS/proxy).
-   Troque estes PNGs pelos oficiais da Ana em /artes/molduras/.        */
-var MOLD_BASE = 'artes/molduras/';
+/* Molduras oficiais no R2 da campanha. O download passa pelo /api/img
+   (proxy com CORS) pra o canvas não "sujar". */
+var R2    = 'https://pub-d8c17953a575480084b80982d84262c2.r2.dev/materiais%20ana/';
+var PROXY = '/api/img?u=';
 var MOLDURAS = {
   perfil: [
-    { n:'Eu voto', u: MOLD_BASE + 'perfil-eu-voto.png' },
-    { n:'Amarela', u: MOLD_BASE + 'perfil-amarela.png' }
+    { n:'Moldura 1', u: R2 + 'Filtro%20FEED%20e%20Perfil%20ANA/1.png' },
+    { n:'Moldura 2', u: R2 + 'Filtro%20FEED%20e%20Perfil%20ANA/2.png' },
+    { n:'Moldura 3', u: R2 + 'Filtro%20FEED%20e%20Perfil%20ANA/3.png' },
+    { n:'Moldura 4', u: R2 + 'Filtro%20FEED%20e%20Perfil%20ANA/4.png' }
   ],
   story: [
-    { n:'Eu voto', u: MOLD_BASE + 'story-eu-voto.png' }
+    { n:'Story 1', u: R2 + 'Filtro%20Story%20ANA/1.png' },
+    { n:'Story 2', u: R2 + 'Filtro%20Story%20ANA/2.png' },
+    { n:'Story 3', u: R2 + 'Filtro%20Story%20ANA/3.png' }
   ]
 };
+/* artes prontas para baixar */
+var ARTES = [
+  { n:'Arte 1', u: R2 + 'Artes%20para%20baixar/4.PNG' },
+  { n:'Arte 2', u: R2 + 'Artes%20para%20baixar/5.PNG' }
+];
 var E = { fmt:'perfil', idx:0, foto:null, moldura:null, escala:1, dx:0, dy:0, rot:0 };
 var tela = document.getElementById('tela');
 var ctx  = tela.getContext('2d');
@@ -269,11 +294,19 @@ function desenhar(){
 function carregarMoldura(){
   var lista = MOLDURAS[E.fmt];
   var m = lista[Math.min(E.idx, lista.length - 1)];
-  var img = new Image();
-  if (/^https?:\/\//i.test(m.u)) img.crossOrigin = 'anonymous';   // só p/ molduras externas
-  img.onload  = function(){ E.moldura = img; desenhar(); };
-  img.onerror = function(){ E.moldura = null; desenhar(); };
-  img.src = m.u;
+  function tentar(url, comCors, aoFalhar){
+    var img = new Image();
+    if (comCors) img.crossOrigin = 'anonymous';
+    img.onload  = function(){ E.moldura = img; desenhar(); };
+    img.onerror = aoFalhar;
+    img.src = url;
+  }
+  // 1) direto do R2 (se mandar CORS); 2) pelo proxy /api/img; 3) sem CORS (só exibe)
+  tentar(m.u, true, function(){
+    tentar(PROXY + encodeURIComponent(m.u), true, function(){
+      tentar(m.u, false, function(){ E.moldura = null; desenhar(); });
+    });
+  });
 }
 
 function miniaturas(){
@@ -413,7 +446,24 @@ function comoFazer(id){
 document.getElementById('modal').addEventListener('click', function(e){ if(!e.target.hasAttribute('data-fechar')) return; document.getElementById('modal').classList.remove('open'); document.body.style.overflow=''; });
 document.addEventListener('keydown', function(e){ if(e.key!=='Escape') return; document.getElementById('modal').classList.remove('open'); document.body.style.overflow=''; });
 
-miniaturas(); carregarMoldura(); desenhar();
+/* galeria de artes prontas */
+function baixarArte(url, nome){
+  fetch(PROXY + encodeURIComponent(url)).then(function(r){ return r.blob(); }).then(function(bl){
+    var a = document.createElement('a'); a.href = URL.createObjectURL(bl); a.download = nome;
+    document.body.appendChild(a); a.click(); a.remove();
+  }).catch(function(){ window.open(url, '_blank'); });
+}
+function renderArtes(){
+  var box = document.getElementById('artes'); if (!box) return; box.innerHTML = '';
+  ARTES.forEach(function(a, i){
+    var c = document.createElement('div'); c.className = 'arte';
+    c.innerHTML = '<img src="' + a.u + '" alt="' + a.n + '" loading="lazy"><button type="button">Baixar</button>';
+    c.querySelector('button').addEventListener('click', function(){ baixarArte(a.u, 'ana-carolina-2026-arte-' + (i + 1) + '.png'); });
+    box.appendChild(c);
+  });
+}
+
+miniaturas(); carregarMoldura(); desenhar(); renderArtes();
 </script>
 </body>
 </html>
