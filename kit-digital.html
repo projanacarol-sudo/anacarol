@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Kit Mídia Digital · Ana Carolina Oliveira 2026</title>
+<meta name="description" content="Coloque o 2026 na sua foto e baixe o Kit Mídia Digital. Apoie Ana Carolina Oliveira 2026 para Deputada Federal por São Paulo." />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="pt_BR" />
+<meta property="og:title" content="Kit Mídia Digital · Ana Carolina Oliveira 2026" />
+<meta property="og:description" content="Coloque o 2026 na sua foto e compartilhe. Rápido, sem cadastro." />
+<meta name="theme-color" content="#120F11" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" />
+<style>
+:root{
+  --preto:#120F11; --preto-2:#1C181A; --laranja:#CC532A; --amarelo:#F9BE15; --marinho:#232A3B;
+  --creme:#FBF7EF; --creme-2:#F3EDE1; --linha:#E4DCCB; --ink:#120F11; --ink-soft:#5B534F;
+  --w50:rgba(255,255,255,.5); --w12:rgba(255,255,255,.12);
+  --pill:9999px; --font:"Poppins",ui-sans-serif,system-ui,sans-serif;
+}
+*,*::before,*::after{ box-sizing:border-box } *{ margin:0; padding:0 }
+body{ background:var(--creme); color:var(--ink); font-family:var(--font); line-height:1.55;
+  -webkit-font-smoothing:antialiased; min-height:100vh; display:flex; flex-direction:column }
+img{ display:block; max-width:100% } a{ color:inherit; text-decoration:none }
+button{ font:inherit; color:inherit; background:none; border:none; cursor:pointer }
+svg{ display:block; flex-shrink:0 } ul{ list-style:none }
+:focus-visible{ outline:3px solid var(--laranja); outline-offset:3px; border-radius:4px }
+.wrap{ width:100%; max-width:64rem; margin-inline:auto; padding-inline:1.25rem }
+@media (min-width:640px){ .wrap{ padding-inline:2rem } }
+
+.btn{ display:inline-flex; align-items:center; justify-content:center; gap:.6rem; border-radius:var(--pill);
+  font-weight:900; font-size:.9rem; letter-spacing:.04em; text-transform:uppercase; padding:1rem 1.6rem;
+  transition:transform .16s, background-color .16s }
+.btn:hover{ transform:translateY(-2px) }
+.btn-lar{ background:var(--laranja); color:#fff } .btn-lar:hover{ background:#e06034 }
+.btn-preto{ background:var(--preto); color:#fff }
+.btn-linha{ border:2px solid currentColor }
+.btn:disabled{ opacity:.4; cursor:not-allowed; transform:none }
+
+.topo{ background:var(--preto); border-bottom:1px solid var(--w12) }
+.topo .wrap{ display:flex; align-items:center; gap:.7rem; height:4.2rem }
+.num{ display:inline-flex; align-items:center; justify-content:center; height:2.4rem; padding-inline:.7rem;
+  border-radius:.5rem; background:var(--amarelo); color:var(--preto); font-weight:900; font-size:1rem }
+.marca{ color:#fff; font-weight:900; text-transform:uppercase; letter-spacing:-.02em; line-height:1; font-size:.95rem }
+.marca small{ display:block; margin-top:.2rem; font-size:.6rem; font-weight:800; letter-spacing:.16em; color:var(--amarelo) }
+.topo a.voltar{ margin-left:auto; font-size:.72rem; font-weight:900; letter-spacing:.1em; text-transform:uppercase; color:var(--w50) }
+.topo a.voltar:hover{ color:var(--amarelo) }
+
+main{ flex:1; padding-block:clamp(2rem,5vw,3.5rem) }
+.chapeu{ display:inline-block; font-size:.7rem; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:var(--laranja) }
+h1{ margin-top:.8rem; font-weight:900; text-transform:uppercase; letter-spacing:-.03em; line-height:.98;
+  font-size:clamp(1.9rem,6vw,3.2rem); text-wrap:balance }
+.sub{ margin-top:1.1rem; max-width:38rem; font-size:1rem; line-height:1.65; color:var(--ink-soft) }
+
+.abas{ display:inline-flex; gap:.3rem; padding:.3rem; margin-top:2rem; border-radius:var(--pill);
+  background:var(--creme-2); border:1px solid var(--linha) }
+.aba{ padding:.6rem 1.3rem; border-radius:var(--pill); font-size:.78rem; font-weight:900;
+  letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); transition:.15s }
+.aba.on{ background:var(--preto); color:#fff }
+
+.editor{ display:grid; gap:2rem; margin-top:1.5rem }
+@media (min-width:860px){ .editor{ grid-template-columns:1fr 19rem; gap:3rem; align-items:start } }
+.palco{ position:relative; width:100%; max-width:28rem; margin-inline:auto; aspect-ratio:1;
+  border-radius:1.2rem; overflow:hidden; background:var(--marinho) }
+.palco.story{ aspect-ratio:9/16; max-width:19rem }
+.palco canvas{ width:100%; height:100%; display:block; touch-action:none; cursor:grab }
+.palco canvas:active{ cursor:grabbing }
+.vazio{ position:absolute; inset:0; display:grid; place-content:center; justify-items:center; gap:.8rem;
+  color:var(--w50); pointer-events:none; text-align:center; padding:1.5rem }
+.vazio svg{ width:2.6rem; height:2.6rem }
+.vazio span{ font-size:.85rem; font-weight:700 }
+
+.rot{ display:block; font-size:.66rem; font-weight:900; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-soft); margin-bottom:.7rem }
+.molduras{ display:flex; flex-wrap:wrap; gap:.6rem; margin-bottom:1.5rem }
+.mini{ width:4.2rem; text-align:center }
+.mini img{ width:4.2rem; height:4.2rem; object-fit:contain; border-radius:.7rem; padding:.2rem;
+  background:var(--creme-2); border:2px solid var(--linha); transition:.15s }
+.mini.on img{ border-color:var(--laranja); background:#fff }
+.mini span{ display:block; margin-top:.3rem; font-size:.66rem; font-weight:800; color:var(--ink-soft) }
+.enviar{ width:100%; cursor:pointer }
+.ctrl{ margin-top:1.5rem; padding:1.1rem; border:1px solid var(--linha); border-radius:1rem; background:var(--creme-2) }
+.ctrl-linha{ margin-bottom:1.1rem } .ctrl-linha:last-of-type{ margin-bottom:0 }
+.ctrl-nome{ display:block; font-size:.72rem; font-weight:900; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-soft); margin-bottom:.5rem }
+.ctrl-bts{ display:flex; align-items:center; gap:.5rem }
+.ctrl-bts input[type=range]{ flex:1; accent-color:var(--laranja) }
+.bt{ display:grid; place-items:center; width:2.9rem; height:2.9rem; flex-shrink:0;
+  border-radius:.7rem; background:#fff; border:2px solid var(--linha);
+  font-size:1.3rem; font-weight:900; line-height:1; color:var(--preto);
+  transition:.12s; user-select:none; -webkit-user-select:none; touch-action:manipulation }
+.bt:hover{ border-color:var(--laranja); color:var(--laranja) }
+.bt:active{ transform:scale(.94); background:var(--amarelo) }
+.bt-larg{ flex:1; width:auto } .bt-centro{ font-size:2rem }
+.dpad{ display:grid; grid-template-columns:repeat(3,2.9rem); grid-template-rows:repeat(3,2.9rem);
+  gap:.4rem; justify-content:center }
+.dpad .bt:nth-child(1){ grid-column:2; grid-row:1 }
+.dpad .bt:nth-child(2){ grid-column:1; grid-row:2 }
+.dpad .bt:nth-child(3){ grid-column:2; grid-row:2 }
+.dpad .bt:nth-child(4){ grid-column:3; grid-row:2 }
+.dpad .bt:nth-child(5){ grid-column:2; grid-row:3 }
+.dica{ margin-top:.9rem; font-size:.75rem; color:var(--ink-soft); text-align:center }
+#baixar{ width:100%; margin-top:1.5rem }
+#trocar{ width:100%; margin-top:.6rem; padding:.7rem 1rem; font-size:.75rem }
+
+.modal{ position:fixed; inset:0; z-index:90; display:none; align-items:center; justify-content:center; padding:1.25rem }
+.modal.open{ display:flex }
+.modal-bg{ position:absolute; inset:0; background:rgba(18,15,17,.82) }
+.folha{ position:relative; width:100%; max-width:27rem; max-height:92vh; overflow:auto;
+  background:var(--creme); border-radius:1.4rem; padding:1.4rem; animation:sobe .3s cubic-bezier(.22,.61,.36,1) both }
+@keyframes sobe{ from{ opacity:0; transform:translateY(16px) } to{ opacity:1; transform:none } }
+.selo{ display:inline-block; padding:.3rem .7rem; border-radius:.35rem; background:#25D366; color:#fff;
+  font-size:.62rem; font-weight:900; letter-spacing:.14em; text-transform:uppercase }
+.folha h2{ margin-top:.9rem; font-size:1.4rem; font-weight:900; letter-spacing:-.02em; line-height:1.15 }
+.folha p{ margin-top:.6rem; font-size:.92rem; line-height:1.6; color:var(--ink-soft) }
+.passos{ margin:1.2rem 0; display:grid; gap:.7rem }
+.passos li{ padding:.8rem 1rem; border-radius:.7rem; background:var(--creme-2); border:1px solid var(--linha) }
+.passos b{ display:block; font-size:.86rem; font-weight:900 }
+.folha .btn{ width:100%; margin-top:.6rem } .folha .btn svg{ width:1.1rem; height:1.1rem }
+.alvos{ display:grid; gap:.6rem; margin:1.2rem 0 1rem }
+.alvo{ display:flex; align-items:center; gap:.9rem; width:100%; padding:.9rem 1rem; border-radius:.9rem;
+  border:2px solid var(--linha); background:#fff; text-align:left; transition:.14s }
+.alvo:active{ transform:scale(.98) }
+.alvo-wa:hover{ border-color:#25D366 } .alvo-ig:hover{ border-color:#E1306C }
+.alvo-i{ display:grid; place-items:center; width:2.6rem; height:2.6rem; border-radius:.7rem; flex-shrink:0 }
+.alvo-i svg{ width:1.4rem; height:1.4rem }
+.alvo-wa .alvo-i{ background:#25D366; color:#fff } .alvo-ig .alvo-i{ background:#E1306C; color:#fff }
+.alvo-t b{ display:block; font-size:.92rem; font-weight:900; letter-spacing:-.01em }
+.alvo-t span{ display:block; margin-top:.1rem; font-size:.76rem; color:var(--ink-soft) }
+
+.rodape{ background:var(--preto); color:var(--w50); padding-block:2rem; font-size:.75rem; text-align:center }
+.rodape strong{ display:block; color:rgba(255,255,255,.75); font-weight:700; margin-bottom:.5rem }
+.rodape a{ color:var(--amarelo) }
+@media (prefers-reduced-motion:reduce){ *{ animation-duration:.01ms !important; transition-duration:.01ms !important } }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="wrap">
+    <span class="num">2026</span>
+    <span class="marca">Ana Carolina Oliveira<small>Podemos · São Paulo</small></span>
+    <a class="voltar" href="https://anacarolinaoliveira.com.br">Ir para o site</a>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <span class="chapeu">Kit Mídia Digital</span>
+    <h1>Coloque o 2026 na sua foto</h1>
+    <p class="sub">Envie sua foto, escolha a moldura e ajuste o enquadramento. Fica pronta em segundos e sua foto não sai do seu aparelho.</p>
+
+    <div class="abas" id="abas">
+      <button type="button" class="aba on" data-fmt="perfil">Foto de perfil</button>
+      <button type="button" class="aba" data-fmt="story">Story</button>
+    </div>
+
+    <div class="editor">
+      <div class="palco" id="palco">
+        <canvas id="tela"></canvas>
+        <div class="vazio" id="vazio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M8 5 9.5 3h5L16 5"/></svg>
+          <span>Sua foto aparece aqui</span>
+        </div>
+      </div>
+
+      <div>
+        <span class="rot">Escolha a moldura</span>
+        <div class="molduras" id="molduras"></div>
+
+        <label class="btn btn-preto enviar">
+          Selecionar sua foto
+          <input type="file" id="arquivo" accept="image/*" hidden />
+        </label>
+
+        <div class="ctrl" id="zoom" hidden>
+          <span class="rot">Ajuste sua foto</span>
+          <div class="ctrl-linha">
+            <span class="ctrl-nome">Tamanho</span>
+            <div class="ctrl-bts">
+              <button type="button" class="bt" data-zoom="-10" aria-label="Diminuir">−</button>
+              <input type="range" id="escala" min="100" max="300" value="100" />
+              <button type="button" class="bt" data-zoom="10" aria-label="Aumentar">+</button>
+            </div>
+          </div>
+          <div class="ctrl-linha">
+            <span class="ctrl-nome">Posição</span>
+            <div class="dpad">
+              <button type="button" class="bt" data-mover="0,-1" aria-label="Para cima">↑</button>
+              <button type="button" class="bt" data-mover="-1,0" aria-label="Para a esquerda">←</button>
+              <button type="button" class="bt bt-centro" id="centralizar" aria-label="Centralizar">•</button>
+              <button type="button" class="bt" data-mover="1,0" aria-label="Para a direita">→</button>
+              <button type="button" class="bt" data-mover="0,1" aria-label="Para baixo">↓</button>
+            </div>
+          </div>
+          <div class="ctrl-linha">
+            <span class="ctrl-nome">Girar</span>
+            <div class="ctrl-bts">
+              <button type="button" class="bt bt-larg" data-girar="-5" aria-label="Girar para a esquerda">↺</button>
+              <button type="button" class="bt bt-larg" data-girar="5" aria-label="Girar para a direita">↻</button>
+            </div>
+          </div>
+          <p class="dica">Você também pode arrastar a foto com o dedo.</p>
+        </div>
+
+        <button class="btn btn-lar" type="button" id="baixar" disabled>Usar minha foto</button>
+        <button class="btn btn-linha" type="button" id="trocar" hidden>Trocar foto</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="rodape">
+  <div class="wrap">
+    <strong>ANA CAROLINA OLIVEIRA 2026 · DEPUTADA FEDERAL POR SÃO PAULO</strong>
+    Propaganda eleitoral · PODEMOS · Eleição 2026 · CNPJ 68.492.090/0001-19
+  </div>
+</footer>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true">
+  <div class="modal-bg" data-fechar></div>
+  <div class="folha" id="folha"></div>
+</div>
+
+<script>
+/* Molduras hospedadas no MESMO domínio (sem CORS/proxy).
+   Troque estes PNGs pelos oficiais da Ana em /artes/molduras/.        */
+var MOLD_BASE = 'artes/molduras/';
+var MOLDURAS = {
+  perfil: [
+    { n:'Eu voto', u: MOLD_BASE + 'perfil-eu-voto.png' },
+    { n:'Amarela', u: MOLD_BASE + 'perfil-amarela.png' }
+  ],
+  story: [
+    { n:'Eu voto', u: MOLD_BASE + 'story-eu-voto.png' }
+  ]
+};
+var E = { fmt:'perfil', idx:0, foto:null, moldura:null, escala:1, dx:0, dy:0, rot:0 };
+var tela = document.getElementById('tela');
+var ctx  = tela.getContext('2d');
+
+function tamanho(){ return E.fmt === 'story' ? { w:1080, h:1920 } : { w:1080, h:1080 }; }
+
+function desenhar(){
+  var t = tamanho();
+  if (tela.width !== t.w || tela.height !== t.h) { tela.width = t.w; tela.height = t.h; }
+  ctx.clearRect(0, 0, t.w, t.h);
+  if (E.foto) {
+    var a = E.rot * Math.PI / 180;
+    var folga = Math.abs(Math.cos(a)) + Math.abs(Math.sin(a));
+    var k = Math.max(t.w / E.foto.width, t.h / E.foto.height) * folga * E.escala;
+    var lw = E.foto.width * k, lh = E.foto.height * k;
+    ctx.save();
+    ctx.translate(t.w / 2 + E.dx, t.h / 2 + E.dy);
+    ctx.rotate(a);
+    ctx.drawImage(E.foto, -lw / 2, -lh / 2, lw, lh);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = '#232A3B'; ctx.fillRect(0, 0, t.w, t.h);
+  }
+  if (E.moldura) {
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(E.moldura, 0, 0, t.w, t.h);
+  }
+}
+
+function carregarMoldura(){
+  var lista = MOLDURAS[E.fmt];
+  var m = lista[Math.min(E.idx, lista.length - 1)];
+  var img = new Image();
+  if (/^https?:\/\//i.test(m.u)) img.crossOrigin = 'anonymous';   // só p/ molduras externas
+  img.onload  = function(){ E.moldura = img; desenhar(); };
+  img.onerror = function(){ E.moldura = null; desenhar(); };
+  img.src = m.u;
+}
+
+function miniaturas(){
+  var box = document.getElementById('molduras'); box.innerHTML = '';
+  MOLDURAS[E.fmt].forEach(function(m, i){
+    var b = document.createElement('button'); b.type = 'button';
+    b.className = 'mini' + (i === E.idx ? ' on' : '');
+    b.innerHTML = '<img src="' + m.u + '" alt="' + m.n + '" /><span>' + m.n + '</span>';
+    b.addEventListener('click', function(){ E.idx = i; miniaturas(); carregarMoldura(); });
+    box.appendChild(b);
+  });
+}
+
+document.querySelectorAll('.aba').forEach(function(a){
+  a.addEventListener('click', function(){
+    document.querySelectorAll('.aba').forEach(function(x){ x.classList.remove('on'); });
+    a.classList.add('on');
+    E.fmt = a.dataset.fmt; E.idx = 0; E.dx = 0; E.dy = 0; E.escala = 1; E.rot = 0;
+    document.getElementById('escala').value = 100;
+    document.getElementById('palco').classList.toggle('story', E.fmt === 'story');
+    miniaturas(); carregarMoldura(); desenhar();
+  });
+});
+
+document.getElementById('arquivo').addEventListener('change', function(e){
+  var arq = e.target.files && e.target.files[0]; if (!arq) return;
+  var leitor = new FileReader();
+  leitor.onload = function(ev){
+    var img = new Image();
+    img.onload = function(){
+      E.foto = img; E.dx = 0; E.dy = 0; E.escala = 1; E.rot = 0;
+      document.getElementById('escala').value = 100;
+      document.getElementById('vazio').hidden = true;
+      document.getElementById('zoom').hidden = false;
+      document.getElementById('baixar').disabled = false;
+      document.getElementById('trocar').hidden = false;
+      desenhar();
+    };
+    img.src = ev.target.result;
+  };
+  leitor.readAsDataURL(arq);
+});
+
+var faixa = document.getElementById('escala');
+faixa.addEventListener('input', function(e){ E.escala = parseInt(e.target.value, 10) / 100; desenhar(); });
+function aplicarZoom(delta){ var v = Math.min(300, Math.max(100, parseInt(faixa.value,10)+delta)); faixa.value=v; E.escala=v/100; desenhar(); }
+document.querySelectorAll('[data-zoom]').forEach(function(b){ b.addEventListener('click', function(){ aplicarZoom(parseInt(b.dataset.zoom,10)); }); });
+
+document.querySelectorAll('[data-mover]').forEach(function(b){
+  var passo = b.dataset.mover.split(','); var repetir = null;
+  function mover(){ E.dx += parseInt(passo[0],10)*45; E.dy += parseInt(passo[1],10)*45; desenhar(); }
+  b.addEventListener('click', mover);
+  b.addEventListener('pointerdown', function(){ repetir = setInterval(mover, 130); });
+  ['pointerup','pointerleave','pointercancel'].forEach(function(ev){ b.addEventListener(ev, function(){ clearInterval(repetir); }); });
+});
+document.querySelectorAll('[data-girar]').forEach(function(b){
+  b.addEventListener('click', function(){ E.rot = (E.rot + parseInt(b.dataset.girar,10)) % 360; desenhar(); });
+});
+document.getElementById('centralizar').addEventListener('click', function(){ E.dx=0; E.dy=0; E.rot=0; E.escala=1; faixa.value=100; desenhar(); });
+document.getElementById('trocar').addEventListener('click', function(){
+  E.foto=null; E.dx=0; E.dy=0; E.escala=1; E.rot=0;
+  document.getElementById('arquivo').value='';
+  document.getElementById('vazio').hidden=false; document.getElementById('zoom').hidden=true;
+  document.getElementById('baixar').disabled=true; document.getElementById('trocar').hidden=true; desenhar();
+});
+
+/* arrastar */
+var arrastando=false, ox=0, oy=0;
+tela.addEventListener('pointerdown', function(e){ if(!E.foto) return; arrastando=true; tela.setPointerCapture(e.pointerId); ox=e.clientX; oy=e.clientY; });
+tela.addEventListener('pointermove', function(e){ if(!arrastando) return; var r=tela.getBoundingClientRect(), k=tela.width/r.width; E.dx+=(e.clientX-ox)*k; E.dy+=(e.clientY-oy)*k; ox=e.clientX; oy=e.clientY; desenhar(); });
+['pointerup','pointercancel','pointerleave'].forEach(function(ev){ tela.addEventListener(ev, function(){ arrastando=false; }); });
+
+var BLOB=null, NOME='';
+function gerar(aoTerminar){
+  try { tela.getContext('2d').getImageData(0,0,1,1); }
+  catch(e){ alert('A imagem não pôde ser preparada. Recarregue a página e tente de novo.'); return; }
+  tela.toBlob(function(blob){
+    if(!blob){ alert('Não foi possível gerar a imagem. Tente de novo.'); return; }
+    BLOB=blob; NOME='ana-carolina-2026-' + E.fmt + '.png'; aoTerminar();
+  }, 'image/png');
+}
+function podeCompartilhar(){ try{ var f=new File([BLOB],NOME,{type:'image/png'}); return !!(navigator.canShare && navigator.canShare({files:[f]})); }catch(e){ return false; } }
+function abrirBandeja(texto){ var f=new File([BLOB],NOME,{type:'image/png'}); navigator.share({files:[f], text:texto}).catch(function(){}); }
+function baixarArquivo(){ var a=document.createElement('a'); a.href=URL.createObjectURL(BLOB); a.download=NOME; document.body.appendChild(a); a.click(); a.remove(); }
+
+document.getElementById('baixar').addEventListener('click', function(){ gerar(function(){ opcoes(); }); });
+
+var ICONES = {
+  wa:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.8-.9-2-1-.3-.1-.5-.2-.7.2-.2.3-.7 1-.9 1.2-.2.2-.3.2-.6.1-.3-.2-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5 0-.2 0-.4-.1-.5-.1-.1-.7-1.6-.9-2.2-.2-.5-.4-.5-.6-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.2 5 4.5.7.3 1.2.5 1.7.6.7.2 1.3.2 1.8.1.6-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.1-.3-.2-.6-.3zM12 0C5.4 0 0 5.4 0 12c0 2.1.6 4.1 1.6 5.9L0 24l6.3-1.6c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12S18.6 0 12 0z"/></svg>',
+  ig:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.4 1 .4 2.2.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .4-2.2.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.4-1-.4-2.2-.1-1.3-.1-1.7-.1-4.9s0-3.6.1-4.9c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.4 2.2-.4 1.3-.1 1.7-.1 4.9-.1zm0 3.2a6.6 6.6 0 1 0 0 13.2 6.6 6.6 0 0 0 0-13.2zm0 10.9a4.3 4.3 0 1 1 0-8.6 4.3 4.3 0 0 1 0 8.6zm8.4-11.2a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>',
+  baixar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 12 5 5 5-5"/><path d="M4 21h16"/></svg>'
+};
+function opcoes(){
+  var pode = podeCompartilhar();
+  var alvos = [
+    { id:'status', ico:'wa', cor:'wa', t:'Status do WhatsApp', s:'Publique no seu status' },
+    { id:'zap',    ico:'wa', cor:'wa', t:'Enviar no WhatsApp', s:'Mande para amigos e grupos' },
+    { id:'story',  ico:'ig', cor:'ig', t:'Story do Instagram', s:'Compartilhe no seu story' },
+    { id:'feed',   ico:'ig', cor:'ig', t:'Feed do Instagram',  s:'Publique como post' }
+  ];
+  var html = '<span class="selo">Sua foto está pronta</span>'
+    + '<h2>Onde você quer publicar?</h2>'
+    + (pode ? '<p>Toque na opção e escolha o aplicativo na tela que abrir.</p>' : '<p>Baixe a imagem e depois publique pelo aplicativo. É rápido.</p>')
+    + '<div class="alvos">'
+    + alvos.map(function(a){ return '<button type="button" class="alvo alvo-'+a.cor+'" data-alvo="'+a.id+'"><span class="alvo-i">'+ICONES[a.ico]+'</span><span class="alvo-t"><b>'+a.t+'</b><span>'+a.s+'</span></span></button>'; }).join('')
+    + '</div>'
+    + '<button class="btn btn-preto" type="button" id="soBaixar">'+ICONES.baixar+' Só baixar a imagem</button>'
+    + '<button class="btn btn-linha" type="button" data-fechar>Voltar e ajustar</button>';
+  document.getElementById('folha').innerHTML = html;
+  document.getElementById('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  var TEXTOS = {
+    status:'Eu voto 2026! Ana Carolina Oliveira para Deputada Federal.',
+    zap:'Eu voto 2026! Ana Carolina Oliveira para Deputada Federal. Vem comigo.',
+    story:'Eu voto 2026! Ana Carolina Oliveira para Deputada Federal.',
+    feed:'Eu voto 2026! Ana Carolina Oliveira para Deputada Federal. #AnaCarolina2026'
+  };
+  document.querySelectorAll('[data-alvo]').forEach(function(b){
+    b.addEventListener('click', function(){ var id=b.dataset.alvo; if(pode){ abrirBandeja(TEXTOS[id]); return; } baixarArquivo(); comoFazer(id); });
+  });
+  document.getElementById('soBaixar').addEventListener('click', function(){ baixarArquivo(); comoFazer(null); });
+}
+function comoFazer(id){
+  var passos = {
+    status:['Abra o WhatsApp','Atualizações › Meu status › Câmera','Escolha a imagem na galeria'],
+    zap:['Abra a conversa no WhatsApp','Toque no clipe › Galeria','Escolha a imagem'],
+    story:['Abra o Instagram','Deslize para a direita › Galeria','Escolha a imagem e publique'],
+    feed:['Abra o Instagram','Toque em + › Publicação','Escolha a imagem e publique']
+  };
+  var lista = passos[id] || ['Abra o aplicativo que quiser','Escolha a imagem na sua galeria','Publique'];
+  document.getElementById('folha').innerHTML =
+    '<span class="selo">Baixado!</span><h2>Agora é só publicar</h2>'
+    + '<ul class="passos">' + lista.map(function(t,i){ return '<li><b>'+(i+1)+'. '+t+'</b></li>'; }).join('') + '</ul>'
+    + '<p>A imagem está na galeria do seu celular, na pasta de downloads.</p>'
+    + '<button class="btn btn-linha" type="button" data-fechar>Voltar</button>';
+}
+document.getElementById('modal').addEventListener('click', function(e){ if(!e.target.hasAttribute('data-fechar')) return; document.getElementById('modal').classList.remove('open'); document.body.style.overflow=''; });
+document.addEventListener('keydown', function(e){ if(e.key!=='Escape') return; document.getElementById('modal').classList.remove('open'); document.body.style.overflow=''; });
+
+miniaturas(); carregarMoldura(); desenhar();
+</script>
+</body>
+</html>

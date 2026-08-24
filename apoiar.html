@@ -482,6 +482,9 @@ h2{
 }
 .dl b{color:var(--amarelo);font-size:12px;letter-spacing:.06em;}
 .dl:active{background:rgba(255,255,255,.16);}
+.dl-primary{background:var(--amarelo);border-color:var(--amarelo);color:var(--preto);font-weight:800;}
+.dl-primary b{color:var(--preto);}
+.dl-primary:active{background:var(--amarelo-2);}
 
 /* ── legal (bottom sheet) ──────────────────────────────────── */
 .topo.claro .barra{background:rgba(18,15,17,.16);}
@@ -1457,6 +1460,12 @@ h2{
             <div class="msg">E-mail inválido.</div>
           </div>
         </div>
+        <!-- só aparece quando o CEP não foi encontrado (não temos a cidade) -->
+        <div class="campo" id="c-cidade" style="display:none;margin-top:16px;">
+          <label for="cidade">De qual cidade você é?</label>
+          <input type="text" id="cidade" placeholder="Cidade / UF" autocomplete="address-level2">
+          <div class="msg">Informe a sua cidade.</div>
+        </div>
       </div>
       <div class="tela-pe">
         <button class="btn" data-ir="5">Continuar</button>
@@ -1619,6 +1628,14 @@ const CFG = {
     "Moldura para foto de perfil",
     "Santinho em PDF para imprimir"
   ],
+
+  /* ── Página do Kit Mídia Digital (destino do botão "Acessar o KIT DIGITAL")
+     Preencha com a URL publicada da página de download da Ana.            */
+  pagina_digital: "/kit-digital.html",   // página do Kit Mídia Digital (mesma hospedagem)
+  redirect_auto: false,        // true = abre sozinho; false = só ao clicar
+  redirect_seg: 4,             // segundos, se redirect_auto = true
+  digital_headline: "Infelizmente seu CEP está fora da nossa rota de entrega nesse momento, mas você pode me ajudar usando o Kit Digital.",
+  digital_texto: "Preparamos um Kit Mídia Digital para você usar em suas redes sociais e compartilhar com seus amigos. Assim que abrir uma rota de entrega para sua região, irei te avisar!",
 
   /* ── Entregáveis digitais (R2) ───────────────────────────── */
   links_digitais: [
@@ -1787,6 +1804,10 @@ function ir(n, opts={}){
     });
   }
 
+  // campo "cidade" só aparece na etapa de contato quando o CEP não foi achado
+  const _cc = document.getElementById('c-cidade');
+  if(_cc) _cc.style.display = (n === 4 && S.cepNaoEncontrado) ? 'block' : 'none';
+
   if(n === 6) montarResumo();
   // ajusta a escala pra caber tudo (depois do layout assentar)
   requestAnimationFrame(()=> ajustarTela(n));
@@ -1950,11 +1971,16 @@ $('#btn-cep').addEventListener('click', async ()=>{
   b.disabled = false; b.textContent = 'Verificar minha região';
 
   if(!d){
-    $('#c-cep').classList.add('erro-borda');
-    $('#dica-cep').className = 'dica ruim';
-    $('#dica-cep').textContent = 'CEP não encontrado. Confira os números.';
+    // CEP não encontrado NUNCA trava: trata como fora da rota nesse momento → digital.
+    // Pediremos a cidade na etapa de contato (não temos cidade/UF do CEP).
+    S.cepNaoEncontrado = true;
+    S.end = { cidade:'', uf:CFG.uf, lat:null, lng:null, logradouro:'', bairro:'' };
+    S.dist = null; S.metodo = 'nao-encontrado';
+    montarDigital(S.end, false, null, true);
+    ir(2, {semFoco:true});
     return;
   }
+  S.cepNaoEncontrado = false;
 
   S.end = d;
   const foraSP = d.uf !== CFG.uf && !CFG.aceita_fora_de_sp;
@@ -1980,15 +2006,16 @@ function montarFisico(d, rota, dist){
   if(!d.logradouro) abrirEdicao();
 }
 
-function montarDigital(d, foraSP, dist){
+function montarDigital(d, foraSP, dist, naoEncontrado){
   S.modo = 'digital'; S.rota = null;
   $('#slam').className = 'slam digital';
-  $('#slam-rot').textContent = foraSP ? `Envio impresso só em ${CFG.uf}` : (dist != null ? `${dist} km do centro — fora do raio de ${CFG.raio_km} km` : 'Fora da rota impressa');
-  $('#slam-tit').textContent = 'Kit digital';
-  $('#local').textContent = `${d.cidade}/${d.uf}`;
-  $('#veredito-sub').textContent = 'O kit digital é liberado na hora — dá para imprimir, postar e encaminhar. E você entra na fila caso abram novas rotas.';
-  $('#lista-kit').innerHTML = CFG.kit_digital.map(i=>`<li>${i}</li>`).join('');
-  $('#btn-veredito').textContent = 'Quero o kit digital';
+  $('#slam-rot').textContent = naoEncontrado ? 'Fora da rota de entrega nesse momento'
+    : (foraSP ? `Envio impresso só em ${CFG.uf}` : (dist != null ? `${dist} km do centro — fora do raio de ${CFG.raio_km} km` : 'Fora da rota impressa'));
+  $('#slam-tit').textContent = 'Kit Mídia Digital';
+  $('#local').textContent = naoEncontrado ? '' : `${d.cidade}/${d.uf}`;
+  $('#veredito-sub').textContent = CFG.digital_texto;
+  $('#lista-kit').innerHTML = '';
+  $('#btn-veredito').textContent = 'Quero o Kit Digital';
   $('#sub-nome').textContent = 'Para personalizar o material que vamos te mandar.';
 }
 
@@ -2014,6 +2041,11 @@ function validarTela(n){
   if(n === 4){
     let ok = marca('#c-whats', t(iWhats.value).replace(/\D/g,'').length>=10);
     ok = marca('#c-email', /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(t(iEmail.value))) && ok;
+    if(S.cepNaoEncontrado){
+      const cid = t($('#cidade').value);
+      ok = marca('#c-cidade', cid.length >= 2) && ok;
+      if(cid.length >= 2){ S.end = S.end || {}; S.end.cidade = cid; }
+    }
     return ok;
   }
   if(n === 5){
@@ -2117,12 +2149,22 @@ function sucesso(){
     $('#ok-links').innerHTML = CFG.link_grupo
       ? `<a class="dl" href="${CFG.link_grupo}" target="_blank" rel="noopener"><span>Entrar no grupo de apoiadores</span><b>ABRIR</b></a>` : '';
   }else{
-    $('#ok-titulo').textContent = 'Kit digital liberado';
-    $('#ok-texto').textContent = 'Está tudo aqui embaixo — e também mandamos pelo seu WhatsApp.';
-    let h = (CFG.links_digitais||[]).map(l=>
-      `<a class="dl" href="${l.url}" target="_blank" rel="noopener"><span>${l.rotulo}</span><b>BAIXAR</b></a>`).join('');
-    if(CFG.link_grupo) h += `<a class="dl" href="${CFG.link_grupo}" target="_blank" rel="noopener"><span>Entrar no grupo</span><b>ABRIR</b></a>`;
-    $('#ok-links').innerHTML = h || '<p class="sub">Os links chegam no seu WhatsApp em instantes.</p>';
+    // Página do KIT MÍDIA DIGITAL
+    $('#ok-titulo').textContent = 'Seu Kit Mídia Digital está pronto';
+    $('#ok-texto').textContent = CFG.digital_texto;
+    const alvo = CFG.pagina_digital || '';
+    let h = '';
+    if(alvo){
+      h += `<a class="dl dl-primary" href="${alvo}" target="_blank" rel="noopener"><span>Acessar o KIT DIGITAL</span><b>ABRIR →</b></a>`;
+    }
+    if(CFG.link_grupo && CFG.link_grupo !== alvo){
+      h += `<a class="dl" href="${CFG.link_grupo}" target="_blank" rel="noopener"><span>Entrar no grupo</span><b>ABRIR</b></a>`;
+    }
+    $('#ok-links').innerHTML = h || '<p class="sub">Enviaremos o Kit Mídia Digital pelo seu WhatsApp em instantes.</p>';
+    // abertura automática opcional
+    if(CFG.redirect_auto && alvo){
+      setTimeout(()=>{ try{ window.open(alvo, '_blank', 'noopener'); }catch(_){ } }, (CFG.redirect_seg || 4) * 1000);
+    }
   }
   $('#ok-selo').textContent = S.modo === 'fisico' ? '✓' : '↓';
   ir(7, {semFoco:true});
