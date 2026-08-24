@@ -1705,6 +1705,18 @@ function bindCardEmail(box){
       catch(e){ toast('Erro no upload'); } };
     rd.readAsDataURL(f); };
 
+  /* auto-hospeda a imagem do post no NOSSO domínio (Gmail marca imagem de CDN externo como spam) */
+  (async()=>{
+    const p=post();
+    if(p && p.imagem && !p.imagem_upload && /cdninstagram|fbcdn|scontent/i.test(p.imagem)){
+      try{
+        const r=await fetch('/api/email/upload',{method:'POST',headers:await authHeader(),body:JSON.stringify({id, url:p.imagem})});
+        const d=await r.json();
+        if(d&&d.ok){ p.imagem_upload=d.url; const th=box.querySelector('.thumb'); if(th){ th.src=d.url; th.style.visibility='visible'; } }
+      }catch(e){}
+    }
+  })();
+
   box.querySelector('.preview').onclick=()=>{
     const html=montarEmailHTML(dados()).replace(/%UNSUB%/g,'#');
     $('#modalRoot').innerHTML=`<div class="overlay" id="ovp"><div class="modal" style="max-width:660px">

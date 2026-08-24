@@ -9,13 +9,26 @@ export async function onRequestPost(context) {
   let body = {}; try { body = await request.json(); } catch (e) {}
   const postId = body.id;
   const dataUrl = body.imagem || "";
-  if (!postId || !dataUrl) return json({ erro: "faltam id ou imagem" }, 200);
+  const fromUrl = body.url || "";
+  if (!postId || (!dataUrl && !fromUrl)) return json({ erro: "faltam id e imagem/url" }, 200);
 
-  const m = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
-  if (!m) return json({ erro: "formato inválido" }, 200);
-  const mime = m[1];
+  let mime, bin;
+  if (dataUrl) {
+    const m = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+    if (!m) return json({ erro: "formato inválido" }, 200);
+    mime = m[1];
+    bin = Uint8Array.from(atob(m[2]), c => c.charCodeAt(0));
+  } else {
+    // busca a imagem pela URL (ex.: CDN do Instagram) e hospeda no nosso domínio
+    let r;
+    try { r = await fetch(fromUrl, { headers: { "User-Agent": "Mozilla/5.0", Referer: "https://www.instagram.com/" } }); }
+    catch (e) { return json({ erro: "falha ao buscar a imagem" }, 200); }
+    if (!r.ok) return json({ erro: "imagem retornou " + r.status }, 200);
+    mime = (r.headers.get("content-type") || "image/jpeg").split(";")[0];
+    if (!/^image\//.test(mime)) mime = "image/jpeg";
+    bin = new Uint8Array(await r.arrayBuffer());
+  }
   const ext = mime.split("/")[1].replace("jpeg", "jpg").replace("+xml", "");
-  const bin = Uint8Array.from(atob(m[2]), c => c.charCodeAt(0));
   const path = `news/${postId}-${Date.now()}.${ext}`;
 
   // upload no Storage (service key)
