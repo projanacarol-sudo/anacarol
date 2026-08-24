@@ -43,10 +43,20 @@ async function handle(env, ev) {
     url_clicada: (data.click && data.click.link) || null,
     payload: ev,
   });
-  // reclamação de spam ou bounce forte -> descadastra
+  // reclamação de spam -> descadastra (protege a reputação do domínio)
   if (tipo === "complained" && leadId) {
     await sb(env, "PATCH", `/leads?id=eq.${leadId}`, { unsubscribed_email: true, opt_in_email: false });
     await pausarFunis(env, leadId);
+  }
+  // hard bounce (permanente) -> descadastra. NÃO mexe em bounce temporário
+  // (transient) nem em delivery_delayed (que o mapTipo trata como "bounced").
+  if (tipo === "bounced" && leadId) {
+    const bt = String((data.bounce && data.bounce.type) || "").toLowerCase();
+    const temporario = bt === "transient" || bt === "soft";
+    if (!temporario) {
+      await sb(env, "PATCH", `/leads?id=eq.${leadId}`, { unsubscribed_email: true, opt_in_email: false });
+      await pausarFunis(env, leadId);
+    }
   }
 
   // métricas por post (Gerador de E-mail): entrega/abertura/clique, sem duplicar
