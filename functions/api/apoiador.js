@@ -66,8 +66,12 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: false, erro: "banco", detalhe: t.slice(0, 200) }, 500, h);
     }
 
-    // Também registra a pessoa como LEAD no CRM (Origem "LP materiais").
-    // Se já for lead: ganha a tag e vira QUENTE. Não bloqueia o cadastro.
+    // Também registra a pessoa como LEAD no CRM, diferenciando a ORIGEM pelo
+    // tipo de material (impresso × digital). Se já for lead: ganha a tag e vira
+    // QUENTE. Não bloqueia o cadastro.
+    const ehFisico = modo === "fisico";
+    const origemNome = ehFisico ? "LP Material Impresso" : "LP Material Digital";
+    const tagLead    = ehFisico ? "Material Impresso"    : "Material Digital";
     try {
       await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/apoiador_vira_lead`, {
         method: "POST",
@@ -80,7 +84,7 @@ export async function onRequestPost({ request, env }) {
         body: JSON.stringify({
           p_nome: nome, p_email: email, p_whatsapp: whatsapp,
           p_uf: texto(b.uf, 2), p_cidade: texto(b.cidade, 100),
-          p_origem_nome: "LP materiais", p_tag: "Pediu Material",
+          p_origem_nome: origemNome, p_tag: tagLead,
         }),
       });
     } catch (e) { /* virar lead não pode derrubar o cadastro do material */ }
