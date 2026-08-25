@@ -138,7 +138,8 @@ h1{ margin-top:.8rem; font-weight:900; text-transform:uppercase; letter-spacing:
 .artes{ display:grid; grid-template-columns:repeat(auto-fill,minmax(17rem,1fr)); gap:1.4rem; margin-top:1rem }
 .arte{ background:var(--creme-2); border:1px solid var(--linha); border-radius:1.1rem; overflow:hidden; display:flex; flex-direction:column }
 .arte img{ width:100%; display:block; background:var(--marinho) }
-.arte-acoes{ display:grid; grid-template-columns:1fr 1fr; gap:.55rem; padding:.7rem }
+.arte-nome{ padding:.75rem .85rem .1rem; font-size:.9rem; font-weight:900; letter-spacing:-.01em; color:#fff }
+.arte-acoes{ display:grid; grid-template-columns:1fr 1fr; gap:.55rem; padding:.6rem .7rem .75rem }
 .arte-bt{ display:flex; align-items:center; justify-content:center; gap:.4rem; padding:.75rem; border-radius:.7rem;
   font-size:.76rem; font-weight:900; letter-spacing:.04em; text-transform:uppercase; transition:transform .12s, filter .12s }
 .arte-bt:active{ transform:scale(.97) } .arte-bt:hover{ filter:brightness(1.06) }
@@ -164,7 +165,7 @@ h1{ margin-top:.8rem; font-weight:900; text-transform:uppercase; letter-spacing:
 <main>
   <div class="wrap">
     <span class="chapeu">Kit Mídia Digital</span>
-    <h1>Gere agora mesmo, sua Foto Personalizada para me Apoiar!</h1>
+    <h1>Gere sua Foto Personalizada para me Apoiar!</h1>
     <p class="sub">Envie sua foto, escolha a moldura e ajuste o enquadramento. Fica pronta em segundos e sua foto não sai do seu aparelho.</p>
 
     <div class="abas" id="abas">
@@ -264,13 +265,13 @@ var MOLDURAS = {
 };
 /* artes prontas para baixar */
 var ARTES = [
-  { n:'Praguinha',  u: R2 + 'Artes%20para%20baixar/PRAGUINHA%20(1).png' },
-  { n:'Santão',     u: R2 + 'Artes%20para%20baixar/SANTAO%20(1)-imagens-0.png' },
-  { n:'Santão 2',   u: R2 + 'Artes%20para%20baixar/SANTAO%20(1)-imagens-1.png' },
-  { n:'Santinho',   u: R2 + 'Artes%20para%20baixar/SANTINHO-imagens-0.png' },
-  { n:'Santinho 2', u: R2 + 'Artes%20para%20baixar/SANTINHO-imagens-1.png' },
-  { n:'Arte 1',     u: R2 + 'Artes%20para%20baixar/4.PNG' },
-  { n:'Arte 2',     u: R2 + 'Artes%20para%20baixar/5.PNG' }
+  { n:'Praguinha',              u: R2 + 'Artes%20para%20baixar/PRAGUINHA%20(1).png' },
+  { n:'Santão',                 u: R2 + 'Artes%20para%20baixar/SANTAO%20(1)-imagens-0.png' },
+  { n:'Quem sou eu',            u: R2 + 'Artes%20para%20baixar/SANTAO%20(1)-imagens-1.png' },
+  { n:'Santinho',               u: R2 + 'Artes%20para%20baixar/SANTINHO-imagens-0.png' },
+  { n:'Colinha',                u: R2 + 'Artes%20para%20baixar/SANTINHO-imagens-1.png' },
+  { n:'Arte para Feed',         u: R2 + 'Artes%20para%20baixar/4.PNG' },
+  { n:'Arte para Story e Status', u: R2 + 'Artes%20para%20baixar/5.PNG' }
 ];
 var E = { fmt:'perfil', idx:0, foto:null, moldura:null, escala:1, dx:0, dy:0, rot:0 };
 var tela = document.getElementById('tela');
@@ -484,6 +485,7 @@ function renderArtes(){
     var nome = 'ana-carolina-2026-' + (slug || ('arte-' + (i + 1))) + '.png';
     var c = document.createElement('div'); c.className = 'arte';
     c.innerHTML = '<img src="' + a.u + '" alt="' + a.n + '" loading="lazy">'
+      + '<div class="arte-nome">' + a.n + '</div>'
       + '<div class="arte-acoes">'
       + '<button type="button" class="arte-bt arte-baixar">' + ICONES.baixar + ' Baixar</button>'
       + '<button type="button" class="arte-bt arte-compartilhar">' + ICONES.wa + ' Compartilhar</button>'
