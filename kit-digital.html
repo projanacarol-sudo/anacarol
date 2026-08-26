@@ -135,6 +135,9 @@ h1{ margin-top:.8rem; font-weight:900; text-transform:uppercase; letter-spacing:
 .alvo-t b{ display:block; font-size:.92rem; font-weight:900; letter-spacing:-.01em }
 .alvo-t span{ display:block; margin-top:.1rem; font-size:.76rem; color:var(--ink-soft) }
 
+.jingle{ background:var(--creme-2); border:1px solid var(--linha); border-radius:1.1rem; padding:1rem; margin-top:.9rem; max-width:34rem }
+.jingle audio{ width:100%; display:block }
+.jingle-acoes{ display:grid; grid-template-columns:1fr 1fr; gap:.55rem; margin-top:.8rem }
 .artes{ display:grid; grid-template-columns:repeat(auto-fill,minmax(17rem,1fr)); gap:1.4rem; margin-top:1rem }
 .arte{ background:var(--creme-2); border:1px solid var(--linha); border-radius:1.1rem; overflow:hidden; display:flex; flex-direction:column }
 .arte img{ width:100%; display:block; background:var(--marinho) }
@@ -165,7 +168,7 @@ h1{ margin-top:.8rem; font-weight:900; text-transform:uppercase; letter-spacing:
 <main>
   <div class="wrap">
     <span class="chapeu">Kit Mídia Digital</span>
-    <h1>Gere sua Foto Personalizada para me Apoiar!</h1>
+    <h1>Crie agora sua Foto Personalizada para me Apoiar!</h1>
     <p class="sub">Envie sua foto, escolha a moldura e ajuste o enquadramento. Fica pronta em segundos e sua foto não sai do seu aparelho.</p>
 
     <div class="abas" id="abas">
@@ -226,6 +229,17 @@ h1{ margin-top:.8rem; font-weight:900; text-transform:uppercase; letter-spacing:
       </div>
     </div>
 
+    <section id="jingleSec" style="margin-top:3.2rem;display:none">
+      <span class="rot">🎵 Jingle da campanha</span>
+      <div class="jingle">
+        <audio id="jingleAudio" controls preload="none"></audio>
+        <div class="jingle-acoes">
+          <button type="button" class="arte-bt arte-baixar" id="jingleBaixar">Baixar</button>
+          <button type="button" class="arte-bt arte-compartilhar" id="jingleWhats">Enviar no WhatsApp</button>
+        </div>
+      </div>
+    </section>
+
     <section style="margin-top:3.2rem">
       <span class="rot">Artes para baixar e compartilhar</span>
       <div class="artes" id="artes"></div>
@@ -263,6 +277,9 @@ var MOLDURAS = {
     { n:'Story 3', u: R2 + 'Filtro%20Story%20ANA/3.png' }
   ]
 };
+/* jingle da campanha (mp3) — cole a URL do R2 do áudio em JINGLE.u */
+var JINGLE = { n:'Jingle da campanha', u: R2 + 'ANA-CAROLINA-CHICLETE-2026.mp3' };
+
 /* artes prontas para baixar */
 var ARTES = [
   { n:'Praguinha',              u: R2 + 'Artes%20para%20baixar/PRAGUINHA%20(1).png' },
@@ -496,7 +513,37 @@ function renderArtes(){
   });
 }
 
-miniaturas(); carregarMoldura(); desenhar(); renderArtes();
+/* jingle da campanha */
+function baixarArquivo(url, nome){
+  fetch(PROXY + encodeURIComponent(url)).then(function(r){ return r.blob(); }).then(function(bl){
+    var a = document.createElement('a'); a.href = URL.createObjectURL(bl); a.download = nome;
+    document.body.appendChild(a); a.click(); a.remove();
+  }).catch(function(){ window.open(url, '_blank'); });
+}
+async function enviarWhatsApp(url, nome, mime){
+  try{
+    var r = await fetch(PROXY + encodeURIComponent(url));
+    var bl = await r.blob();
+    var f = new File([bl], nome, { type: mime || bl.type || 'audio/mpeg' });
+    if (navigator.canShare && navigator.canShare({ files:[f] })) {
+      await navigator.share({ files:[f], text:'Jingle da Ana Carolina Oliveira 2026 — Deputada Federal 💛' });
+      return;
+    }
+  }catch(e){}
+  // fallback (desktop): baixa e abre o WhatsApp pra anexar
+  baixarArquivo(url, nome);
+  window.open('https://wa.me/?text=' + encodeURIComponent('Jingle da Ana Carolina Oliveira 2026 — Deputada Federal 💛'), '_blank');
+}
+function renderJingle(){
+  var sec = document.getElementById('jingleSec');
+  if (!sec || !JINGLE.u) return;              // só aparece quando o mp3 estiver configurado
+  document.getElementById('jingleAudio').src = JINGLE.u;
+  sec.style.display = '';
+  document.getElementById('jingleBaixar').addEventListener('click', function(){ baixarArquivo(JINGLE.u, 'jingle-ana-carolina-2026.mp3'); });
+  document.getElementById('jingleWhats').addEventListener('click', function(){ enviarWhatsApp(JINGLE.u, 'jingle-ana-carolina-2026.mp3', 'audio/mpeg'); });
+}
+
+miniaturas(); carregarMoldura(); desenhar(); renderArtes(); renderJingle();
 </script>
 </body>
 </html>
