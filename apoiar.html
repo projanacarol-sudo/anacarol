@@ -1997,8 +1997,8 @@ function montarFisico(d, rota, dist){
   $('#slam-rot').textContent = 'Sua região está na rota';
   $('#slam-tit').textContent = 'Entrega em casa';
   $('#local').textContent = dist != null ? `${d.cidade}/${d.uf} · ${dist} km do centro` : `${d.cidade}/${d.uf}`;
-  $('#veredito-sub').textContent = 'Você recebe o kit impresso pelos Correios, sem custo nenhum.';
-  $('#lista-kit').innerHTML = CFG.kit_fisico.map(i=>`<li>${i}</li>`).join('');
+  $('#veredito-sub').textContent = 'Você recebe o material impresso da campanha em casa, pelos Correios e sem custo nenhum.';
+  $('#lista-kit').innerHTML = '';
   $('#btn-veredito').textContent = 'Continuar';
   $('#sub-nome').textContent = 'É o nome que vai na etiqueta do pacote.';
   $('#end-txt').textContent = [d.logradouro, d.bairro, `${d.cidade}/${d.uf}`].filter(Boolean).join(' · ') || 'CEP sem rua definida';
