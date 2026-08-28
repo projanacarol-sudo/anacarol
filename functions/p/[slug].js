@@ -12,10 +12,19 @@ export async function onRequestGet(context) {
     p = rows[0] || null;
   } catch (e) { /* cai no 404 */ }
   if (!p) return html(pagina404(), 404);
-  return html(render(p));
+  // status de vagas (para avisar "lista de espera" já na abertura)
+  let full = false;
+  if (p.limite_vagas && p.limite_vagas > 0) {
+    try {
+      const st = await sb(env, `/rpc/evento_status`, "POST", { p_slug: slug });
+      const s = Array.isArray(st) ? st[0] : st;
+      if (s && s.limite > 0 && s.confirmados >= s.limite) full = true;
+    } catch (e) { /* ignora */ }
+  }
+  return html(render(p, full));
 }
 
-function render(p) {
+function render(p, full) {
   const cor = p.cor || "#128C7E";
   const fundo = p.cor_fundo || "#eef2f4";
   const titulo = p.cor_titulo || "#14202a";
@@ -46,6 +55,8 @@ function render(p) {
   button:disabled{opacity:.6}
   .msg{padding:11px;border-radius:9px;font-size:13.5px;display:none}
   .err{background:#fdecea;color:#b3392f;display:block}
+  .aviso{background:#fff7e6;border:1px solid #f0c987;color:#8a5a00;border-radius:12px;padding:13px 15px;font-size:14px;margin-bottom:16px;line-height:1.45}
+  .aviso b{color:#7a4e00}
   .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
 </style></head>
 <body><div class="wrap">
@@ -54,6 +65,7 @@ function render(p) {
   ${p.subheadline ? `<div class="sub">${esc(p.subheadline)}</div>` : ""}
   <div class="chips">${chips}</div>
   ${p.descricao ? `<div class="desc">${esc(p.descricao)}</div>` : ""}
+  ${full ? `<div class="aviso"><b>Vagas esgotadas.</b> Este evento já atingiu a lotação, mas você pode entrar na <b>lista de espera</b>: se abrir uma vaga ou surgir um próximo evento, a gente te avisa primeiro.</div>` : ""}
   <form id="f" novalidate>
     <div class="msg" id="m"></div>
     <label>Nome<input name="nome" type="text" autocomplete="name" required></label>
@@ -61,7 +73,7 @@ function render(p) {
     <label>WhatsApp (com DDD)<input name="telefone" type="tel" inputmode="numeric" placeholder="(11) 99999-9999" maxlength="16"></label>
     <label class="optin"><input type="checkbox" name="opt" required> Autorizo receber e-mails e mensagens no WhatsApp e concordo em participar.</label>
     <input class="hp" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true">
-    <button type="submit" id="b">Quero participar</button>
+    <button type="submit" id="b">${full ? "Entrar na lista de espera" : "Quero participar"}</button>
   </form>
 </div>
 <script>
@@ -94,9 +106,11 @@ function pagina404() {
 }
 
 /* helpers */
-async function sb(env, path) {
+async function sb(env, path, method, payload) {
   const res = await fetch(`${env.SUPABASE_URL}/rest/v1${path}`, {
-    headers: { "apikey": env.SUPABASE_SERVICE_KEY, "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}` } });
+    method: method || "GET",
+    headers: { "apikey": env.SUPABASE_SERVICE_KEY, "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`, "Content-Type": "application/json" },
+    body: payload !== undefined ? JSON.stringify(payload) : undefined });
   if (!res.ok) throw new Error("supabase " + res.status);
   return res.json();
 }

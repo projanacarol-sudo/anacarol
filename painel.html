@@ -1201,22 +1201,33 @@ async function loadPaginas(){
   const { data } = await sb.from("landing_pages").select("*").order("created_at",{ascending:false});
   const rows=data||[];
   if(!rows.length){ $("#paginasWrap").innerHTML='<div class="empty">Nenhuma página ainda. Clique em “+ Nova página de captura”.</div>'; return; }
-  // conta leads capturados por página (pela origem da página)
+  // conta inscritos/espera por página (fonte: inscricoes)
   for(const p of rows){
-    if(p.origem_id){ const { count } = await sb.from("leads").select("*",{count:"exact",head:true}).eq("origem_id",p.origem_id); p._leads=count||0; }
-    else p._leads=0;
+    const c1=await sb.from("inscricoes").select("*",{count:"exact",head:true}).eq("page_id",p.id).eq("status","confirmado");
+    const c2=await sb.from("inscricoes").select("*",{count:"exact",head:true}).eq("page_id",p.id).eq("status","espera");
+    p._conf=c1.count||0; p._espera=c2.count||0;
   }
-  $("#paginasWrap").innerHTML=`<table><thead><tr><th>Página</th><th>Link público</th><th>Leads</th><th>Tag</th><th>Status</th><th></th></tr></thead><tbody>${
+  const vagasCel=p=>{
+    if(p.limite_vagas&&p.limite_vagas>0){
+      const cheio=p._conf>=p.limite_vagas;
+      return `<strong>${fmt(p._conf)}</strong>/<span class="muted">${fmt(p.limite_vagas)}</span>`+
+        (cheio?' <span class="pill frio" style="background:#fff3d6;color:#8a5a00">lotado</span>':'');
+    }
+    return `<strong>${fmt(p._conf)}</strong> <span class="muted">(sem limite)</span>`;
+  };
+  $("#paginasWrap").innerHTML=`<table><thead><tr><th>Página</th><th>Link público</th><th>Inscritos</th><th>Espera</th><th>Status</th><th></th></tr></thead><tbody>${
     rows.map(p=>{const url=location.origin+"/p/"+p.slug;return `<tr>
-      <td><strong>${esc(p.headline||p.slug)}</strong></td>
+      <td><strong>${esc(p.headline||p.slug)}</strong>${p.relatorio_ativo?' <span class="pill ok" title="Relatório 2x/dia ativo">📊</span>':''}</td>
       <td><a href="${esc(url)}" target="_blank" class="lnk">/p/${esc(p.slug)}</a> · <button class="lnk" data-copy="${esc(url)}">copiar</button></td>
-      <td><strong>${fmt(p._leads)}</strong></td>
-      <td>${p.tag?('<span class="pill ok">'+esc(p.tag)+'</span>'):'<span class="muted">—</span>'}</td>
+      <td>${vagasCel(p)}</td>
+      <td>${p._espera?`<button class="lnk" data-esp="${p.id}"><strong>${fmt(p._espera)}</strong> na espera</button>`:'<span class="muted">0</span>'}</td>
       <td>${p.ativo?'<span class="pill ok">ativa</span>':'<span class="pill frio">inativa</span>'}</td>
-      <td><button class="lnk" data-ep="${p.id}">Editar</button> · <button class="lnk" data-dp="${p.id}" style="color:#c0392b">Excluir</button></td>
+      <td><button class="lnk" data-ep="${p.id}">Editar</button> · <button class="lnk" data-rel="${p.id}">Relatório</button> · <button class="lnk" data-dp="${p.id}" style="color:#c0392b">Excluir</button></td>
     </tr>`;}).join("")
   }</tbody></table>`;
   $$("[data-ep]").forEach(b=>b.onclick=()=>editarPagina(rows.find(x=>x.id===b.dataset.ep)));
+  $$("[data-esp]").forEach(b=>b.onclick=()=>abrirEspera(rows.find(x=>x.id===b.dataset.esp)));
+  $$("[data-rel]").forEach(b=>b.onclick=()=>enviarRelatorioAgora(rows.find(x=>x.id===b.dataset.rel)));
   $$("[data-dp]").forEach(b=>b.onclick=async()=>{ if(!confirm("Excluir esta página?"))return;
     await sb.from("landing_pages").delete().eq("id",b.dataset.dp); toast("Página excluída"); loadPaginas(); });
   $$("[data-copy]").forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.dataset.copy).then(()=>toast("Link copiado"));});
@@ -1255,11 +1266,25 @@ function editarPagina(p){
       <div style="flex:1"><label>Slug (endereço)</label><input id="lpSlug" value="${esc(p.slug)}" placeholder="gerado do headline"></div>
       <label class="chk" style="margin-top:22px"><input type="checkbox" id="lpAtivo" ${p.ativo!==false?"checked":""}> Ativa</label>
     </div>
+
+    <div class="divider"></div>
+    <div style="display:flex;gap:10px;align-items:flex-start">
+      <div style="flex:1"><label>Limite de vagas</label><input id="lpLimite" type="number" min="0" step="1" value="${esc(p.limite_vagas!=null?p.limite_vagas:0)}" placeholder="0"></div>
+      <div style="flex:2;padding-top:2px"><div class="muted" style="font-size:11.5px;margin-top:24px">Deixe <b>0</b> para vagas ilimitadas. Ao lotar, novos inscritos entram automaticamente na <b>lista de espera</b>.</div></div>
+    </div>
+
+    <label class="chk" style="margin-top:12px"><input type="checkbox" id="lpRelAtivo" ${p.relatorio_ativo?"checked":""}> Receber relatório do evento por e-mail (2×/dia — 9h e 18h)</label>
+    <div id="lpRelBox" style="margin-top:6px;${p.relatorio_ativo?"":"display:none"}">
+      <label>E-mail para receber o relatório</label>
+      <input id="lpRelEmail" type="email" value="${esc(p.relatorio_email||'')}" placeholder="responsavel@exemplo.com">
+    </div>
+
     <div class="actions"><button class="btn" id="lpSave">Salvar</button><button class="btn ghost" id="lpClose">Cancelar</button></div>
     <div class="muted" id="lpMsg" style="font-size:12px;margin-top:8px"></div>
   </div></div>`;
   const close=()=>$("#modalRoot").innerHTML="";
   $("#lpClose").onclick=close; $("#ov").onclick=e=>{if(e.target.id==="ov")close();};
+  $("#lpRelAtivo").onchange=e=>{$("#lpRelBox").style.display=e.target.checked?"":"none";};
   $("#lpSave").onclick=async()=>{
     const headline=$("#lpH").value.trim();
     if(!headline){toast("Dê um headline");return;}
@@ -1284,11 +1309,14 @@ function editarPagina(p){
         origem_id=org&&org.id;
       }
       // 3) upsert da página
+      const relAtivo=$("#lpRelAtivo").checked;
       const rec={slug,headline,subheadline:$("#lpS").value.trim()||null,descricao:$("#lpD").value.trim()||null,
         data_txt:$("#lpDt").value.trim()||null,local:$("#lpL").value.trim()||null,banner_url,
         tag:$("#lpTag").value.trim()||null,sequence_id:$("#lpSeq").value||null,origem_id,
         grupo_url:$("#lpGrupo").value.trim()||null,ativo:$("#lpAtivo").checked,
-        cor:$("#lpBotao").value,cor_fundo:$("#lpFundo").value,cor_titulo:$("#lpTitulo").value};
+        cor:$("#lpBotao").value,cor_fundo:$("#lpFundo").value,cor_titulo:$("#lpTitulo").value,
+        limite_vagas:Math.max(0,parseInt($("#lpLimite").value,10)||0),
+        relatorio_ativo:relAtivo,relatorio_email:relAtivo?($("#lpRelEmail").value.trim()||null):null};
       let err;
       if(p.id){({error:err}=await sb.from("landing_pages").update(rec).eq("id",p.id));}
       else {({error:err}=await sb.from("landing_pages").insert(rec));}
@@ -1296,6 +1324,63 @@ function editarPagina(p){
       toast("Página salva"); close(); loadPaginas();
     }catch(e){ console.error(e); $("#lpMsg").textContent="Erro: "+(e.message||"não foi possível salvar (slug repetido?)"); btn.disabled=false; }
   };
+}
+
+async function abrirEspera(p){
+  const { data } = await sb.from("inscricoes")
+    .select("id,created_at,leads(nome,email,telefone_e164,cidade_estimada,uf)")
+    .eq("page_id",p.id).eq("status","espera").order("created_at",{ascending:true});
+  const lista=data||[];
+  const linhas=lista.length? lista.map((r,i)=>{const l=r.leads||{};return `<tr>
+      <td style="padding:6px 8px;font-size:12.5px">${i+1}</td>
+      <td style="padding:6px 8px;font-size:13px"><b>${esc(l.nome||"—")}</b></td>
+      <td style="padding:6px 8px;font-size:12px;color:#54636d">${esc(l.email||l.telefone_e164||"—")}</td>
+      <td style="padding:6px 8px;font-size:12px;color:#54636d">${esc([l.cidade_estimada,l.uf].filter(Boolean).join("/")||"—")}</td>
+    </tr>`;}).join("") : '<tr><td colspan="4" class="muted" style="padding:10px">Ninguém na lista de espera.</td></tr>';
+  $("#modalRoot").innerHTML=`<div class="overlay" id="ove"><div class="modal" style="max-width:620px">
+    <h3>Lista de espera — ${esc(p.headline||p.slug)}</h3>
+    <p class="muted" style="font-size:12.5px">${lista.length} pessoa(s) aguardando vaga. Ao clicar em avisar, todos recebem um e-mail com o link do evento para confirmar presença.</p>
+    <div style="max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:10px;margin:8px 0">
+      <table style="width:100%"><thead><tr><th style="text-align:left;padding:6px 8px;font-size:11px">#</th><th style="text-align:left;padding:6px 8px;font-size:11px">Nome</th><th style="text-align:left;padding:6px 8px;font-size:11px">Contato</th><th style="text-align:left;padding:6px 8px;font-size:11px">Cidade/UF</th></tr></thead><tbody>${linhas}</tbody></table>
+    </div>
+    <label>Mensagem extra (opcional)</label>
+    <textarea id="espMsg" style="width:100%;min-height:64px;padding:10px;border:1px solid #cfd8dd;border-radius:9px" placeholder="Ex.: Abrimos mais 20 vagas! Confirme logo para garantir a sua."></textarea>
+    <div class="actions">
+      <button class="btn" id="espAvisar" ${lista.length?"":"disabled"}>Avisar lista de espera (${lista.length})</button>
+      <button class="btn ghost" id="espFechar">Fechar</button></div>
+    <div class="muted" id="espMsgOut" style="font-size:12px;margin-top:8px"></div>
+  </div></div>`;
+  const close=()=>$("#modalRoot").innerHTML="";
+  $("#espFechar").onclick=close; $("#ove").onclick=e=>{if(e.target.id==="ove")close();};
+  $("#espAvisar").onclick=async()=>{
+    if(!confirm("Enviar e-mail para "+lista.length+" pessoa(s) da lista de espera?"))return;
+    const btn=$("#espAvisar"); btn.disabled=true; $("#espMsgOut").textContent="Enviando...";
+    const {data:s}=await sb.auth.getSession(); const token=s.session&&s.session.access_token;
+    try{
+      const r=await fetch("/api/evento-avisar",{method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+        body:JSON.stringify({page_id:p.id,mensagem:$("#espMsg").value.trim()})});
+      const res=await r.json().catch(()=>({}));
+      if(res.ok){ toast("Avisados: "+res.enviados+" · pulados: "+res.pulados); close(); }
+      else { $("#espMsgOut").textContent="Erro: "+(res.error||"falhou"); btn.disabled=false; }
+    }catch(e){ $("#espMsgOut").textContent="Erro de conexão"; btn.disabled=false; }
+  };
+}
+
+async function enviarRelatorioAgora(p){
+  if(!p.relatorio_email){ toast("Configure o e-mail do relatório em Editar."); editarPagina(p); return; }
+  if(!confirm("Enviar o relatório deste evento agora para "+p.relatorio_email+"?"))return;
+  toast("Gerando relatório...");
+  const {data:s}=await sb.auth.getSession(); const token=s.session&&s.session.access_token;
+  try{
+    const r=await fetch("/api/relatorio-eventos",{method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({page_id:p.id})});
+    const res=await r.json().catch(()=>({}));
+    if(res.ok&&res.enviados) toast("Relatório enviado para "+p.relatorio_email);
+    else if(res.ok) toast("Não enviado (verifique o e-mail do relatório).");
+    else toast("Erro ao enviar ("+(res.error||"")+")");
+  }catch(e){ toast("Erro de conexão"); }
 }
 
 /* ================= TAREFAS (KANBAN) ================= */

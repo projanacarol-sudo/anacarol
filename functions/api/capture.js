@@ -72,7 +72,7 @@ async function handleCapture(request, env, cors) {
   let page = null;
   if (pageSlug) {
     const rows = await sb(env, "GET",
-      `/landing_pages?slug=eq.${encodeURIComponent(pageSlug)}&select=id,origem_id,tag,sequence_id&limit=1`);
+      `/landing_pages?slug=eq.${encodeURIComponent(pageSlug)}&select=id,origem_id,tag,sequence_id,headline,limite_vagas&limit=1`);
     page = rows[0] || null;
   }
 
@@ -156,6 +156,26 @@ async function handleCapture(request, env, cors) {
     catch (e) { console.log("enroll da página falhou:", String(e)); }
   }
 
+  // 4d) inscrição no evento + controle de vagas / lista de espera
+  let inscricao = null;
+  if (page) {
+    try {
+      const r = await sb(env, "POST", "/rpc/inscrever_em_evento",
+        { p_page: page.id, p_lead: lead.id });
+      inscricao = (r && (Array.isArray(r) ? r[0] : r)) || null;
+    } catch (e) { console.log("inscrever_em_evento falhou:", String(e)); }
+    // se caiu na lista de espera, marca uma tag no lead
+    if (inscricao && inscricao.status === "espera") {
+      try {
+        const tagEspera = "Lista de espera: " + (page.headline || pageSlug);
+        const novasTags = Array.from(new Set(((lead.tags) || []).concat([tagEspera])));
+        lead = (await sb(env, "PATCH", `/leads?id=eq.${lead.id}`,
+          { tags: novasTags }, "return=representation"))[0];
+      } catch (e) { console.log("tag espera falhou:", String(e)); }
+    }
+  }
+  const emEspera = !!(inscricao && inscricao.status === "espera");
+
   // 5) Resend (não bloqueia a resposta)
   let resend = { synced: false };
   if (optInEmail && email_normalizado && env.RESEND_API_KEY && env.RESEND_AUDIENCE_ID) {
@@ -170,9 +190,9 @@ async function handleCapture(request, env, cors) {
     }
   }
 
-  const redirect = (page ? `/obrigado/${encodeURIComponent(pageSlug)}` : null)
+  const redirect = (page ? `/obrigado/${encodeURIComponent(pageSlug)}${emEspera ? "?espera=1" : ""}` : null)
     || (form && form.redirect_url) || clean(body.redirect) || null;
-  return json({ ok: true, lead_id: lead.id, uf: geo.uf, resend, redirect }, 200, cors);
+  return json({ ok: true, lead_id: lead.id, uf: geo.uf, resend, redirect, waitlist: emEspera }, 200, cors);
 }
 
 /* =====================================================================
