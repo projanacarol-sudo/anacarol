@@ -767,21 +767,36 @@ async function carregarSequencias(){
   for(const s of SEQUENCES){
     const { data: st } = await sb.rpc("crm_funil_stats",{p_sequence:s.id});
     const x = st||{};
+    const on=s.ativo!==false;
     rows.push(`<tr>
       <td><strong>${esc(s.nome)}</strong>${s.objetivo?`<div class="muted" style="font-size:11px">${esc(s.objetivo)}</div>`:""}</td>
-      <td>${s.ativo?'<span class="pill ok">ativo</span>':'<span class="pill frio">pausado</span>'}</td>
+      <td><button type="button" class="chave-funil" data-toggle="${s.id}" aria-pressed="${on}" title="Clique para ${on?'pausar':'ativar'} este funil"
+        style="border:0;cursor:pointer;border-radius:999px;color:#fff;font-weight:800;font-size:11px;padding:6px 12px;min-width:92px;background:${on?'#128C7E':'#c0392b'}">${on?'● ATIVO':'❚❚ PAUSADO'}</button></td>
       <td>${fmt(x.ativos)} ativos · ${fmt(x.concluidos)} concluídos</td>
       <td>${fmt(x.enviados)} env · ${fmt(x.aberturas)} abert · ${fmt(x.cliques)} cliq</td>
       <td><button class="lnk" data-seq="${s.id}">Abrir</button> · <button class="lnk" data-delseq="${s.id}" style="color:#c0392b">Excluir</button></td>
     </tr>`);
   }
-  $("#seqList").innerHTML=`<table><thead><tr><th>Funil</th><th>Status</th><th>No funil</th><th>Desempenho</th><th></th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
+  $("#seqList").innerHTML=`<table><thead><tr><th>Funil</th><th>Ligado?</th><th>No funil</th><th>Desempenho</th><th></th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
+  $$("[data-toggle]").forEach(b=>b.addEventListener("click",()=>toggleFunil(b.dataset.toggle)));
   $$("[data-seq]").forEach(b=>b.addEventListener("click",()=>abrirSequencia(SEQUENCES.find(s=>s.id===b.dataset.seq))));
   $$("[data-delseq]").forEach(b=>b.addEventListener("click",async()=>{
     if(!confirm("Excluir este funil e todos os seus passos? (os leads saem do funil)"))return;
     await sb.from("email_sequences").delete().eq("id",b.dataset.delseq);
     toast("Funil excluído");carregarSequencias();
   }));
+}
+
+/* liga/pausa UM funil específico (usa email_sequences.ativo; o motor respeita) */
+async function toggleFunil(id){
+  const s=SEQUENCES.find(x=>x.id===id); if(!s) return;
+  const novo = !(s.ativo!==false);   // inverte o estado atual
+  if(!novo && !confirm(`Pausar o funil "${s.nome}"?\nOs e-mails automáticos deste funil param até você religar. Os leads continuam parados (não saem do funil).`))return;
+  const { error } = await sb.from("email_sequences").update({ativo:novo}).eq("id",id);
+  if(error){ toast("Erro ao alterar o funil"); return; }
+  s.ativo=novo;
+  toast(novo?`Funil "${s.nome}" ATIVADO`:`Funil "${s.nome}" PAUSADO`);
+  carregarSequencias();
 }
 
 /* --- criar/editar sequência --- */

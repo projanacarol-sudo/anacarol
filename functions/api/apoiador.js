@@ -21,6 +21,8 @@ export async function onRequestPost({ request, env }) {
     if (b._gotcha) return json({ ok: true, skipped: true }, 200, h);
 
     const modo = b.modo === "fisico" ? "fisico" : "digital";
+    // método de entrega do impresso (controle interno): motoboy | correio
+    const entrega = modo === "fisico" ? (b.entrega === "correio" ? "correio" : "motoboy") : null;
     const nome = texto(b.nome, 120);
     const whatsapp = String(b.whatsapp || "").replace(/\D/g, "").slice(0, 13);
     const email = texto(b.email, 160).toLowerCase();
@@ -39,7 +41,7 @@ export async function onRequestPost({ request, env }) {
     // payload SEM status/lote/rastreio/criado_em (preserva em recadastro)
     const row = {
       atualizado_em: new Date().toISOString(),
-      modo, nome, whatsapp, email, cep,
+      modo, entrega, nome, whatsapp, email, cep,
       logradouro: texto(b.logradouro, 160), numero: texto(b.numero, 20),
       complemento: texto(b.complemento, 80), bairro: texto(b.bairro, 100),
       cidade: texto(b.cidade, 100), uf: texto(b.uf, 2),
@@ -69,9 +71,16 @@ export async function onRequestPost({ request, env }) {
     // Também registra a pessoa como LEAD no CRM, diferenciando a ORIGEM pelo
     // tipo de material (impresso × digital). Se já for lead: ganha a tag e vira
     // QUENTE. Não bloqueia o cadastro.
-    const ehFisico = modo === "fisico";
-    const origemNome = ehFisico ? "LP Material Impresso" : "LP Material Digital";
-    const tagLead    = ehFisico ? "Material Impresso"    : "Material Digital";
+    // Origem/tag em 3 vias: digital, impresso-motoboy, impresso-correio.
+    // (o lead NÃO vê essa diferença — é só controle interno de logística)
+    let origemNome, tagLead;
+    if (modo !== "fisico") {
+      origemNome = "LP Material Digital"; tagLead = "Material Digital";
+    } else if (entrega === "correio") {
+      origemNome = "LP Impresso Correio"; tagLead = "Impresso Correio";
+    } else {
+      origemNome = "LP Impresso Motoboy"; tagLead = "Impresso Motoboy";
+    }
     try {
       await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/apoiador_vira_lead`, {
         method: "POST",
