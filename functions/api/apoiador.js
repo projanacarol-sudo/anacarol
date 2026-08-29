@@ -73,13 +73,13 @@ export async function onRequestPost({ request, env }) {
     const origemNome = ehFisico ? "LP Material Impresso" : "LP Material Digital";
     const tagLead    = ehFisico ? "Material Impresso"    : "Material Digital";
     try {
-      await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/apoiador_vira_lead`, {
+      // 1) cria/atualiza o lead e RECEBE O ID (para poder inscrever no funil)
+      const rLead = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/apoiador_vira_lead`, {
         method: "POST",
         headers: {
           apikey: env.SUPABASE_SERVICE_KEY,
           Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY,
           "Content-Type": "application/json",
-          Prefer: "return=minimal",
         },
         body: JSON.stringify({
           p_nome: nome, p_email: email, p_whatsapp: whatsapp,
@@ -87,7 +87,32 @@ export async function onRequestPost({ request, env }) {
           p_origem_nome: origemNome, p_tag: tagLead,
         }),
       });
-    } catch (e) { /* virar lead não pode derrubar o cadastro do material */ }
+      let leadId = null;
+      try { const t = await rLead.text(); const v = t ? JSON.parse(t) : null; leadId = typeof v === "string" ? v : null; } catch (e) {}
+
+      // 2) AUTO-ENROLL no funil: se a origem ("LP Material Impresso"/"Digital")
+      //    tiver um funil ligado (auto_sequence_id no editor de funil), inscreve
+      //    o lead nele. É o gatilho que faltava para os cadastros de material.
+      if (leadId) {
+        const rOrg = await fetch(
+          `${env.SUPABASE_URL}/rest/v1/origens?nome=eq.${encodeURIComponent(origemNome)}&select=auto_sequence_id&limit=1`,
+          { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY } });
+        const org = (await rOrg.json().catch(() => []))[0];
+        const seqId = org && org.auto_sequence_id;
+        if (seqId) {
+          await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/enroll_lead`, {
+            method: "POST",
+            headers: {
+              apikey: env.SUPABASE_SERVICE_KEY,
+              Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY,
+              "Content-Type": "application/json",
+              Prefer: "return=minimal",
+            },
+            body: JSON.stringify({ p_lead: leadId, p_sequence: seqId }),
+          });
+        }
+      }
+    } catch (e) { /* virar lead / inscrever não pode derrubar o cadastro do material */ }
 
     return json({ ok: true, modo }, 200, h);
   } catch (e) {
