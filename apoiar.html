@@ -1975,7 +1975,7 @@ $('#btn-cep').addEventListener('click', async ()=>{
     // Pediremos a cidade na etapa de contato (não temos cidade/UF do CEP).
     S.cepNaoEncontrado = true;
     S.end = { cidade:'', uf:CFG.uf, lat:null, lng:null, logradouro:'', bairro:'' };
-    S.dist = null; S.metodo = 'nao-encontrado'; S.entrega = null;
+    S.dist = null; S.metodo = 'nao-encontrado';
     montarDigital(S.end, false, null, true);
     ir(2, {semFoco:true});
     return;
@@ -1983,27 +1983,18 @@ $('#btn-cep').addEventListener('click', async ()=>{
   S.cepNaoEncontrado = false;
 
   S.end = d;
+  // Régua (2 faixas): dentro do raio (30 km) em SP = impresso por MOTOBOY;
+  // fora do raio OU fora de SP = Kit Digital.
   const foraSP = d.uf !== CFG.uf && !CFG.aceita_fora_de_sp;
+  const r = foraSP ? { ok:false, metodo:'fora-uf', dist:null } : dentroDaRota(d);
+  S.dist = r.dist; S.metodo = r.metodo;
 
-  // ── Régua de entrega (3 faixas) ──────────────────────────────
-  // • Fora de SP           → Kit Digital
-  // • SP, dentro do raio   → Impresso por MOTOBOY
-  // • SP, fora do raio     → Impresso pelos CORREIOS (mala direta)
-  if(foraSP){
-    S.dist = null; S.metodo = 'fora-uf'; S.entrega = null;
-    montarDigital(d, true, null);
-  }else{
-    const r = dentroDaRota(d);
-    S.dist = r.dist; S.metodo = r.metodo;
-    const entrega = r.ok ? 'motoboy' : 'correio';   // em SP mas fora do raio = Correio
-    S.entrega = entrega;
-    montarFisico(d, r.rota, r.dist, entrega);
-  }
+  if(r.ok) montarFisico(d, r.rota, r.dist); else montarDigital(d, foraSP, r.dist);
   ir(2, {semFoco:true});
 });
 
-function montarFisico(d, rota, dist, entrega){
-  S.modo = 'fisico'; S.rota = rota; S.entrega = entrega || S.entrega || 'motoboy';
+function montarFisico(d, rota, dist){
+  S.modo = 'fisico'; S.rota = rota;
   $('#slam').className = 'slam fisico';
   $('#slam-rot').textContent = 'Sua região está na rota';
   $('#slam-tit').textContent = 'Entrega em casa';
@@ -2113,7 +2104,6 @@ $('#btn-enviar').addEventListener('click', async ()=>{
     cidade: S.end?.cidade || '', uf: S.end?.uf || '',
     lat: S.end?.lat ?? null, lng: S.end?.lng ?? null,
     distancia_km: S.dist, metodo_rota: S.metodo,
-    entrega: S.modo === 'fisico' ? (S.entrega || 'motoboy') : null,
     candidato: CFG.candidato, numero_urna: CFG.numero_urna,
     aceite:true, aceite_em:new Date().toISOString(),
     origem: p.get('utm_source') || document.referrer || 'direto',

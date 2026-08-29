@@ -189,9 +189,7 @@ td.end{white-space:normal;max-width:280px;line-height:1.4;}
       <label for="f-modo">Kit</label>
       <select id="f-modo">
         <option value="">Todos</option>
-        <option value="fisico">Impresso (todos)</option>
-        <option value="motoboy">Impresso · Motoboy</option>
-        <option value="correio">Impresso · Correio</option>
+        <option value="fisico">Impresso</option>
         <option value="digital">Digital</option>
       </select>
     </div>
@@ -352,9 +350,7 @@ function dedupe(rows){
 
 function passaFiltro(l){
   const modo = $('#f-modo').value, status = $('#f-status').value, cidade = $('#f-cidade').value, lote = $('#f-lote').value, q = $('#f-q').value.trim().toLowerCase();
-  if(modo === 'motoboy' || modo === 'correio'){
-    if(l.modo !== 'fisico' || (l.entrega || 'motoboy') !== modo) return false;
-  } else if(modo && l.modo !== modo) return false;
+  if(modo && l.modo !== modo) return false;
   if(status && l.status !== status) return false;
   if(cidade && (l.cidade || '') !== cidade) return false;
   if(lote === '__sem__'){ if(l.lote) return false; }
@@ -373,20 +369,19 @@ function aplicarFiltros(){
   preencherSelects();
   desenharTabela();
   $('#contagem').textContent = `${LEADS.length} de ${TODOS.length} cadastros`;
-  const sc = TODOS.filter(l => l.modo === 'fisico' && l.metodo_rota === 'sem-coordenada').length;
+  const sc = TODOS.filter(l => l.metodo_rota === 'sem-coordenada').length;
   $('#aviso-sem-coord').textContent = sc
-    ? `${sc} CEP(s) em SP sem coordenada entraram como Correio (não deu p/ medir a distância) — confira antes de postar` : '';
+    ? `${sc} CEP(s) sem coordenada foram para o digital — confira as cidades no CFG` : '';
 }
 
 function desenharKpis(){
   const t = (modo, status) => TODOS.filter(x => (!modo || x.modo === modo) && (!status || x.status === status)).length;
-  const tEnt = ent => TODOS.filter(x => x.modo === 'fisico' && (x.entrega || 'motoboy') === ent).length;
   const kpis = [
     ['Total', t(), ''],
-    ['Impresso · Motoboy', tEnt('motoboy'), 'f'],
-    ['Impresso · Correio', tEnt('correio'), 'f'],
+    ['Kit impresso', t('fisico'), 'f'],
     ['Kit digital', t('digital'), 'd'],
     ['A separar', t('fisico', 'novo'), ''],
+    ['Separados', t('fisico', 'separado'), ''],
     ['Postados', t('fisico', 'postado'), 'p']
   ];
   $('#kpis').innerHTML = kpis.map(([r, n, c]) =>
@@ -429,7 +424,7 @@ function desenharTabela(){
   $('#corpo').innerHTML = LEADS.map(l => `
     <tr data-id="${l.id}">
       <td><input type="checkbox" class="chk" data-id="${l.id}"></td>
-      <td><span class="tag ${l.modo}">${l.modo === 'fisico' ? 'impresso' : 'digital'}</span>${l.modo === 'fisico' ? `<br><span class="dim" style="font-size:10px;text-transform:uppercase;letter-spacing:.3px">${(l.entrega || 'motoboy') === 'correio' ? '✉ correio' : '🛵 motoboy'}</span>` : ''}</td>
+      <td><span class="tag ${l.modo}">${l.modo === 'fisico' ? 'impresso' : 'digital'}</span></td>
       <td><span class="tag ${l.status}">${l.status}</span></td>
       <td>${esc(l.nome)}<br><span class="dim mono" style="font-size:11px">${esc(l.email)}</span></td>
       <td class="end">${endereco(l)}</td>
@@ -520,7 +515,7 @@ $$('[data-status]').forEach(b => b.addEventListener('click', () => emMassa({ sta
 /* ─── CSV (gerado no navegador; ; + BOM p/ Excel PT) ────── */
 $('#btn-csv').addEventListener('click', () => {
   if(!LEADS.length) return alert('Nada para exportar com esses filtros.');
-  const cols = ['criado_em','modo','entrega','status','nome','whatsapp','email','cep','logradouro','numero','complemento','bairro','cidade','uf','distancia_km','metodo_rota','lote','rastreio','obs'];
+  const cols = ['criado_em','modo','status','nome','whatsapp','email','cep','logradouro','numero','complemento','bairro','cidade','uf','distancia_km','metodo_rota','lote','rastreio','obs'];
   const cel = v => { const s = String(v == null ? '' : v).replace(/"/g,'""'); return /[";\n]/.test(s) ? `"${s}"` : s; };
   const linhas = [cols.join(';')].concat(LEADS.map(l => cols.map(c => cel(l[c])).join(';')));
   const blob = new Blob(['﻿' + linhas.join('\r\n')], { type:'text/csv;charset=utf-8' });
