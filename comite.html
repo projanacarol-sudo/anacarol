@@ -60,9 +60,9 @@
     <p class="hint">A pessoa veio ao comitê e já levou o material. Entra como <b>impresso · entregue</b>.</p>
     <label>Nome completo</label><input id="fNome" type="text" autocomplete="off">
     <label>WhatsApp (com DDD)</label><input id="fWhats" type="tel" inputmode="numeric" placeholder="(11) 99999-9999" maxlength="16">
-    <label>E-mail <span style="text-transform:none;font-weight:600"></span></label><input id="fEmail" type="email" autocomplete="off" placeholder="email">
+    <label>E-mail</label><input id="fEmail" type="email" autocomplete="off" placeholder="email@exemplo.com">
     <div class="row">
-      <div><label>Cidade <span style="text-transform:none;font-weight:600"></span></label><input id="fCidade" type="text" placeholder="endereço"></div>
+      <div><label>Cidade</label><input id="fCidade" type="text" placeholder="Cidade"></div>
       <div class="uf"><label>UF</label><input id="fUf" type="text" maxlength="2" placeholder="SP" style="text-transform:uppercase"></div>
     </div>
     <button class="primary" id="btnSalvar">✓ Cadastrar retirada</button>
@@ -114,14 +114,20 @@ function mostrarForm(session){
 async function salvar(){
   const nome=$("#fNome").value.trim();
   const whats=$("#fWhats").value.replace(/\D/g,'');
+  const email=$("#fEmail").value.trim();
+  const cidade=$("#fCidade").value.trim();
+  const uf=$("#fUf").value.trim().toUpperCase();
   if(nome.length<3){ return erroForm("Digite o nome completo."); }
   if(whats.length<10){ return erroForm("WhatsApp inválido (com DDD)."); }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ return erroForm("Digite um e-mail válido."); }
+  if(cidade.length<2){ return erroForm("Informe a cidade."); }
+  if(uf.length!==2){ return erroForm("Informe a UF (2 letras)."); }
   const btn=$("#btnSalvar"); btn.disabled=true; $("#formMsg").style.display="none";
   const { data } = await sb.auth.getSession();
   const token = data.session && data.session.access_token;
   try{
     const r=await fetch("/api/comite-retirada",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
-      body:JSON.stringify({nome, whatsapp:whats, email:$("#fEmail").value.trim(), cidade:$("#fCidade").value.trim(), uf:$("#fUf").value.trim().toUpperCase()})});
+      body:JSON.stringify({nome, whatsapp:whats, email, cidade, uf})});
     const d=await r.json().catch(()=>({}));
     if(d.ok){
       feitos++;
