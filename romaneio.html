@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Romaneio — Ana Carolina Oliveira</title>
 <meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#7a2418">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CRM Ana">
+<script>if("serviceWorker" in navigator){addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -176,6 +182,7 @@ td.end{white-space:normal;max-width:280px;line-height:1.4;}
   <div class="topo">
     <h1>Romaneio <b>Ana Carolina</b></h1>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <a class="btn" href="/comite.html" style="text-decoration:none;background:var(--amarelo);color:#3a2600">＋ Retirada no local</a>
       <button class="btn btn-2" id="btn-atualizar">Atualizar</button>
       <button class="btn btn-2" id="btn-csv">Baixar CSV</button>
       <button class="btn btn-2" id="btn-sair">Sair</button>
@@ -190,6 +197,7 @@ td.end{white-space:normal;max-width:280px;line-height:1.4;}
       <select id="f-modo">
         <option value="">Todos</option>
         <option value="fisico">Impresso</option>
+        <option value="retirada">Retirada no local</option>
         <option value="digital">Digital</option>
       </select>
     </div>
@@ -350,7 +358,8 @@ function dedupe(rows){
 
 function passaFiltro(l){
   const modo = $('#f-modo').value, status = $('#f-status').value, cidade = $('#f-cidade').value, lote = $('#f-lote').value, q = $('#f-q').value.trim().toLowerCase();
-  if(modo && l.modo !== modo) return false;
+  if(modo === 'retirada'){ if(!l.retirada_local) return false; }
+  else if(modo && l.modo !== modo) return false;
   if(status && l.status !== status) return false;
   if(cidade && (l.cidade || '') !== cidade) return false;
   if(lote === '__sem__'){ if(l.lote) return false; }
@@ -376,12 +385,13 @@ function aplicarFiltros(){
 
 function desenharKpis(){
   const t = (modo, status) => TODOS.filter(x => (!modo || x.modo === modo) && (!status || x.status === status)).length;
+  const retirados = TODOS.filter(x => x.retirada_local).length;
   const kpis = [
     ['Total', t(), ''],
     ['Kit impresso', t('fisico'), 'f'],
+    ['Retirada no local', retirados, 'p'],
     ['Kit digital', t('digital'), 'd'],
     ['A separar', t('fisico', 'novo'), ''],
-    ['Separados', t('fisico', 'separado'), ''],
     ['Postados', t('fisico', 'postado'), 'p']
   ];
   $('#kpis').innerHTML = kpis.map(([r, n, c]) =>
@@ -424,7 +434,7 @@ function desenharTabela(){
   $('#corpo').innerHTML = LEADS.map(l => `
     <tr data-id="${l.id}">
       <td><input type="checkbox" class="chk" data-id="${l.id}"></td>
-      <td><span class="tag ${l.modo}">${l.modo === 'fisico' ? 'impresso' : 'digital'}</span></td>
+      <td><span class="tag ${l.modo}">${l.modo === 'fisico' ? 'impresso' : 'digital'}</span>${l.retirada_local ? `<br><span class="dim" style="font-size:10px;text-transform:uppercase;letter-spacing:.3px">🏪 retirou no local</span>` : ''}</td>
       <td><span class="tag ${l.status}">${l.status}</span></td>
       <td>${esc(l.nome)}<br><span class="dim mono" style="font-size:11px">${esc(l.email)}</span></td>
       <td class="end">${endereco(l)}</td>
@@ -515,7 +525,7 @@ $$('[data-status]').forEach(b => b.addEventListener('click', () => emMassa({ sta
 /* ─── CSV (gerado no navegador; ; + BOM p/ Excel PT) ────── */
 $('#btn-csv').addEventListener('click', () => {
   if(!LEADS.length) return alert('Nada para exportar com esses filtros.');
-  const cols = ['criado_em','modo','status','nome','whatsapp','email','cep','logradouro','numero','complemento','bairro','cidade','uf','distancia_km','metodo_rota','lote','rastreio','obs'];
+  const cols = ['criado_em','modo','retirada_local','status','nome','whatsapp','email','cep','logradouro','numero','complemento','bairro','cidade','uf','distancia_km','metodo_rota','lote','rastreio','obs'];
   const cel = v => { const s = String(v == null ? '' : v).replace(/"/g,'""'); return /[";\n]/.test(s) ? `"${s}"` : s; };
   const linhas = [cols.join(';')].concat(LEADS.map(l => cols.map(c => cel(l[c])).join(';')));
   const blob = new Blob(['﻿' + linhas.join('\r\n')], { type:'text/csv;charset=utf-8' });

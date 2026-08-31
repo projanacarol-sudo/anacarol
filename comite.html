@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Retirada no Comitê — Ana Carolina</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#7a2418">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CRM Ana">
+<script>if("serviceWorker" in navigator){addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));}</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--wine:#7a2418;--wine2:#9a3524;--gold:#e0a53a;--ink:#241812;--soft:#7a6a5e;--line:#e6dccf;--bg:#f4efe9;--wa:#25D366}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
+  .wrap{max-width:520px;margin:0 auto;padding:16px 16px 40px}
+  header{background:linear-gradient(135deg,var(--wine2),var(--wine));color:#fff;border-radius:18px;padding:18px 18px;box-shadow:0 10px 26px rgba(122,36,24,.25);display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
+  header h1{font-size:19px;font-weight:800}
+  header .who{font-size:11.5px;opacity:.9}
+  .sair{background:#ffffff26;border:0;color:#fff;font-weight:700;font-size:12px;padding:7px 12px;border-radius:999px;cursor:pointer}
+  .card{background:#fff;border-radius:18px;box-shadow:0 8px 26px rgba(120,50,20,.08);padding:18px;margin-top:16px}
+  label{display:block;font-size:12px;font-weight:800;color:var(--soft);text-transform:uppercase;letter-spacing:.4px;margin:12px 0 5px}
+  input{width:100%;padding:14px;border:1.5px solid var(--line);border-radius:12px;font-size:16px;background:#faf5ef;color:var(--ink);font-family:inherit}
+  input:focus{outline:none;border-color:var(--gold)}
+  .row{display:flex;gap:10px}.row>div{flex:1}
+  .uf{max-width:90px}
+  button.primary{margin-top:18px;width:100%;padding:16px;border:0;border-radius:14px;background:var(--wa);color:#0a3d20;font-size:17px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(37,211,102,.3)}
+  button.primary:disabled{opacity:.6}
+  .msg{margin-top:12px;padding:12px;border-radius:11px;font-size:14px;font-weight:700;display:none}
+  .ok{background:#e6f7ee;color:#1c8a4e;display:block}
+  .err{background:#fdecea;color:#c0392b;display:block}
+  .hint{font-size:12.5px;color:var(--soft);margin-top:6px}
+  .contador{font-size:12.5px;color:var(--soft);text-align:center;margin-top:14px}
+  h2{font-size:16px;color:var(--wine);margin-bottom:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div><h1>Retirada no Comitê</h1><div class="who" id="who">Pronta entrega no balcão</div></div>
+    <button class="sair" id="btnSair" style="display:none">Sair</button>
+  </header>
+
+  <!-- LOGIN -->
+  <div class="card" id="cardLogin" style="display:none">
+    <h2>Entrar</h2>
+    <p class="hint">Use o seu login de colaborador do CRM.</p>
+    <label>E-mail</label><input id="liEmail" type="email" autocomplete="username">
+    <label>Senha</label><input id="liSenha" type="password" autocomplete="current-password">
+    <button class="primary" id="btnEntrar" style="background:var(--wine)">Entrar</button>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <!-- FORM DE RETIRADA -->
+  <div class="card" id="cardForm" style="display:none">
+    <h2>Novo cadastro de retirada</h2>
+    <p class="hint">A pessoa veio ao comitê e já levou o material. Entra como <b>impresso · entregue</b>.</p>
+    <label>Nome completo</label><input id="fNome" type="text" autocomplete="off">
+    <label>WhatsApp (com DDD)</label><input id="fWhats" type="tel" inputmode="numeric" placeholder="(11) 99999-9999" maxlength="16">
+    <label>E-mail <span style="text-transform:none;font-weight:600">(opcional)</span></label><input id="fEmail" type="email" autocomplete="off" placeholder="opcional">
+    <div class="row">
+      <div><label>Cidade <span style="text-transform:none;font-weight:600">(opcional)</span></label><input id="fCidade" type="text" placeholder="opcional"></div>
+      <div class="uf"><label>UF</label><input id="fUf" type="text" maxlength="2" placeholder="SP" style="text-transform:uppercase"></div>
+    </div>
+    <button class="primary" id="btnSalvar">✓ Cadastrar retirada</button>
+    <div class="msg" id="formMsg"></div>
+    <div class="contador" id="contador"></div>
+  </div>
+</div>
+
+<script>
+const $ = s=>document.querySelector(s);
+let sb=null, feitos=0;
+
+function mask(v){var d=(v||'').replace(/\D/g,'').slice(0,11);if(!d)return'';if(d.length<=2)return'('+d;
+  if(d.length<=6)return'('+d.slice(0,2)+') '+d.slice(2);
+  if(d.length<=10)return'('+d.slice(0,2)+') '+d.slice(2,6)+'-'+d.slice(6);
+  return'('+d.slice(0,2)+') '+d.slice(2,7)+'-'+d.slice(7);}
+
+async function init(){
+  let url,anon;
+  try{ const c=await (await fetch("/api/config",{cache:"no-store"})).json(); url=c.url; anon=c.anonKey; }catch(e){}
+  if(!url||!anon){ $("#cardLogin").style.display="block"; $("#loginMsg").className="msg err"; $("#loginMsg").textContent="Configuração do servidor ausente."; return; }
+  sb = window.supabase.createClient(url, anon);
+  $("#fWhats").addEventListener('input',()=>{$("#fWhats").value=mask($("#fWhats").value);});
+  $("#btnEntrar").onclick=entrar;
+  $("#btnSalvar").onclick=salvar;
+  $("#btnSair").onclick=async()=>{ await sb.auth.signOut(); location.reload(); };
+  const { data } = await sb.auth.getSession();
+  if(data.session) mostrarForm(data.session); else $("#cardLogin").style.display="block";
+}
+
+async function entrar(){
+  const email=$("#liEmail").value.trim(), senha=$("#liSenha").value;
+  if(!email||!senha){ return; }
+  $("#btnEntrar").disabled=true; $("#loginMsg").style.display="none";
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
+  $("#btnEntrar").disabled=false;
+  if(error){ $("#loginMsg").className="msg err"; $("#loginMsg").textContent="Não entrou: confira e-mail e senha."; return; }
+  location.reload();
+}
+
+function mostrarForm(session){
+  $("#cardLogin").style.display="none";
+  $("#cardForm").style.display="block";
+  $("#btnSair").style.display="inline-block";
+  $("#who").textContent = (session.user && session.user.email) || "Conectado";
+  $("#fNome").focus();
+}
+
+async function salvar(){
+  const nome=$("#fNome").value.trim();
+  const whats=$("#fWhats").value.replace(/\D/g,'');
+  if(nome.length<3){ return erroForm("Digite o nome completo."); }
+  if(whats.length<10){ return erroForm("WhatsApp inválido (com DDD)."); }
+  const btn=$("#btnSalvar"); btn.disabled=true; $("#formMsg").style.display="none";
+  const { data } = await sb.auth.getSession();
+  const token = data.session && data.session.access_token;
+  try{
+    const r=await fetch("/api/comite-retirada",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({nome, whatsapp:whats, email:$("#fEmail").value.trim(), cidade:$("#fCidade").value.trim(), uf:$("#fUf").value.trim().toUpperCase()})});
+    const d=await r.json().catch(()=>({}));
+    if(d.ok){
+      feitos++;
+      $("#formMsg").className="msg ok"; $("#formMsg").textContent="✓ "+nome+" cadastrado! Próximo.";
+      $("#contador").textContent=feitos+" retirada(s) cadastrada(s) nesta sessão.";
+      ["#fNome","#fWhats","#fEmail","#fCidade","#fUf"].forEach(s=>$(s).value="");
+      $("#fNome").focus();
+    } else erroForm("Erro: "+(d.erro||"não salvou"));
+  }catch(e){ erroForm("Sem conexão. Tente de novo."); }
+  btn.disabled=false;
+}
+function erroForm(t){ const m=$("#formMsg"); m.className="msg err"; m.textContent=t; $("#btnSalvar").disabled=false; }
+
+init();
+</script>
+</body>
+</html>

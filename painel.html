@@ -2,8 +2,15 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>CRM — Ana Carolina</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#7a2418">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CRM Ana">
+<script>if("serviceWorker" in navigator){addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));}</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
@@ -183,6 +190,7 @@
     <button data-tab="colaboradores">Colaboradores</button>
     <button data-tab="romaneio">Romaneio Materiais</button>
     <button data-tab="impacto">Impacto</button>
+    <button data-tab="notificacoes">Notificações</button>
   </nav>
 
   <main>
@@ -289,6 +297,41 @@
           <select id="impAno" style="font-size:13px;padding:6px 10px;border-radius:8px;"></select>
         </h3>
         <div id="impTabela" style="overflow:auto;"></div>
+      </div>
+    </section>
+
+    <!-- ------- NOTIFICAÇÕES (PUSH) ------- -->
+    <section class="panel" id="panel-notificacoes">
+      <div class="box">
+        <h3>🔔 Notificações neste aparelho</h3>
+        <p class="muted" style="font-size:13px;margin:4px 0 12px">Ative para receber os avisos do CRM direto no celular. <b>No iPhone</b>: primeiro toque em Compartilhar → “Adicionar à Tela de Início”, abra o app pelo ícone e só então ative aqui.</p>
+        <button class="btn" id="btnAtivarPush">Ativar notificações</button>
+        <button class="btn ghost" id="btnTestePush" style="margin-left:8px;display:none">Enviar teste pra mim</button>
+        <span id="pushStatus" class="muted" style="font-size:13px;margin-left:10px"></span>
+      </div>
+
+      <div class="box">
+        <h3>✉️ Enviar notificação</h3>
+        <label>Título</label>
+        <input id="nvTitulo" maxlength="60" placeholder="Ex: Reunião às 15h" style="width:100%;padding:10px;border:1px solid #cfd8dd;border-radius:9px">
+        <label style="margin-top:8px;display:block">Mensagem</label>
+        <textarea id="nvCorpo" maxlength="160" style="width:100%;min-height:60px;padding:10px;border:1px solid #cfd8dd;border-radius:9px" placeholder="Texto curto do aviso"></textarea>
+        <label style="margin-top:8px;display:block">Link ao abrir (opcional)</label>
+        <input id="nvUrl" placeholder="/painel.html" style="width:100%;padding:10px;border:1px solid #cfd8dd;border-radius:9px">
+        <label style="margin-top:10px;display:block">Para quem?</label>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:4px">
+          <label class="chk"><input type="radio" name="nvAlvo" value="todos" checked> Todos os aparelhos</label>
+          <label class="chk"><input type="radio" name="nvAlvo" value="selecionados"> Colaboradores específicos</label>
+        </div>
+        <div id="nvColabsWrap" style="display:none;margin-top:8px;border:1px solid var(--line);border-radius:10px;padding:10px;max-height:180px;overflow:auto"></div>
+        <div class="actions"><button class="btn" id="btnEnviarPush">Enviar notificação</button></div>
+        <div class="muted" id="nvMsg" style="font-size:13px"></div>
+      </div>
+
+      <div class="box">
+        <h3>⚙️ Regras automáticas</h3>
+        <p class="muted" style="font-size:13px;margin:4px 0 12px">Defina quem recebe cada aviso automático. <b>Todos</b> = todos os aparelhos inscritos; <b>Selecionados</b> = só os colaboradores que você marcar.</p>
+        <div id="regrasWrap"><div class="empty">Carregando…</div></div>
       </div>
     </section>
 
@@ -459,8 +502,117 @@ $$("nav.tabs button").forEach(b => b.addEventListener("click", () => {
   if (b.dataset.tab==="romaneio") { const f=$("#romaneioFrame"); if(f && !f.src) f.src="romaneio.html"; }
   if (b.dataset.tab==="email-gen") loadEmailGen();
   if (b.dataset.tab==="impacto") loadImpacto();
+  if (b.dataset.tab==="notificacoes") loadNotificacoes();
   aplicarEdicao(b.dataset.tab);
 }));
+
+/* ================= NOTIFICAÇÕES (PUSH) ================= */
+let NOTIF_COLABS=[];
+function urlB64ToU8(b64){const pad="=".repeat((4-b64.length%4)%4);const s=(b64+pad).replace(/-/g,"+").replace(/_/g,"/");const raw=atob(s);const u=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)u[i]=raw.charCodeAt(i);return u;}
+async function _tok(){const {data}=await sb.auth.getSession();return data.session&&data.session.access_token;}
+function pushSuportado(){return ("serviceWorker" in navigator)&&("PushManager" in window)&&("Notification" in window);}
+
+async function loadNotificacoes(){
+  const { data } = await sb.from("colaboradores").select("id,nome,cor").neq("status","recusado").order("nome");
+  NOTIF_COLABS = data||[];
+  // checkboxes do envio manual
+  $("#nvColabsWrap").innerHTML = NOTIF_COLABS.map(c=>`<label class="chk" style="display:block;margin:3px 0"><input type="checkbox" class="nv-colab" value="${c.id}"> ${esc(c.nome)}</label>`).join("")||'<span class="muted">Nenhum colaborador.</span>';
+  $$('input[name="nvAlvo"]').forEach(r=>r.onchange=()=>{ $("#nvColabsWrap").style.display = (document.querySelector('input[name="nvAlvo"]:checked').value==="selecionados")?"block":"none"; });
+  $("#btnAtivarPush").onclick=ativarPush;
+  $("#btnTestePush").onclick=enviarTestePush;
+  $("#btnEnviarPush").onclick=enviarPush;
+  statusPush();
+  loadRegras();
+}
+
+async function statusPush(){
+  const el=$("#pushStatus"), tbtn=$("#btnTestePush"), abtn=$("#btnAtivarPush");
+  if(!pushSuportado()){ el.textContent="Este navegador não suporta notificações."; abtn.disabled=true; return; }
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.getSubscription();
+    if(sub && Notification.permission==="granted"){ el.innerHTML="✅ Ativado neste aparelho."; abtn.textContent="Reativar"; tbtn.style.display="inline-block"; }
+    else { el.textContent="Não ativado neste aparelho."; abtn.textContent="Ativar notificações"; tbtn.style.display="none"; }
+  }catch(e){ el.textContent=""; }
+}
+
+async function ativarPush(){
+  const el=$("#pushStatus");
+  if(!pushSuportado()){ toast("Navegador sem suporte a notificações"); return; }
+  try{
+    const perm=await Notification.requestPermission();
+    if(perm!=="granted"){ el.textContent="Permissão negada — ative nas configurações do navegador."; return; }
+    const reg=await navigator.serviceWorker.ready;
+    const cfg=await (await fetch("/api/push/vapid")).json();
+    if(!cfg.publicKey){ toast("Chave VAPID não configurada no servidor"); return; }
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64ToU8(cfg.publicKey)});
+    const j=sub.toJSON(); const token=await _tok();
+    const r=await fetch("/api/push/subscribe",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({endpoint:sub.endpoint,keys:j.keys,user_agent:navigator.userAgent})});
+    if(!r.ok) throw new Error("falha ao salvar assinatura");
+    toast("Notificações ativadas neste aparelho"); statusPush();
+  }catch(e){ console.error(e); el.textContent="Não foi possível ativar ("+(e.message||e)+")."; }
+}
+
+async function enviarTestePush(){
+  const token=await _tok();
+  try{
+    const r=await fetch("/api/push/enviar",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({teste:true})});
+    const d=await r.json().catch(()=>({}));
+    toast(d.ok&&d.enviados?"Teste enviado — confira a notificação":"Nenhum aparelho recebeu (ative primeiro)");
+  }catch(e){ toast("Erro ao enviar teste"); }
+}
+
+async function enviarPush(){
+  const titulo=$("#nvTitulo").value.trim(); if(!titulo){toast("Dê um título");return;}
+  const alvo=document.querySelector('input[name="nvAlvo"]:checked').value;
+  const ids=[...document.querySelectorAll(".nv-colab:checked")].map(x=>x.value);
+  if(alvo==="selecionados" && !ids.length){toast("Selecione ao menos um colaborador");return;}
+  const btn=$("#btnEnviarPush"); btn.disabled=true; $("#nvMsg").textContent="Enviando...";
+  const token=await _tok();
+  try{
+    const r=await fetch("/api/push/enviar",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify({titulo,corpo:$("#nvCorpo").value.trim(),url:$("#nvUrl").value.trim()||null,alvo,colaborador_ids:ids})});
+    const d=await r.json().catch(()=>({}));
+    if(d.ok){ $("#nvMsg").textContent=`Enviado: ${d.enviados} · falhas: ${d.falhas}`+(d.aviso?" ("+d.aviso+")":""); $("#nvTitulo").value="";$("#nvCorpo").value=""; }
+    else $("#nvMsg").textContent="Erro ("+(d.error||"")+")";
+  }catch(e){ $("#nvMsg").textContent="Erro de conexão"; }
+  btn.disabled=false;
+}
+
+async function loadRegras(){
+  const [{data:evs},{data:vinc}]=await Promise.all([
+    sb.from("notif_eventos").select("*").order("titulo"),
+    sb.from("notif_evento_colab").select("evento,colaborador_id"),
+  ]);
+  const eventos=evs||[]; const vincs=vinc||[];
+  const porEvento={}; vincs.forEach(v=>{(porEvento[v.evento]=porEvento[v.evento]||new Set()).add(v.colaborador_id);});
+  if(!eventos.length){ $("#regrasWrap").innerHTML='<div class="empty">Nenhuma regra. Rode a migração 41.</div>'; return; }
+  $("#regrasWrap").innerHTML=eventos.map(e=>{
+    const on=e.ativo!==false; const sel=e.alvo==="selecionados";
+    const set=porEvento[e.evento]||new Set();
+    const colabs = sel? `<div style="margin-top:6px;border:1px solid var(--line);border-radius:9px;padding:8px;max-height:150px;overflow:auto">${
+      NOTIF_COLABS.map(c=>`<label class="chk" style="display:block;margin:2px 0"><input type="checkbox" class="rg-colab" data-ev="${e.evento}" value="${c.id}" ${set.has(c.id)?"checked":""}> ${esc(c.nome)}</label>`).join("")}</div>`:"";
+    return `<div style="border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div><strong>${esc(e.titulo||e.evento)}</strong><div class="muted" style="font-size:11px">${esc(e.evento)}</div></div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <label class="chk"><input type="checkbox" class="rg-ativo" data-ev="${e.evento}" ${on?"checked":""}> ativo</label>
+          <select class="rg-alvo" data-ev="${e.evento}" style="padding:6px 8px;border:1px solid #cfd8dd;border-radius:8px;font-size:12px">
+            <option value="todos" ${!sel?"selected":""}>Todos</option>
+            <option value="selecionados" ${sel?"selected":""}>Selecionados</option>
+          </select>
+        </div>
+      </div>${colabs}</div>`;
+  }).join("");
+  $$(".rg-ativo").forEach(b=>b.onchange=async()=>{ await sb.from("notif_eventos").update({ativo:b.checked,atualizado_em:new Date().toISOString()}).eq("evento",b.dataset.ev); toast("Regra atualizada"); });
+  $$(".rg-alvo").forEach(s=>s.onchange=async()=>{ await sb.from("notif_eventos").update({alvo:s.value,atualizado_em:new Date().toISOString()}).eq("evento",s.dataset.ev); loadRegras(); });
+  $$(".rg-colab").forEach(c=>c.onchange=async()=>{
+    if(c.checked) await sb.from("notif_evento_colab").upsert({evento:c.dataset.ev,colaborador_id:c.value},{onConflict:"evento,colaborador_id"});
+    else await sb.from("notif_evento_colab").delete().eq("evento",c.dataset.ev).eq("colaborador_id",c.value);
+  });
+}
 
 /* ---------- Impacto (Silêncio que Grita) ---------- */
 let IMPACTO=[];

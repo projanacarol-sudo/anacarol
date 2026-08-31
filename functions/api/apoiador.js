@@ -9,11 +9,14 @@
  *
  * Usa SUPABASE_URL + SUPABASE_SERVICE_KEY (já existentes no Pages).
  */
+import { dispararEvento } from "./push/disparo.js";
+
 export async function onRequestOptions() {
   return new Response(null, { status: 204, headers: cors() });
 }
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost(context) {
+  const { request, env } = context;
   const h = cors();
   try {
     const b = await request.json().catch(() => null);
@@ -113,6 +116,15 @@ export async function onRequestPost({ request, env }) {
         }
       }
     } catch (e) { /* virar lead / inscrever não pode derrubar o cadastro do material */ }
+
+    // Notificação push: material impresso novo no Romaneio (não bloqueia)
+    if (modo === "fisico") {
+      try {
+        const cidadeUf = [texto(b.cidade, 100), texto(b.uf, 2)].filter(Boolean).join("/");
+        context && context.waitUntil(dispararEvento(env, "romaneio_novo",
+          { title: "Novo material no Romaneio 📦", body: `${nome}${cidadeUf ? " · " + cidadeUf : ""}`, url: "/romaneio.html", tag: "romaneio_novo" }));
+      } catch (e) {}
+    }
 
     return json({ ok: true, modo }, 200, h);
   } catch (e) {

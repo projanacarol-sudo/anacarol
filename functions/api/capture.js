@@ -17,6 +17,8 @@
  * ---------------------------------------------------------------------
  */
 
+import { dispararEvento } from "./push/disparo.js";
+
 // Preflight CORS
 export async function onRequestOptions(context) {
   return new Response(null, { status: 204, headers: corsHeaders(context.request, context.env) });
@@ -27,7 +29,7 @@ export async function onRequestPost(context) {
   const { request, env } = context;
   const cors = corsHeaders(request, env);
   try {
-    return await handleCapture(request, env, cors);
+    return await handleCapture(request, env, cors, context);
   } catch (err) {
     console.log("ERRO /api/capture:", err && err.stack ? err.stack : String(err));
     // Responde 200 "ok:false" para o widget não travar; o erro fica no log.
@@ -38,7 +40,7 @@ export async function onRequestPost(context) {
 /* =====================================================================
  * Handler principal
  * ===================================================================== */
-async function handleCapture(request, env, cors) {
+async function handleCapture(request, env, cors, context) {
   const body = await readBody(request);
 
   // Honeypot anti-spam
@@ -93,6 +95,7 @@ async function handleCapture(request, env, cors) {
 
   // 3) find-or-create do lead
   let lead = await findLead(env, email_normalizado, phone.e164);
+  const eraNovo = !lead;
   const now = new Date().toISOString();
 
   const leadData = {
@@ -189,6 +192,20 @@ async function handleCapture(request, env, cors) {
       console.log("Resend sync falhou:", String(e));
     }
   }
+
+  // 6) Notificação push (não bloqueia a resposta pública)
+  try {
+    const quem = nome || emailRaw || phone.e164 || "Alguém";
+    if (page) {
+      const ondeUf = geo.uf ? ` (${geo.uf})` : "";
+      context && context.waitUntil(dispararEvento(env, "evento_inscricao",
+        { title: "Nova inscrição 📝", body: `${quem}${ondeUf} — ${page.headline || "evento"}`, url: "/painel.html", tag: "evento_inscricao" }));
+    } else if (eraNovo) {
+      const ondeUf = geo.uf ? ` · ${geo.uf}` : "";
+      context && context.waitUntil(dispararEvento(env, "novo_lead",
+        { title: "Novo lead 🎯", body: `${quem}${ondeUf}`, url: "/painel.html", tag: "novo_lead" }));
+    }
+  } catch (e) { /* push nunca derruba a captura */ }
 
   const redirect = (page ? `/obrigado/${encodeURIComponent(pageSlug)}${emEspera ? "?espera=1" : ""}` : null)
     || (form && form.redirect_url) || clean(body.redirect) || null;
