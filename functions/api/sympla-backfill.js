@@ -20,7 +20,8 @@ export async function onRequestPost({ request, env }) {
 
   let b = {}; try { b = await request.json(); } catch {}
   try {
-    if (b.step === "events") return json({ ok: true, eventos: await listarEventos(env) }, 200);
+    if (b.step === "events") return json(await listarEventos(env), 200);
+    if (b.step === "debug") { const r = await symplaRaw(env, `/events?page=1&page_size=5`); return json({ ok: true, status: r.status, corpo: (r.text || "").slice(0, 900) }, 200); }
     if (b.step === "participants") return json({ ok: true, ...(await importarPagina(env, b.event_id, b.event_nome, b.page || 1)) }, 200);
     return json({ ok: false, error: "step invalido" }, 200);
   } catch (e) {
@@ -28,22 +29,43 @@ export async function onRequestPost({ request, env }) {
   }
 }
 
-async function sympla(env, path) {
+async function symplaRaw(env, path) {
   const r = await fetch(API + path, { headers: { "s_token": env.SYMPLA_TOKEN, "Content-Type": "application/json" } });
-  const t = await r.text();
-  if (!r.ok) throw new Error(`sympla ${r.status} ${t.slice(0, 160)}`);
-  return t ? JSON.parse(t) : {};
+  const text = await r.text();
+  let jsonBody = null; try { jsonBody = text ? JSON.parse(text) : null; } catch {}
+  return { status: r.status, ok: r.ok, json: jsonBody, text };
+}
+async function sympla(env, path) {
+  const r = await symplaRaw(env, path);
+  if (!r.ok) throw new Error(`sympla ${r.status} ${(r.text || "").slice(0, 160)}`);
+  return r.json || {};
 }
 
 async function listarEventos(env) {
-  const out = []; let page = 1;
-  for (let i = 0; i < 50; i++) {
-    const d = await sympla(env, `/events?page=${page}&page_size=100&sort=DESC`);
-    for (const e of (d.data || [])) out.push({ id: e.id, nome: e.name || e.title || ("Evento " + e.id) });
-    if (!(d.pagination && d.pagination.has_next)) break;
-    page++;
+  // tenta variações de query (algumas contas exigem parâmetros diferentes)
+  const variantes = [
+    "/events?page=1&page_size=100",
+    "/events?page=1&page_size=100&field_sort=start_date&sort=DESC",
+    "/events?page=1&page_size=100&published=true",
+  ];
+  let debug = null;
+  for (const v0 of variantes) {
+    const first = await symplaRaw(env, v0);
+    const data0 = (first.json && (first.json.data || first.json.events)) || [];
+    if (!debug) debug = { status: first.status, keys: first.json ? Object.keys(first.json) : [], pagination: first.json && first.json.pagination, amostra: (first.text || "").slice(0, 500) };
+    if (!data0.length) continue;
+    // essa variante funcionou -> pagina até o fim
+    const out = []; let page = 1; const base = v0.replace(/([?&])page=\d+/, "$1page=" + "PAGE");
+    for (let i = 0; i < 60; i++) {
+      const d = await sympla(env, base.replace("PAGE", String(page)));
+      const arr = (d.data || d.events || []);
+      for (const e of arr) out.push({ id: e.id, nome: e.name || e.title || ("Evento " + e.id) });
+      if (!(d.pagination && d.pagination.has_next)) break;
+      page++;
+    }
+    return { ok: true, eventos: out };
   }
-  return out;
+  return { ok: true, eventos: [], debug };
 }
 
 async function importarPagina(env, eventId, eventNome, page) {

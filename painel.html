@@ -636,7 +636,11 @@ async function puxarSympla(){
     const ev=await chamar({step:"events"});
     if(!ev.ok){ log("Erro ao listar eventos: "+(ev.error||"")+(ev.detalhe?" — "+ev.detalhe:"")); throw 0; }
     const eventos=ev.eventos||[];
-    if(!eventos.length){ log("Nenhum evento encontrado no Sympla."); throw 0; }
+    if(!eventos.length){
+      const d=ev.debug||{};
+      log("Nenhum evento encontrado no Sympla.\n\n[diagnóstico] HTTP "+(d.status||"?")+" · chaves da resposta: "+((d.keys||[]).join(", ")||"—")+"\nAmostra: "+((d.amostra||"").slice(0,400)||"(vazio)")+"\n\nManda um print disto que eu vejo o motivo.");
+      throw 0;
+    }
     let totalImp=0, totalPul=0;
     for(let i=0;i<eventos.length;i++){
       const e=eventos[i]; let page=1, impEv=0;
