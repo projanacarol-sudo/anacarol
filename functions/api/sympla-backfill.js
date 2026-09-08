@@ -42,20 +42,23 @@ async function sympla(env, path) {
 }
 
 async function listarEventos(env) {
-  // tenta variações de query (algumas contas exigem parâmetros diferentes)
+  // 'published=false' é essencial: por padrão a API só lista eventos PUBLICADOS,
+  // e palestras já encerradas ficam de fora. 'from' amplia a janela p/ o passado.
+  const FROM = encodeURIComponent("2018-01-01 00:00:00");
   const variantes = [
-    "/events?page=1&page_size=100",
-    "/events?page=1&page_size=100&field_sort=start_date&sort=DESC",
-    "/events?page=1&page_size=100&published=true",
+    `/events?page=1&page_size=200&from=${FROM}&published=false`,
+    `/events?page=1&page_size=200&published=false`,
+    `/events?page=1&page_size=200&from=${FROM}`,
+    `/events?page=1&page_size=200`,
   ];
-  let debug = null;
+  const tentativas = [];
   for (const v0 of variantes) {
     const first = await symplaRaw(env, v0);
-    const data0 = (first.json && (first.json.data || first.json.events)) || [];
-    if (!debug) debug = { status: first.status, keys: first.json ? Object.keys(first.json) : [], pagination: first.json && first.json.pagination, amostra: (first.text || "").slice(0, 500) };
-    if (!data0.length) continue;
-    // essa variante funcionou -> pagina até o fim
-    const out = []; let page = 1; const base = v0.replace(/([?&])page=\d+/, "$1page=" + "PAGE");
+    const arr0 = (first.json && (first.json.data || first.json.events)) || [];
+    tentativas.push({ q: v0.replace(/%20/g, " "), status: first.status, quantidade: (first.json && first.json.pagination && first.json.pagination.quantity) ?? arr0.length });
+    if (!arr0.length) continue;
+    // funcionou -> pagina até o fim
+    const out = []; let page = 1; const base = v0.replace(/([?&])page=\d+/, "$1page=PAGE");
     for (let i = 0; i < 60; i++) {
       const d = await sympla(env, base.replace("PAGE", String(page)));
       const arr = (d.data || d.events || []);
@@ -63,9 +66,9 @@ async function listarEventos(env) {
       if (!(d.pagination && d.pagination.has_next)) break;
       page++;
     }
-    return { ok: true, eventos: out };
+    return { ok: true, eventos: out, usou: v0.replace(/%20/g, " ") };
   }
-  return { ok: true, eventos: [], debug };
+  return { ok: true, eventos: [], debug: { tentativas, amostra: "todas as variações voltaram 0 eventos" } };
 }
 
 async function importarPagina(env, eventId, eventNome, page) {
@@ -95,7 +98,10 @@ async function importarPagina(env, eventId, eventNome, page) {
 function extrairCustom(p) {
   const res = { telefone: "", cidade: "", uf: "" };
   let campos = p.custom_form || p.customForm || [];
-  if (campos && !Array.isArray(campos) && typeof campos === "object") campos = Object.values(campos);
+  // pode vir como array de {name,value}, um único objeto {name,value}, ou um mapa
+  if (campos && !Array.isArray(campos) && typeof campos === "object") {
+    campos = ("name" in campos || "value" in campos) ? [campos] : Object.values(campos);
+  }
   for (const c of (campos || [])) {
     const nome = String((c && (c.name || c.label || c.title)) || "").toLowerCase();
     const val = c && (c.value != null ? c.value : c.answer);

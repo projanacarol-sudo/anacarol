@@ -637,10 +637,11 @@ async function puxarSympla(){
     if(!ev.ok){ log("Erro ao listar eventos: "+(ev.error||"")+(ev.detalhe?" — "+ev.detalhe:"")); throw 0; }
     const eventos=ev.eventos||[];
     if(!eventos.length){
-      const d=ev.debug||{};
-      log("Nenhum evento encontrado no Sympla.\n\n[diagnóstico] HTTP "+(d.status||"?")+" · chaves da resposta: "+((d.keys||[]).join(", ")||"—")+"\nAmostra: "+((d.amostra||"").slice(0,400)||"(vazio)")+"\n\nManda um print disto que eu vejo o motivo.");
+      const d=ev.debug||{}; const tent=(d.tentativas||[]).map(t=>`  • ${t.q} → HTTP ${t.status}, ${t.quantidade} evento(s)`).join("\n");
+      log("Nenhum evento encontrado no Sympla.\n\n[diagnóstico] tentativas:\n"+(tent||"—")+"\n\nSe tudo deu 0, o token provavelmente é de outra conta/organizador. Manda um print disto.");
       throw 0;
     }
+    log(`Encontrados ${eventos.length} eventos. Começando a importar…`);
     let totalImp=0, totalPul=0;
     for(let i=0;i<eventos.length;i++){
       const e=eventos[i]; let page=1, impEv=0;
