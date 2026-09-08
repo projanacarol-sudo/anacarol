@@ -69,63 +69,47 @@ export async function onRequestPost(context) {
       return json({ ok: false, erro: "banco", detalhe: t.slice(0, 200) }, 500, h);
     }
 
-    // Também registra a pessoa como LEAD no CRM, diferenciando a ORIGEM pelo
-    // tipo de material (impresso × digital). Se já for lead: ganha a tag e vira
-    // QUENTE. Não bloqueia o cadastro.
+    // ===== Tudo o que NÃO é essencial para confirmar o pedido roda em
+    // segundo plano (waitUntil), para a página responder na hora: virar lead,
+    // inscrever no funil e notificar o Romaneio. =====
     const ehFisico = modo === "fisico";
     const origemNome = ehFisico ? "LP Material Impresso" : "LP Material Digital";
     const tagLead    = ehFisico ? "Material Impresso"    : "Material Digital";
-    try {
-      // 1) cria/atualiza o lead e RECEBE O ID (para poder inscrever no funil)
-      const rLead = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/apoiador_vira_lead`, {
-        method: "POST",
-        headers: {
-          apikey: env.SUPABASE_SERVICE_KEY,
-          Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          p_nome: nome, p_email: email, p_whatsapp: whatsapp,
-          p_uf: texto(b.uf, 2), p_cidade: texto(b.cidade, 100),
-          p_origem_nome: origemNome, p_tag: tagLead,
-        }),
-      });
-      let leadId = null;
-      try { const t = await rLead.text(); const v = t ? JSON.parse(t) : null; leadId = typeof v === "string" ? v : null; } catch (e) {}
+    const cidadeUf   = [texto(b.cidade, 100), texto(b.uf, 2)].filter(Boolean).join("/");
 
-      // 2) AUTO-ENROLL no funil: se a origem ("LP Material Impresso"/"Digital")
-      //    tiver um funil ligado (auto_sequence_id no editor de funil), inscreve
-      //    o lead nele. É o gatilho que faltava para os cadastros de material.
-      if (leadId) {
-        const rOrg = await fetch(
-          `${env.SUPABASE_URL}/rest/v1/origens?nome=eq.${encodeURIComponent(origemNome)}&select=auto_sequence_id&limit=1`,
-          { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY } });
-        const org = (await rOrg.json().catch(() => []))[0];
-        const seqId = org && org.auto_sequence_id;
-        if (seqId) {
-          await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/enroll_lead`, {
+    const posGravacao = async () => {
+      // 1) vira lead (origem por tipo de material) e recebe o id
+      let leadId = null;
+      try {
+        const rLead = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/apoiador_vira_lead`, {
+          method: "POST",
+          headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY, "Content-Type": "application/json" },
+          body: JSON.stringify({ p_nome: nome, p_email: email, p_whatsapp: whatsapp, p_uf: texto(b.uf, 2), p_cidade: texto(b.cidade, 100), p_origem_nome: origemNome, p_tag: tagLead }),
+        });
+        try { const t = await rLead.text(); const v = t ? JSON.parse(t) : null; leadId = typeof v === "string" ? v : null; } catch (e) {}
+      } catch (e) {}
+      // 2) auto-enroll no funil ligado à origem
+      try {
+        if (leadId) {
+          const rOrg = await fetch(`${env.SUPABASE_URL}/rest/v1/origens?nome=eq.${encodeURIComponent(origemNome)}&select=auto_sequence_id&limit=1`,
+            { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY } });
+          const org = (await rOrg.json().catch(() => []))[0];
+          const seqId = org && org.auto_sequence_id;
+          if (seqId) await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/enroll_lead`, {
             method: "POST",
-            headers: {
-              apikey: env.SUPABASE_SERVICE_KEY,
-              Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY,
-              "Content-Type": "application/json",
-              Prefer: "return=minimal",
-            },
+            headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY, "Content-Type": "application/json", Prefer: "return=minimal" },
             body: JSON.stringify({ p_lead: leadId, p_sequence: seqId }),
           });
         }
-      }
-    } catch (e) { /* virar lead / inscrever não pode derrubar o cadastro do material */ }
-
-    // Notificação push: material impresso novo no Romaneio (não bloqueia)
-    if (modo === "fisico") {
-      try {
-        const cidadeUf = [texto(b.cidade, 100), texto(b.uf, 2)].filter(Boolean).join("/");
-        context && context.waitUntil(dispararEvento(env, "romaneio_novo",
-          { title: "Novo material no Romaneio 📦", body: `${nome}${cidadeUf ? " · " + cidadeUf : ""}`, url: "/romaneio.html", tag: "romaneio_novo" }));
       } catch (e) {}
-    }
+      // 3) push do Romaneio (só impresso)
+      if (ehFisico) {
+        try { await dispararEvento(env, "romaneio_novo", { title: "Novo material no Romaneio 📦", body: `${nome}${cidadeUf ? " · " + cidadeUf : ""}`, url: "/romaneio.html", tag: "romaneio_novo" }); } catch (e) {}
+      }
+    };
+    if (context && context.waitUntil) context.waitUntil(posGravacao()); else posGravacao();
 
+    // confirma pro usuário IMEDIATAMENTE (o pedido já está salvo)
     return json({ ok: true, modo }, 200, h);
   } catch (e) {
     return json({ ok: false, erro: "internal", detalhe: String(e).slice(0, 120) }, 500, h);

@@ -2118,15 +2118,19 @@ $('#btn-enviar').addEventListener('click', async ()=>{
   try{
     if(CFG.endpoint){
       let r;
+      const ctrl = new AbortController();
+      const to = setTimeout(()=>ctrl.abort(), 15000); // não deixa travar em "Enviando…"
       try{
         r = await fetch(CFG.endpoint,{
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload), signal: ctrl.signal
         });
       }catch(rede){
-        // fetch so estoura assim quando o navegador barra: CORS ou sem rede
-        throw new Error('a página não conseguiu falar com o servidor (CORS ou conexão)');
-      }
+        // AbortError = demorou demais; senão, CORS/sem rede
+        throw new Error(rede && rede.name === 'AbortError'
+          ? 'a confirmação demorou demais (conexão lenta). Toque em “Tentar de novo”.'
+          : 'não foi possível falar com o servidor. Verifique a internet e tente de novo.');
+      }finally{ clearTimeout(to); }
       if(!r.ok){
         const d = await r.json().catch(() => ({}));
         throw new Error(`${r.status} — ${d.erro || 'sem detalhe'}${d.detalhe ? ' · ' + d.detalhe : ''}`);
