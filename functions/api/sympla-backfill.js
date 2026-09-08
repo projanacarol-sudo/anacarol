@@ -1,0 +1,90 @@
+/**
+ * POST /api/sympla-backfill   (admin logado, ou x-engine-key)
+ * Puxa leads do Sympla para o CRM. Feito em passos, pra não estourar tempo:
+ *   body { step:"events" }                         -> lista todos os eventos
+ *   body { step:"participants", event_id, event_nome, page } -> importa 1 página
+ *
+ * Variáveis: SYMPLA_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_KEY, SUPABASE_ANON_KEY, ENGINE_KEY
+ */
+const API = "https://api.sympla.com.br/public/v3";
+
+export async function onRequestPost({ request, env }) {
+  // auth: admin logado OU chave do motor
+  const engineOk = (request.headers.get("x-engine-key") || "") === (env.ENGINE_KEY || "\0");
+  if (!engineOk) {
+    const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+    const who = token ? await fetch(`${env.SUPABASE_URL}/auth/v1/user`, { headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: "Bearer " + token } }) : null;
+    if (!who || !who.ok) return json({ ok: false, error: "nao_autorizado" }, 401);
+  }
+  if (!env.SYMPLA_TOKEN) return json({ ok: false, error: "SYMPLA_TOKEN ausente no Cloudflare" }, 200);
+
+  let b = {}; try { b = await request.json(); } catch {}
+  try {
+    if (b.step === "events") return json({ ok: true, eventos: await listarEventos(env) }, 200);
+    if (b.step === "participants") return json({ ok: true, ...(await importarPagina(env, b.event_id, b.event_nome, b.page || 1)) }, 200);
+    return json({ ok: false, error: "step invalido" }, 200);
+  } catch (e) {
+    return json({ ok: false, error: "sympla", detalhe: String(e).slice(0, 200) }, 200);
+  }
+}
+
+async function sympla(env, path) {
+  const r = await fetch(API + path, { headers: { "s_token": env.SYMPLA_TOKEN, "Content-Type": "application/json" } });
+  const t = await r.text();
+  if (!r.ok) throw new Error(`sympla ${r.status} ${t.slice(0, 160)}`);
+  return t ? JSON.parse(t) : {};
+}
+
+async function listarEventos(env) {
+  const out = []; let page = 1;
+  for (let i = 0; i < 50; i++) {
+    const d = await sympla(env, `/events?page=${page}&page_size=100&sort=DESC`);
+    for (const e of (d.data || [])) out.push({ id: e.id, nome: e.name || e.title || ("Evento " + e.id) });
+    if (!(d.pagination && d.pagination.has_next)) break;
+    page++;
+  }
+  return out;
+}
+
+async function importarPagina(env, eventId, eventNome, page) {
+  const d = await sympla(env, `/events/${encodeURIComponent(eventId)}/participants?page=${page}&page_size=100`);
+  const parts = d.data || [];
+  let importados = 0, pulados = 0;
+  for (const p of parts) {
+    const nome = [p.first_name, p.last_name].filter(Boolean).join(" ").trim();
+    const email = (p.email || "").trim();
+    const cf = extrairCustom(p);
+    const okContato = email || cf.telefone;
+    if (!okContato) { pulados++; continue; }
+    try {
+      await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/sympla_lead`, {
+        method: "POST",
+        headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ p_nome: nome, p_email: email, p_telefone: cf.telefone || "", p_cidade: cf.cidade || null, p_uf: cf.uf || null, p_evento: eventNome || "" }),
+      });
+      importados++;
+    } catch (e) { pulados++; }
+  }
+  const pg = d.pagination || {};
+  return { event_id: eventId, page, importados, pulados, total_na_pagina: parts.length, has_next: !!pg.has_next };
+}
+
+/* extrai telefone/cidade/uf do formulário do participante (custom_form) */
+function extrairCustom(p) {
+  const res = { telefone: "", cidade: "", uf: "" };
+  let campos = p.custom_form || p.customForm || [];
+  if (campos && !Array.isArray(campos) && typeof campos === "object") campos = Object.values(campos);
+  for (const c of (campos || [])) {
+    const nome = String((c && (c.name || c.label || c.title)) || "").toLowerCase();
+    const val = c && (c.value != null ? c.value : c.answer);
+    if (val == null || val === "") continue;
+    if (!res.telefone && /telefone|celular|whats|fone|contato/.test(nome)) res.telefone = String(val);
+    else if (!res.cidade && /cidade|munic/.test(nome)) res.cidade = String(val);
+    else if (!res.uf && /estado|\buf\b/.test(nome)) res.uf = String(val).slice(0, 2);
+  }
+  // alguns eventos trazem telefone direto no participante
+  if (!res.telefone && (p.phone || p.telephone)) res.telefone = String(p.phone || p.telephone);
+  return res;
+}
+
+function json(o, s) { return new Response(JSON.stringify(o), { status: s || 200, headers: { "Content-Type": "application/json" } }); }

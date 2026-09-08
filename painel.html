@@ -268,6 +268,12 @@
     <section class="panel" id="panel-canais">
       <div class="box"><h3>Grupos de WhatsApp (SendFlow)</h3><div id="gruposWrap"></div></div>
       <div class="box"><h3>Redes sociais</h3><div id="socialWrap"></div></div>
+      <div class="box">
+        <h3>🎟️ Importar leads do Sympla</h3>
+        <p class="muted" style="font-size:13px;margin:4px 0 12px">Puxa todos os participantes das palestras do Sympla pra base (origem “Sympla (Palestras)”, com tag por evento). Não duplica quem já está no CRM. Requer a variável <b>SYMPLA_TOKEN</b> no Cloudflare.</p>
+        <button class="btn" id="btnSympla">Puxar do Sympla agora</button>
+        <div id="symplaProg" class="muted" style="font-size:13px;margin-top:10px;white-space:pre-line"></div>
+      </div>
     </section>
 
     <!-- ------- GERADOR DE E-MAIL ------- -->
@@ -613,6 +619,41 @@ async function loadRegras(){
     else await sb.from("notif_evento_colab").delete().eq("evento",c.dataset.ev).eq("colaborador_id",c.value);
   });
 }
+
+/* ================= INTEGRAÇÃO SYMPLA ================= */
+async function puxarSympla(){
+  const btn=$("#btnSympla"), out=$("#symplaProg");
+  if(btn.dataset.rodando==="1") return;
+  btn.dataset.rodando="1"; btn.disabled=true;
+  const log=(t)=>{ out.textContent=t; };
+  log("Buscando eventos no Sympla…");
+  const {data}=await sb.auth.getSession(); const token=data.session&&data.session.access_token;
+  const chamar=async(body)=>{
+    const r=await fetch("/api/sympla-backfill",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify(body)});
+    return r.json().catch(()=>({ok:false,error:"resposta_invalida"}));
+  };
+  try{
+    const ev=await chamar({step:"events"});
+    if(!ev.ok){ log("Erro ao listar eventos: "+(ev.error||"")+(ev.detalhe?" — "+ev.detalhe:"")); throw 0; }
+    const eventos=ev.eventos||[];
+    if(!eventos.length){ log("Nenhum evento encontrado no Sympla."); throw 0; }
+    let totalImp=0, totalPul=0;
+    for(let i=0;i<eventos.length;i++){
+      const e=eventos[i]; let page=1, impEv=0;
+      for(let guard=0; guard<200; guard++){
+        const res=await chamar({step:"participants",event_id:e.id,event_nome:e.nome,page});
+        if(!res.ok){ log(`Evento ${i+1}/${eventos.length} (${e.nome}) — erro: ${res.error||""}`); break; }
+        impEv+=res.importados||0; totalImp+=res.importados||0; totalPul+=res.pulados||0;
+        log(`Evento ${i+1}/${eventos.length}: ${e.nome}\n  página ${page} · +${res.importados||0} importados\n  TOTAL até agora: ${totalImp} importados (${totalPul} sem contato)`);
+        if(!res.has_next) break;
+        page++;
+      }
+    }
+    log(`✅ Concluído. ${eventos.length} eventos processados.\nImportados/atualizados: ${totalImp}\nSem contato (pulados): ${totalPul}\n\nDica: rode a higiene da base pra unificar duplicados cruzados.`);
+  }catch(e){ /* já logado */ }
+  btn.dataset.rodando="0"; btn.disabled=false;
+}
+$("#btnSympla") && $("#btnSympla").addEventListener("click", puxarSympla);
 
 /* ---------- Impacto (Silêncio que Grita) ---------- */
 let IMPACTO=[];
