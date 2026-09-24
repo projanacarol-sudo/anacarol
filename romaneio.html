@@ -331,9 +331,21 @@ function abrirPainel(){
 async function carregar(){
   $('#corpo').innerHTML = '<tr><td colspan="12" class="carregando">Carregando…</td></tr>';
   try{
-    const { data, error } = await sb.from('apoiadores').select('*').order('criado_em', { ascending:false });
-    if(error) throw new Error(error.message);
-    TODOS = dedupe(data || []);   // lista sempre limpa: sem duplicados por WhatsApp/e-mail
+    // O Supabase limita cada leitura a 1000 linhas. Buscamos em blocos (range)
+    // até acabar, para nunca travar em 1000.
+    const PAG = 1000; let inicio = 0; let todos = [];
+    for(;;){
+      const { data, error } = await sb.from('apoiadores')
+        .select('*').order('criado_em', { ascending:false })
+        .range(inicio, inicio + PAG - 1);
+      if(error) throw new Error(error.message);
+      const lote = data || [];
+      todos = todos.concat(lote);
+      $('#corpo').innerHTML = `<tr><td colspan="12" class="carregando">Carregando… ${todos.length}</td></tr>`;
+      if(lote.length < PAG) break;   // último bloco
+      inicio += PAG;
+    }
+    TODOS = dedupe(todos);   // lista sempre limpa: sem duplicados por WhatsApp/e-mail
     aplicarFiltros();
   }catch(e){
     $('#corpo').innerHTML = `<tr><td colspan="12" class="vazio">Erro: ${e.message}</td></tr>`;
