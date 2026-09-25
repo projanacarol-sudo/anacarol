@@ -264,7 +264,10 @@ h1{ margin-top:.8rem; font-weight:900; text-transform:uppercase; letter-spacing:
    (proxy com CORS) pra o canvas não "sujar". */
 var R2    = 'https://pub-d8c17953a575480084b80982d84262c2.r2.dev/materiais%20ana/';
 var PROXY = '/api/img?u=';
-var MOLDURAS = {
+/* PADRÕES (fallback): usados se a API /api/materiais-digitais falhar
+   ou vier vazia. Em operação normal, o catálogo vem do banco (editável
+   pela tela de Materiais Digitais no CRM).                            */
+var MOLDURAS_PADRAO = {
   perfil: [
     { n:'Moldura 1', u: R2 + 'Filtro%20FEED%20e%20Perfil%20ANA/1.png' },
     { n:'Moldura 2', u: R2 + 'Filtro%20FEED%20e%20Perfil%20ANA/2.png' },
@@ -277,11 +280,8 @@ var MOLDURAS = {
     { n:'Story 3', u: R2 + 'Filtro%20Story%20ANA/3.png' }
   ]
 };
-/* jingle da campanha (mp3) — cole a URL do R2 do áudio em JINGLE.u */
-var JINGLE = { n:'Jingle da campanha', u: R2 + 'ANA-CAROLINA-CHICLETE-2026.mp3' };
-
-/* artes prontas para baixar */
-var ARTES = [
+var JINGLE_PADRAO = { n:'Jingle da campanha', u: R2 + 'ANA-CAROLINA-CHICLETE-2026.mp3' };
+var ARTES_PADRAO = [
   { n:'Praguinha',              u: R2 + 'Artes%20para%20baixar/PRAGUINHA%20(1).png' },
   { n:'Santão',                 u: R2 + 'Artes%20para%20baixar/SANTAO%20(1)-imagens-0.png' },
   { n:'Quem sou eu',            u: R2 + 'Artes%20para%20baixar/SANTAO%20(1)-imagens-1.png' },
@@ -290,6 +290,11 @@ var ARTES = [
   { n:'Arte para Feed',         u: R2 + 'Artes%20para%20baixar/4.PNG' },
   { n:'Arte para Story e Status', u: R2 + 'Artes%20para%20baixar/5.PNG' }
 ];
+
+/* Ativos correntes (começam com o padrão; a API sobrescreve no load). */
+var MOLDURAS = { perfil: MOLDURAS_PADRAO.perfil.slice(), story: MOLDURAS_PADRAO.story.slice() };
+var JINGLE   = { n: JINGLE_PADRAO.n, u: JINGLE_PADRAO.u };
+var ARTES    = ARTES_PADRAO.slice();
 var E = { fmt:'perfil', idx:0, foto:null, moldura:null, escala:1, dx:0, dy:0, rot:0 };
 var tela = document.getElementById('tela');
 var ctx  = tela.getContext('2d');
@@ -543,7 +548,24 @@ function renderJingle(){
   document.getElementById('jingleWhats').addEventListener('click', function(){ enviarWhatsApp(JINGLE.u, 'jingle-ana-carolina-2026.mp3', 'audio/mpeg'); });
 }
 
-miniaturas(); carregarMoldura(); desenhar(); renderArtes(); renderJingle();
+/* carrega o catálogo editável do banco; se falhar, mantém os padrões */
+function aplicarCatalogo(g){
+  if(!g) return;
+  if(Array.isArray(g.moldura_perfil) && g.moldura_perfil.length) MOLDURAS.perfil = g.moldura_perfil;
+  if(Array.isArray(g.moldura_story)  && g.moldura_story.length)  MOLDURAS.story  = g.moldura_story;
+  if(Array.isArray(g.arte)           && g.arte.length)           ARTES = g.arte;
+  if(Array.isArray(g.jingle)         && g.jingle.length)         JINGLE = g.jingle[0];
+  else if (g.jingle && !g.jingle.length) JINGLE = { n:'', u:'' }; // jingle removido
+}
+function iniciar(){
+  E.idx = 0;
+  miniaturas(); carregarMoldura(); desenhar(); renderArtes(); renderJingle();
+}
+fetch('/api/materiais-digitais', { cache:'no-store' })
+  .then(function(r){ return r.json(); })
+  .then(function(j){ if(j && j.ok) aplicarCatalogo(j.grupos); })
+  .catch(function(){})
+  .finally(iniciar);
 </script>
 </body>
 </html>

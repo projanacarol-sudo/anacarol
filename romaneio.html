@@ -183,9 +183,29 @@ td.end{white-space:normal;max-width:280px;line-height:1.4;}
     <h1>Romaneio <b>Ana Carolina</b></h1>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <a class="btn" href="/comite.html" style="text-decoration:none;background:var(--amarelo);color:#3a2600">＋ Retirada no local</a>
+      <a class="btn btn-2" href="/materiais-admin.html" style="text-decoration:none">🎨 Materiais digitais</a>
       <button class="btn btn-2" id="btn-atualizar">Atualizar</button>
       <button class="btn btn-2" id="btn-csv">Baixar CSV</button>
       <button class="btn btn-2" id="btn-sair">Sair</button>
+    </div>
+  </div>
+
+  <div id="painel-impressos" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+       background:var(--preto-2);border:1px solid var(--linha);border-radius:12px;padding:14px 16px;margin-bottom:16px;">
+    <div>
+      <div style="font-family:var(--d);font-weight:900;font-size:14px;letter-spacing:.02em;">Cadastro de materiais impressos</div>
+      <div id="impressos-hint" style="font-size:12px;color:var(--cinza-2);margin-top:3px;">
+        Quando desligado, o quiz continua funcionando normalmente, mas todos recebem apenas o Kit Digital (nenhum pedido impresso é gerado).
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+      <span id="impressos-estado" style="font-family:var(--d);font-weight:900;font-size:13px;letter-spacing:.08em;text-transform:uppercase;">—</span>
+      <button id="sw-impressos" role="switch" aria-checked="false" title="Ligar/desligar cadastro de impressos"
+        style="position:relative;width:60px;height:32px;border-radius:9999px;border:1px solid var(--linha);
+               background:#444;cursor:pointer;transition:background .18s;flex-shrink:0;">
+        <span id="sw-bolinha" style="position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;
+               background:#fff;transition:left .18s;"></span>
+      </button>
     </div>
   </div>
 
@@ -325,7 +345,39 @@ function abrirPainel(){
   $('#tela-login').style.display = 'none';
   $('#tela-painel').style.display = 'block';
   carregar();
+  carregarFlagImpressos();
 }
+
+/* ─── interruptor: cadastro de materiais impressos ──────────── */
+let IMPRESSOS_ATIVO = true, flagOcupado = false;
+function pintarImpressos(){
+  const on = IMPRESSOS_ATIVO;
+  const sw = $('#sw-impressos'), bol = $('#sw-bolinha'), est = $('#impressos-estado');
+  if(sw){ sw.setAttribute('aria-checked', on ? 'true':'false'); sw.style.background = on ? 'var(--verde)' : '#555'; }
+  if(bol){ bol.style.left = on ? '33px' : '3px'; }
+  if(est){ est.textContent = on ? 'Ativo' : 'Desativado'; est.style.color = on ? 'var(--verde)' : 'var(--cinza-2)'; }
+}
+async function carregarFlagImpressos(){
+  try{
+    const { data } = await sb.from('config_app').select('valor').eq('chave','materiais_impressos_ativo').maybeSingle();
+    IMPRESSOS_ATIVO = data ? (data.valor !== false && data.valor !== 'false') : true;
+  }catch(e){ IMPRESSOS_ATIVO = true; }
+  pintarImpressos();
+}
+async function alternarImpressos(){
+  if(flagOcupado) return; flagOcupado = true;
+  const novo = !IMPRESSOS_ATIVO;
+  if(!novo && !confirm('Desligar o cadastro de materiais IMPRESSOS?\n\nO quiz continua funcionando, mas todos passam a receber apenas o Kit Digital.')){ flagOcupado=false; return; }
+  try{
+    const { error } = await sb.from('config_app')
+      .update({ valor: novo, updated_at: new Date().toISOString() })
+      .eq('chave','materiais_impressos_ativo');
+    if(error) throw error;
+    IMPRESSOS_ATIVO = novo; pintarImpressos();
+  }catch(e){ alert('Não foi possível salvar: ' + (e.message||e)); }
+  finally{ flagOcupado = false; }
+}
+document.getElementById('sw-impressos').addEventListener('click', alternarImpressos);
 
 /* ─── carregamento (uma leitura; filtros no cliente) ────── */
 async function carregar(){

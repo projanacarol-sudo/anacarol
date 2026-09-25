@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Materiais Digitais · Ana Carolina</title>
+<style>
+:root{
+  --preto:#0c0908; --preto-2:#17100F; --amarelo:#e0a53a; --verde:#1f9d63; --azul:#3b82f6;
+  --vermelho:#c0392b; --linha:rgba(255,255,255,.12); --cinza-2:rgba(255,255,255,.55);
+  --d:"Poppins",system-ui,sans-serif; --f:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:linear-gradient(160deg,#0c0908,#17100F 60%,#241611);color:#fff;font-family:var(--f);min-height:100vh}
+.wrap{max-width:1000px;margin:0 auto;padding:22px 18px 60px}
+h1{font-family:var(--d);font-weight:900;font-size:22px;letter-spacing:-.01em}
+h1 b{color:var(--amarelo)}
+.btn{font-family:var(--d);font-weight:800;font-size:13px;border:1px solid var(--linha);border-radius:10px;
+  padding:10px 14px;background:var(--amarelo);color:#3a2600;cursor:pointer;transition:.15s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{filter:brightness(1.06)} .btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-2{background:rgba(255,255,255,.06);color:#fff}
+.btn-del{background:transparent;color:var(--vermelho);border-color:transparent;padding:6px 8px;font-size:18px}
+.btn-del:hover{color:#e74c3c}
+.topo{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.topo .acoes{display:flex;gap:8px;flex-wrap:wrap}
+
+/* login */
+#tela-login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card-login{background:var(--preto-2);border:1px solid var(--linha);border-radius:16px;padding:26px;width:100%;max-width:360px}
+.card-login h2{font-family:var(--d);font-weight:900;margin-bottom:16px}
+.card-login input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--linha);background:#0c0908;color:#fff;margin-bottom:10px;font-size:15px}
+.card-login .btn{width:100%;justify-content:center;margin-top:6px}
+#erro-login{color:#e74c3c;font-size:13px;min-height:18px;margin-top:6px}
+
+.sec{background:var(--preto-2);border:1px solid var(--linha);border-radius:14px;padding:16px;margin-bottom:18px}
+.sec h2{font-family:var(--d);font-weight:900;font-size:15px;margin-bottom:4px}
+.sec .desc{font-size:12px;color:var(--cinza-2);margin-bottom:14px}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.item{background:#0c0908;border:1px solid var(--linha);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.item.inativo{opacity:.55}
+.thumb{width:100%;aspect-ratio:1;object-fit:contain;background:#231712;display:block}
+.thumb.audio{aspect-ratio:auto;padding:14px}
+.item-b{padding:10px 11px;display:flex;flex-direction:column;gap:8px}
+.item-b label{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cinza-2)}
+.item-b input[type=text],.item-b input[type=number]{width:100%;padding:8px;border-radius:8px;border:1px solid var(--linha);background:#17100F;color:#fff;font-size:13px}
+.linha{display:flex;gap:8px;align-items:center}
+.linha .col{flex:1}
+.ativo-linha{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.chk{display:flex;align-items:center;gap:6px;font-size:12px;color:#fff}
+.acoes-item{display:flex;gap:6px;align-items:center;justify-content:space-between;padding-top:2px}
+.novo{border:1.5px dashed var(--linha);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,.02)}
+.novo h3{font-family:var(--d);font-weight:800;font-size:13px}
+.novo input[type=text],.novo input[type=number]{padding:9px;border-radius:8px;border:1px solid var(--linha);background:#17100F;color:#fff;font-size:13px}
+.arquivo{border:1px solid var(--linha);border-radius:8px;padding:9px;font-size:12px;color:var(--cinza-2);background:#17100F}
+.msg{font-size:12px;min-height:16px}
+.msg.ok{color:var(--verde)} .msg.err{color:#e74c3c}
+.vazio{color:var(--cinza-2);font-size:13px;padding:10px 0}
+.aviso{background:rgba(224,165,58,.12);border:1px solid rgba(224,165,58,.4);color:#f0d59a;border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:18px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="tela-login">
+  <div class="card-login">
+    <h2>Materiais Digitais</h2>
+    <input type="email" id="email" placeholder="E-mail" autocomplete="username" />
+    <input type="password" id="senha" placeholder="Senha" autocomplete="current-password" />
+    <button class="btn" id="btn-entrar">Entrar</button>
+    <div id="erro-login"></div>
+  </div>
+</div>
+
+<!-- PAINEL -->
+<div class="wrap" id="tela-painel" style="display:none">
+  <div class="topo">
+    <h1>Materiais <b>Digitais</b></h1>
+    <div class="acoes">
+      <a class="btn btn-2" href="/kit-digital.html" target="_blank" rel="noopener">👁 Ver página</a>
+      <a class="btn btn-2" href="/romaneio.html">← Romaneio</a>
+      <button class="btn btn-2" id="btn-sair">Sair</button>
+    </div>
+  </div>
+
+  <div class="aviso">
+    Estes são os materiais que aparecem na página do <b>Kit Mídia Digital</b>. Edite o nome, a ordem, ligue/desligue,
+    ou adicione novos enviando o arquivo. As mudanças aparecem na página pública ao recarregar.
+  </div>
+
+  <div id="secoes"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+let sb = null, ITENS = [];
+
+const BUCKET = 'materiais-digitais';
+const TIPOS = [
+  { id:'moldura_perfil', titulo:'Molduras — Foto de perfil', desc:'Molduras quadradas (perfil e feed). Aparecem na aba "Foto de perfil".', img:true },
+  { id:'moldura_story',  titulo:'Molduras — Story',          desc:'Molduras verticais 9:16. Aparecem na aba "Story".', img:true },
+  { id:'arte',           titulo:'Artes para baixar',         desc:'Artes prontas na seção "Artes para baixar e compartilhar".', img:true },
+  { id:'jingle',         titulo:'Jingle da campanha',        desc:'Áudio do jingle. A página usa o primeiro ativo.', img:false },
+];
+
+/* ─── Supabase (mesmo login do CRM) ─── */
+async function getCfg(){
+  const u = window.SUPA_URL, k = window.SUPA_ANON;
+  if(u && k && !/^COLE/.test(u)) return { url:u, anonKey:k };
+  try{ const c = await (await fetch('/api/config',{cache:'no-store'})).json(); if(c && c.ok) return { url:c.url, anonKey:c.anonKey }; }catch(e){}
+  return null;
+}
+async function initSb(){
+  const c = await getCfg();
+  if(!c){ $('#erro-login').textContent = 'Configuração ausente (/api/config).'; return false; }
+  sb = window.supabase.createClient(c.url, c.anonKey);
+  return true;
+}
+async function entrar(){
+  const email = $('#email').value.trim(), senha = $('#senha').value;
+  if(!email || !senha) return;
+  if(!sb && !(await initSb())) return;
+  $('#btn-entrar').disabled = true; $('#erro-login').textContent = '';
+  try{
+    const { error } = await sb.auth.signInWithPassword({ email, password: senha });
+    if(error) throw new Error('E-mail ou senha inválidos.');
+    $('#tela-login').style.display='none'; $('#tela-painel').style.display='block';
+    carregar();
+  }catch(e){ $('#erro-login').textContent = e.message; }
+  finally{ $('#btn-entrar').disabled = false; }
+}
+$('#btn-entrar').addEventListener('click', entrar);
+$('#senha').addEventListener('keydown', e => { if(e.key==='Enter') entrar(); });
+$('#email').addEventListener('keydown', e => { if(e.key==='Enter') $('#senha').focus(); });
+$('#btn-sair').addEventListener('click', async ()=>{ if(sb) await sb.auth.signOut(); location.reload(); });
+
+/* ─── carregar catálogo ─── */
+async function carregar(){
+  $('#secoes').innerHTML = '<div class="vazio">Carregando…</div>';
+  const { data, error } = await sb.from('materiais_digitais').select('*').order('ordem',{ascending:true}).order('criado_em',{ascending:true});
+  if(error){ $('#secoes').innerHTML = '<div class="vazio">Erro: '+error.message+'</div>'; return; }
+  ITENS = data || [];
+  render();
+}
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function render(){
+  const box = $('#secoes'); box.innerHTML = '';
+  TIPOS.forEach(t => {
+    const itens = ITENS.filter(i => i.tipo === t.id);
+    const sec = document.createElement('div'); sec.className = 'sec';
+    sec.innerHTML = `<h2>${t.titulo} <span style="color:var(--cinza-2);font-weight:600">(${itens.length})</span></h2><div class="desc">${t.desc}</div>`;
+    const grade = document.createElement('div'); grade.className = 'grade';
+    if(!itens.length) grade.innerHTML = '<div class="vazio">Nenhum item ainda.</div>';
+    itens.forEach(i => grade.appendChild(cardItem(i, t)));
+    grade.appendChild(cardNovo(t));
+    sec.appendChild(grade);
+    box.appendChild(sec);
+  });
+}
+
+function preview(url, ehImg){
+  if(ehImg) return `<img class="thumb" src="${esc(url)}" alt="" loading="lazy" onerror="this.style.opacity=.3">`;
+  return `<audio class="thumb audio" controls preload="none" src="${esc(url)}"></audio>`;
+}
+
+function cardItem(i, t){
+  const d = document.createElement('div'); d.className = 'item' + (i.ativo ? '' : ' inativo');
+  d.innerHTML =
+    preview(i.url, t.img) +
+    `<div class="item-b">
+       <div><label>Nome</label><input type="text" data-f="nome" value="${esc(i.nome)}"></div>
+       <div class="linha">
+         <div class="col"><label>Ordem</label><input type="number" data-f="ordem" value="${Number(i.ordem)||0}"></div>
+       </div>
+       <div class="acoes-item">
+         <label class="chk"><input type="checkbox" data-f="ativo" ${i.ativo?'checked':''}> Ativo</label>
+         <div class="linha" style="gap:4px">
+           <button class="btn" data-a="salvar">Salvar</button>
+           <button class="btn-del" data-a="excluir" title="Excluir">🗑</button>
+         </div>
+       </div>
+       <div class="msg" data-msg></div>
+     </div>`;
+  const msg = d.querySelector('[data-msg]');
+  d.querySelector('[data-a="salvar"]').addEventListener('click', async (e)=>{
+    const btn = e.currentTarget; btn.disabled = true; msg.className='msg'; msg.textContent='';
+    const patch = {
+      nome: d.querySelector('[data-f="nome"]').value.trim(),
+      ordem: parseInt(d.querySelector('[data-f="ordem"]').value,10) || 0,
+      ativo: d.querySelector('[data-f="ativo"]').checked,
+    };
+    const { error } = await sb.from('materiais_digitais').update(patch).eq('id', i.id);
+    if(error){ msg.className='msg err'; msg.textContent = error.message; }
+    else { Object.assign(i, patch); d.classList.toggle('inativo', !i.ativo); msg.className='msg ok'; msg.textContent='Salvo ✓'; setTimeout(()=>msg.textContent='',1600); }
+    btn.disabled = false;
+  });
+  d.querySelector('[data-a="excluir"]').addEventListener('click', async ()=>{
+    if(!confirm(`Excluir "${i.nome}"?`)) return;
+    const { error } = await sb.from('materiais_digitais').delete().eq('id', i.id);
+    if(error){ alert('Erro: '+error.message); return; }
+    ITENS = ITENS.filter(x => x.id !== i.id); render();
+  });
+  return d;
+}
+
+function cardNovo(t){
+  const d = document.createElement('div'); d.className = 'novo';
+  const aceita = t.img ? 'image/*' : 'audio/*';
+  d.innerHTML =
+    `<h3>+ Adicionar ${t.img?'material':'áudio'}</h3>
+     <input type="text" data-n="nome" placeholder="Nome (ex: ${t.id==='jingle'?'Jingle 30s':'Moldura nova'})">
+     <input type="number" data-n="ordem" placeholder="Ordem (opcional)">
+     <input type="file" class="arquivo" data-n="arquivo" accept="${aceita}">
+     <button class="btn" data-n="add">Enviar e adicionar</button>
+     <div class="msg" data-msg></div>`;
+  const msg = d.querySelector('[data-msg]');
+  d.querySelector('[data-n="add"]').addEventListener('click', async (e)=>{
+    const btn = e.currentTarget;
+    const arq = d.querySelector('[data-n="arquivo"]').files[0];
+    let nome = d.querySelector('[data-n="nome"]').value.trim();
+    if(!arq){ msg.className='msg err'; msg.textContent='Escolha um arquivo.'; return; }
+    if(!nome) nome = arq.name.replace(/\.[^.]+$/,'');
+    btn.disabled = true; msg.className='msg'; msg.textContent='Enviando…';
+    try{
+      const ext = (arq.name.split('.').pop()||'bin').toLowerCase();
+      const slug = nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40) || 'material';
+      const caminho = `${t.id}/${Date.now()}-${slug}.${ext}`;
+      const up = await sb.storage.from(BUCKET).upload(caminho, arq, { upsert:false, contentType: arq.type || undefined });
+      if(up.error) throw up.error;
+      const { data:pub } = sb.storage.from(BUCKET).getPublicUrl(caminho);
+      const url = pub.publicUrl;
+      let ordem = parseInt(d.querySelector('[data-n="ordem"]').value,10);
+      if(!Number.isFinite(ordem)){
+        const mx = ITENS.filter(x=>x.tipo===t.id).reduce((m,x)=>Math.max(m, Number(x.ordem)||0), 0);
+        ordem = mx + 1;
+      }
+      const ins = await sb.from('materiais_digitais').insert({ tipo:t.id, nome, url, ordem, ativo:true }).select().single();
+      if(ins.error) throw ins.error;
+      ITENS.push(ins.data); render();
+    }catch(err){ msg.className='msg err'; msg.textContent = err.message || String(err); btn.disabled=false; }
+  });
+  return d;
+}
+</script>
+</body>
+</html>

@@ -1613,6 +1613,12 @@ const CFG = {
 
   aceita_fora_de_sp: false,
 
+  /* Interruptor do cadastro de IMPRESSOS (controlado no Romaneio).
+     Começa ligado; o valor real vem de /api/materiais-config no load.
+     Quando desligado, o quiz roda normal mas todo mundo recebe o
+     Kit Digital (nenhum cadastro impresso é gerado).             */
+  impressos_ativo: true,
+
   /* ── Backend ─────────────────────────────────────────────
      URL do endpoint no CRM. "" = MODO SIMULAÇÃO (só console).   */
   endpoint: "/api/apoiador",
@@ -1670,6 +1676,13 @@ txt('#lg-nome', `${CFG.candidato} — ${CFG.partido} — Nº ${CFG.numero_urna}`
 txt('#lg-cnpj', CFG.cnpj);
 txt('#lg-dpo', CFG.email_dpo);
 document.title = `${CFG.candidato} ${CFG.numero} — Material de campanha`;
+
+/* ── estado do cadastro de impressos (ligado/desligado no Romaneio) ──
+   Busca em segundo plano; a checagem de CEP espera essa promessa.   */
+const FLAG_IMPRESSOS = fetch('/api/materiais-config', { cache:'no-store' })
+  .then(r => r.json())
+  .then(j => { CFG.impressos_ativo = (j && j.impressos_ativo !== false); })
+  .catch(() => { CFG.impressos_ativo = true; });
 
 
 /* ─── PWA: manifest + ícone gerados em runtime ──────────────── */
@@ -1971,8 +1984,19 @@ $('#btn-cep').addEventListener('click', async ()=>{
   $('#dica-cep').className = 'dica';
   $('#dica-cep').textContent = 'Checando a rota de entrega…';
 
+  await FLAG_IMPRESSOS;                 // garante o estado do interruptor
   const d = await buscarCep(cep8);
   b.disabled = false; b.textContent = 'Verificar minha região';
+
+  // Cadastro de impressos DESLIGADO: todo mundo vai para o Kit Digital.
+  if(CFG.impressos_ativo === false){
+    S.cepNaoEncontrado = false;
+    S.end = d || { cidade:'', uf:CFG.uf, lat:null, lng:null, logradouro:'', bairro:'' };
+    S.dist = null; S.metodo = 'impressos-off';
+    montarDigital(S.end, false, null, !d, true);
+    ir(2, {semFoco:true});
+    return;
+  }
 
   if(!d){
     // CEP não encontrado NUNCA trava: trata como fora da rota nesse momento → digital.
@@ -2012,14 +2036,17 @@ function montarFisico(d, rota, dist){
   if(!d.logradouro) abrirEdicao();
 }
 
-function montarDigital(d, foraSP, dist, naoEncontrado){
+function montarDigital(d, foraSP, dist, naoEncontrado, pausado){
   S.modo = 'digital'; S.rota = null;
   $('#slam').className = 'slam digital';
-  $('#slam-rot').textContent = naoEncontrado ? 'Fora da rota de entrega nesse momento'
+  $('#slam-rot').textContent = pausado ? 'Kit Mídia Digital disponível'
+    : naoEncontrado ? 'Fora da rota de entrega nesse momento'
     : (foraSP ? `Envio impresso só em ${CFG.uf}` : (dist != null ? `${dist} km do centro — fora do raio de ${CFG.raio_km} km` : 'Fora da rota impressa'));
   $('#slam-tit').textContent = 'Kit Mídia Digital';
-  $('#local').textContent = naoEncontrado ? '' : `${d.cidade}/${d.uf}`;
-  $('#veredito-sub').textContent = CFG.digital_texto;
+  $('#local').textContent = (naoEncontrado || pausado || !d || !d.cidade) ? '' : `${d.cidade}/${d.uf}`;
+  $('#veredito-sub').textContent = pausado
+    ? 'Preparamos um Kit Mídia Digital para você usar nas suas redes sociais e compartilhar com seus amigos. É só baixar e apoiar a campanha!'
+    : CFG.digital_texto;
   $('#lista-kit').innerHTML = '';
   $('#btn-veredito').textContent = 'Quero o Kit Digital';
   $('#sub-nome').textContent = 'Para personalizar o material que vamos te mandar.';
