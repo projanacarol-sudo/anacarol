@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7a2418">
+<title>Fale Comigo — Ana Carolina Oliveira</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f4efe9;--card:#fff;--ink:#241812;--soft:#8a7a6e;--line:#e6dccf;--wine:#7a2418;--wine2:#9a3524;--gold:#e0a53a;--wa:#25D366;--shadow:0 8px 26px rgba(120,50,20,.10)}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Manrope',system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:480px;margin:0 auto;padding:20px 18px 44px}
+  .back{color:var(--soft);text-decoration:none;font-size:14px;font-weight:800}
+  .brand{background:linear-gradient(135deg,var(--wine2),var(--wine));border-radius:22px;padding:22px 20px;text-align:center;color:#fff;box-shadow:0 12px 30px rgba(122,36,24,.3);margin-top:12px}
+  .pill{display:inline-block;background:#ffffff26;font-weight:800;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;padding:5px 14px;border-radius:999px}
+  h1{font-weight:800;font-size:22px;margin-top:11px}
+  .lead{font-size:14px;opacity:.92;margin-top:8px}
+  form{background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:18px;display:flex;flex-direction:column;gap:12px;margin-top:16px}
+  label{font-size:12px;font-weight:800;color:var(--soft);display:flex;flex-direction:column;gap:6px;text-transform:uppercase;letter-spacing:.4px}
+  input,select{background:#faf5ef;border:1.5px solid var(--line);border-radius:12px;padding:12px;font-size:15px;color:var(--ink);font-family:inherit}
+  input:focus,select:focus{outline:none;border-color:var(--gold)}
+  .optin{flex-direction:row;align-items:flex-start;gap:9px;font-weight:600;font-size:11.5px;color:var(--soft);text-transform:none;letter-spacing:0}
+  .optin input{margin-top:2px}
+  button{margin-top:4px;padding:15px;border:0;border-radius:14px;background:var(--wa);color:#0a3d20;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(37,211,102,.32);display:flex;align-items:center;justify-content:center;gap:9px}
+  button:disabled{opacity:.6}
+  button svg{display:block}
+  .msg{padding:11px;border-radius:11px;font-size:13.5px;display:none;font-weight:700}
+  .err{background:#fdecea;color:#c0392b;display:block}
+  .hp{position:absolute;left:-9999px}
+  footer{text-align:center;margin-top:20px;color:#a99a8c;font-size:11.5px;font-weight:700;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">‹ Voltar</a>
+  <div class="brand">
+    <div class="pill">Fale Comigo</div>
+    <h1>Fale Comigo</h1>
+    <p class="lead">Preencha seus dados e continue a conversa no WhatsApp. Eu recebo a sua mensagem e retorno o contato.</p>
+  </div>
+  <form id="f" novalidate>
+    <div class="msg" id="m"></div>
+    <label>Nome<input name="nome" type="text" autocomplete="name" required></label>
+    <label>WhatsApp (com DDD)<input name="telefone" type="tel" inputmode="numeric" placeholder="(11) 99999-9999" required></label>
+    <label>E-mail<input name="email" type="email" autocomplete="email" placeholder="seu@email.com" required></label>
+    <label class="optin"><input type="checkbox" name="opt"> Aceito receber contato e novidades por e-mail.</label>
+    <input class="hp" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <button type="submit" id="b">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.8-.9-2-1-.3-.1-.5-.2-.7.2s-.8 1-1 1.2c-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6.1-.2 0-.4 0-.6l-1-2.3c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.3 5.2 4.6.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.2-.6-.4zM12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.5A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-2.8.9.9-2.8-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>
+      <span id="btxt">Falar agora no WhatsApp</span>
+    </button>
+  </form>
+  <footer>Ana Carolina Oliveira · Podemos · Deputada Federal 2026</footer>
+</div>
+
+<script>
+/* ===================== CONFIG ===================== */
+const WHATS = "5511922131422";     // <-- número do "Fale Comigo" (55 + DDD + número, só dígitos) = +55 11 92213-1422
+const CRM   = "https://anacarol.pages.dev/api/capture";
+const PAGE_SLUG = "fale-comigo";
+/* ================================================= */
+
+const f=document.getElementById("f"), m=document.getElementById("m"), b=document.getElementById("b"), btxt=document.getElementById("btxt"), tel=f.telefone;
+function mask(v){var d=(v||'').replace(/\D/g,'').slice(0,11);if(!d)return'';if(d.length<=2)return'('+d;
+  if(d.length<=6)return'('+d.slice(0,2)+') '+d.slice(2);
+  if(d.length<=10)return'('+d.slice(0,2)+') '+d.slice(2,6)+'-'+d.slice(6);
+  return'('+d.slice(0,2)+') '+d.slice(2,7)+'-'+d.slice(7);}
+tel.addEventListener('input',()=>tel.value=mask(tel.value));
+
+let indo=false;
+function irWhats(nome){
+  if(indo)return; indo=true;
+  const msg=`Olá me chamo ${(nome||'').trim()}! Gostaria de ajudar na campanha da Ana Carolina. Você pode me passar mais informações?`;
+  location.href = `https://wa.me/${WHATS}?text=${encodeURIComponent(msg)}`;
+}
+
+f.addEventListener('submit',e=>{
+  e.preventDefault(); m.className='msg';
+  const nome=f.nome.value.trim(), email=f.email.value.trim();
+  if(!nome || !f.telefone.value.trim() || !email){ m.className='msg err'; m.textContent='Preencha nome, WhatsApp e e-mail.'; return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ m.className='msg err'; m.textContent='Digite um e-mail válido.'; return; }
+
+  b.disabled=true; btxt.textContent='Conectando...';
+
+  // Registra no CRM e segue pro WhatsApp
+  const payload={
+    nome, email:f.email.value.trim(), telefone:f.telefone.value,
+    obs:'Fale Comigo',
+    opt_in_email:f.opt.checked, page:PAGE_SLUG, origem_url:location.href,
+    texto_optin: f.opt.checked ? 'Fale Comigo' : '',
+    _gotcha:f._gotcha.value
+  };
+  fetch(CRM,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),keepalive:true})
+    .catch(()=>{}).finally(()=>irWhats(nome));
+  // rede lenta? segue mesmo assim
+  setTimeout(()=>irWhats(nome), 2500);
+});
+</script>
+</body>
+</html>

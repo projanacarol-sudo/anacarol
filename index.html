@@ -2,16 +2,336 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="0; url=/painel.html">
-<title>CRM Ana Carolina</title>
-<script>location.replace("/painel.html");</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0c0908">
+<title>Ana Carolina Oliveira</title>
+<meta name="description" content="Ana Carolina Oliveira — Deputada Federal 2026. Esse é o nosso legado.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Kaushan+Script&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  body{margin:0;font-family:system-ui,Arial,sans-serif;background:#f4f7f8;color:#41505a;
-    display:flex;min-height:100vh;align-items:center;justify-content:center}
-  a{color:#128C7E;font-weight:700;text-decoration:none}
+  :root{
+    --bg:#f4efe9; --card:#fff; --ink:#241812; --soft:#8a7a6e; --line:#ece2d7;
+    --wine:#7a2418; --wine2:#9a3524; --winedk:#4a170d; --gold:#e0a53a; --gold2:#f0d59a;
+    --cream:#f7ead0; --orange:#d98a2b; --shadow:0 8px 26px rgba(120,50,20,.12);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Manrope',system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .app{max-width:480px;margin:0 auto;background:var(--bg);min-height:100vh;overflow:hidden}
+  svg{display:block}
+
+  /* ===== HERO SANTINHO (arte oficial) ===== */
+  .hero{position:relative;background:#3a130c;line-height:0}
+  .hero img.santao{display:block;width:100%;height:auto}
+
+  /* ===== BODY ===== */
+  .body{padding:22px 18px 46px}
+  .sec{font-family:'Archivo';font-weight:800;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--wine);margin:6px 4px 12px}
+  .cta{display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:18px;
+    background:linear-gradient(135deg,var(--wine2),var(--wine));color:#fff;text-decoration:none;
+    box-shadow:0 12px 28px rgba(122,36,24,.32);transition:.16s;margin-bottom:22px}
+  .cta:active{transform:scale(.98)}
+  .cta .ic{width:46px;height:46px;border-radius:14px;background:#ffffff26;display:grid;place-items:center;flex:0 0 auto}
+  .cta .tx{flex:1}.cta .tx b{display:block;font-size:16.5px;font-weight:800}.cta .tx span{font-size:12.5px;opacity:.85}
+  /* botão de destaque (dourado) — receber materiais em /apoiar */
+  .cta.destaque{background:linear-gradient(135deg,var(--gold2),var(--gold));color:var(--winedk);
+    box-shadow:0 14px 32px rgba(224,165,58,.42);position:relative;overflow:hidden;
+    animation:up .5s cubic-bezier(.2,.8,.2,1) forwards, pulseGold 2.6s ease-in-out .6s infinite}
+  .cta.destaque .ic{background:#4a170d1f;color:var(--winedk)}
+  .cta.destaque .tx span{opacity:.78}
+  .cta.destaque .badge{position:absolute;top:10px;right:12px;background:var(--winedk);color:var(--gold2);
+    font-family:'Archivo';font-weight:900;font-size:9.5px;letter-spacing:1px;padding:3px 8px;border-radius:999px}
+  @keyframes pulseGold{0%,100%{box-shadow:0 14px 32px rgba(224,165,58,.42)}50%{box-shadow:0 14px 40px rgba(224,165,58,.72)}}
+
+  .railwrap{position:relative;margin:0 -4px}
+  .rail{display:flex;gap:12px;overflow-x:auto;padding:2px 4px 14px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .rail::-webkit-scrollbar{height:0;display:none}
+  .poster{flex:0 0 152px;height:214px;border-radius:18px;position:relative;overflow:hidden;
+    text-decoration:none;box-shadow:var(--shadow);color:#fff;display:block;transition:.16s}
+  .poster:active{transform:scale(.97)}
+  .poster .bg{position:absolute;inset:0;background-size:cover;background-position:center}
+  .poster .ic{position:absolute;top:12px;left:12px;width:36px;height:36px;border-radius:11px;background:#ffffff26;display:grid;place-items:center;backdrop-filter:blur(3px)}
+  .poster .info{position:absolute;left:0;right:0;bottom:0;padding:34px 13px 13px;background:linear-gradient(to top,#000000e6,#00000055 55%,transparent)}
+  .poster .info b{display:block;font-size:15px;font-weight:800;line-height:1.15}
+  .poster .info span{font-size:11.5px;opacity:.85}
+
+  .list{display:flex;flex-direction:column;gap:11px;margin-top:6px}
+  .item{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;background:var(--card);
+    box-shadow:var(--shadow);color:var(--ink);text-decoration:none;transition:.16s}
+  .item:active{transform:scale(.98)}
+  .item .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:0 0 auto;color:#fff}
+  .item .tx{flex:1;min-width:0}.item .tx b{display:block;font-size:15px;font-weight:800}
+  .item .tx span{font-size:12px;color:var(--soft);font-weight:600}
+  .item .chev{color:#cbbaa9}
+  footer{text-align:center;margin-top:26px;color:#a99a8c;font-size:11.5px;line-height:1.6;font-weight:600}
+  @keyframes up{to{opacity:1;transform:none}}
+  .an{opacity:0;transform:translateY(12px);animation:up .5s cubic-bezier(.2,.8,.2,1) forwards}
+
+  /* ===== Modal player (Spotify) — estilo Linktree ===== */
+  .modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:#0009;backdrop-filter:blur(3px);padding:16px}
+  .modal.open{display:flex}
+  .modal-in{background:#fff;color:#1a1a1a;width:100%;max-width:416px;max-height:92vh;border-radius:28px;position:relative;display:flex;flex-direction:column;overflow:hidden;animation:sheet .28s ease}
+  @keyframes sheet{from{transform:translateY(30px) scale(.98);opacity:.3}to{transform:none;opacity:1}}
+  .sp-top{display:flex;align-items:center;gap:8px;padding:14px 14px 8px;flex:0 0 auto}
+  .sp-top .t{flex:1;text-align:center}
+  .sp-top .t b{display:block;font-size:15px;font-weight:800;color:#111}
+  .sp-top .t span{font-size:12px;color:#6b6b6b}
+  .sp-x{border:0;background:#f0f0f0;color:#111;width:34px;height:34px;border-radius:50%;font-size:19px;cursor:pointer;line-height:1;flex:0 0 auto}
+  .sp-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px 22px}
+  .modal-in iframe{width:100%;height:232px;border:0;border-radius:12px;display:block;margin-bottom:8px}
+  .sp-title{text-align:center;font-size:19px;font-weight:800;color:#111;margin-top:14px;line-height:1.3}
+  .sp-author{text-align:center;font-size:15px;color:#333;margin-top:2px}
+  .sp-desc{font-size:13.5px;color:#333;margin-top:12px;line-height:1.5}
+  .sp-h{font-size:13px;font-weight:800;color:#9a9a9a;margin:18px 0 10px}
+  .sp-listen{display:inline-flex;align-items:center;gap:9px;border:1px solid #e0e0e0;border-radius:12px;padding:10px 16px;font-weight:800;font-size:14px;color:#111;text-decoration:none}
+  .sp-eps{display:flex;flex-direction:column;gap:15px}
+  .sp-ep{display:flex;gap:12px;align-items:center;text-decoration:none;color:#111}
+  .sp-ep img{width:48px;height:48px;border-radius:6px;object-fit:cover;flex:0 0 auto;background:#eee}
+  .sp-ep b{font-size:13.5px;font-weight:600;line-height:1.25;display:block}
+  .sp-ep span{font-size:12.5px;color:#8a8a8a}
+  .sp-follow{display:flex;align-items:center;justify-content:center;gap:8px;background:#000;color:#fff;border-radius:24px;padding:13px;font-weight:800;font-size:14px;text-decoration:none;margin-top:20px}
 </style>
 </head>
 <body>
-  <p>Redirecionando para o painel… Se não abrir, <a href="/painel.html">clique aqui</a>.</p>
+<div class="app">
+  <div class="hero">
+    <img class="santao" src="santao.jpg" alt="Ana Carolina Oliveira — Vote 2026 para Deputada Federal. Esse é o nosso legado.">
+  </div>
+
+  <div class="body">
+    <!-- Botao "Receba os Materiais da Campanha" DESATIVADO a pedido. Para reativar, descomente o bloco abaixo. -->
+    <!--
+    <a class="cta destaque" href="https://lp.anacarolinaoliveira.com.br/apoiar">
+      <div class="ic">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"></path><path d="M1 3h22v5H1z"></path><path d="M10 12h4"></path></svg>
+      </div>
+      <div class="tx"><b>Receba os Materiais da Campanha</b></div>
+    </a>
+    -->
+
+    <a class="cta an" id="cta" href="fale-comigo.html">
+      <div class="ic" id="ctaic"></div>
+      <div class="tx"><b>Fale Comigo</b><span>Sua mensagem chega direto até mim</span></div>
+    </a>
+
+    <a class="cta an" href="https://lp.anacarolinaoliveira.com.br/kit-digital.html" style="background:linear-gradient(135deg,#e0a53a,#c9791f)">
+      <div class="ic">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      </div>
+      <div class="tx"><b>Kit Digital</b><span>Artes, molduras e jingle pra compartilhar</span></div>
+    </a>
+
+    <div class="sec">Conteúdos</div>
+    <div class="railwrap"><div class="rail" id="rail"></div></div>
+
+    <div class="sec" style="margin-top:16px">Redes e site</div>
+    <div class="list" id="list"></div>
+
+    <footer>Ana Carolina Oliveira · Podemos · Deputada Federal 2026<br>Conteúdo de responsabilidade da campanha.</footer>
+  </div>
+</div>
+
+<div class="modal" id="spModal">
+  <div class="modal-in">
+    <div class="sp-top">
+      <span style="width:34px;flex:0 0 auto"></span>
+      <div class="t"><b id="spKicker">Spotify</b><span id="spSub">Podcast</span></div>
+      <button class="sp-x" id="spClose" aria-label="Fechar">×</button>
+    </div>
+    <div class="sp-scroll" id="spBody"></div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+/* Fallback usado se o Supabase não responder (a página nunca quebra). */
+const POSTERS = [
+  { icon:"youtube", image:"cards/card-dandovoz.jpg", bare:true, titulo:"Dando Voz Cast", sub:"Canal no YouTube", url:"https://www.youtube.com/channel/UC0AViRM6LKhhH0lccYAeD2w", grad:"linear-gradient(160deg,#9a3524,#3a130c)" },
+  { icon:"shield",  image:"cards/card-silencio.jpg", bare:true, titulo:"Silêncio que Grita", sub:"Proteção infantil", url:"https://dandovoz.com.br/silencioquegrita/", grad:"linear-gradient(160deg,#5a1a12,#241010)" },
+  { icon:"spotify", image:"cards/card-podcast.jpg", bare:true, titulo:"Podcast", sub:"Ouça no Spotify", url:"https://open.spotify.com/show/1fjVsMhlYPZPoU9wecSJH7", grad:"linear-gradient(160deg,#caa143,#7a5510)" },
+  { icon:"globe",   image:"cards/card-site.jpg", bare:true, titulo:"Site oficial", sub:"anacarolinaoliveira.com.br", url:"https://anacarolinaoliveira.com.br/", grad:"linear-gradient(160deg,#3a2a1a,#14100b)" },
+];
+const LINKS = [
+  { icon:"instagram", titulo:"Instagram", sub:"@anacarolinaoliveira_oficial", url:"https://www.instagram.com/anacarolinaoliveira_oficial/", cor:"#c2306b" },
+  { icon:"tiktok",    titulo:"TikTok",    sub:"@anacarolinaoliveira_of",      url:"https://www.tiktok.com/@anacarolinaoliveira_of", cor:"#111" },
+  { icon:"facebook",  titulo:"Facebook",  sub:"Página oficial",               url:"https://www.facebook.com/anacarolinaoliveira.of/", cor:"#1877F2" },
+];
+const GRADS=["linear-gradient(160deg,#9a3524,#3a130c)","linear-gradient(160deg,#5a1a12,#241010)","linear-gradient(160deg,#caa143,#7a5510)","linear-gradient(160deg,#3a2a1a,#14100b)"];
+
+/* Dados do podcast p/ o modal rico (estilo Linktree). Edite os episódios recentes aqui. */
+const PODCAST={
+  showId:"1fjVsMhlYPZPoU9wecSJH7",
+  titulo:"Dando Voz Cast Por Ana Carolina Oliveira",
+  autor:"Ana Carolina Oliveira",
+  desc:"O podcast Dando Voz Cast Por Ana Carolina Oliveira tem como objetivo levar uma mensagem de superação e tratar sobre pautas importantes para pessoas que precisam de voz por meio de histórias reais e inspiradoras.",
+  spotify:"https://open.spotify.com/show/1fjVsMhlYPZPoU9wecSJH7",
+  capa:"https://i.scdn.co/image/ab6765630000ba8a92c4404a40bd940722cdd974",
+  episodios:[
+    { t:"Dando Voz Cast - Zona de recomeço/ As marcas do F3min1c1di0!", d:"8 de abril • 1 hr 51 min", url:"https://open.spotify.com/show/1fjVsMhlYPZPoU9wecSJH7" },
+    { t:"Dando Voz Cast - Dra. Raphaella #57", d:"8 de abril • 1 hr 2 min",  url:"https://open.spotify.com/show/1fjVsMhlYPZPoU9wecSJH7" },
+    { t:"Dando Voz Cast - Vitoria Reis #56",   d:"8 de abril • 1 hr 29 min", url:"https://open.spotify.com/episode/0eKWfozDaLdPdc5m3clBJR" },
+  ],
+};
+const SPOTIFY_G='<svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true"><path d="M10 0a10 10 0 100 20 10 10 0 000-20zm4.59 14.43a.62.62 0 01-.86.21c-2.35-1.44-5.3-1.76-8.79-.97a.62.62 0 11-.28-1.21c3.81-.87 7.09-.5 9.72 1.11.3.18.39.57.21.86zm1.23-2.73a.78.78 0 01-1.07.26c-2.69-1.66-6.79-2.14-9.96-1.17a.78.78 0 01-.46-1.5c3.63-1.1 8.15-.57 11.24 1.33.36.22.48.71.25 1.08zm.1-2.84C12.7 6.95 7.38 6.77 4.3 7.7a.94.94 0 11-.54-1.8c3.54-1.07 9.42-.86 13.12 1.34a.94.94 0 01-.96 1.62z" fill="#1ED760"/></svg>';
+
+const IC = {
+  instagram:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.1" fill="currentColor" stroke="none"/></svg>',
+  youtube:'<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.2-.4-4.7a2.5 2.5 0 0 0-1.8-1.8C19.3 5 12 5 12 5s-7.3 0-8.8.5A2.5 2.5 0 0 0 1.4 7.3C1 8.8 1 12 1 12s0 3.2.4 4.7a2.5 2.5 0 0 0 1.8 1.8C4.7 19 12 19 12 19s7.3 0 8.8-.5a2.5 2.5 0 0 0 1.8-1.8C23 15.2 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>',
+  tiktok:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 3c.3 2.1 1.5 3.6 3.5 3.9V10c-1.4.1-2.6-.3-3.8-1v6.4c0 3.4-2.7 5.6-5.7 5.6A5.4 5.4 0 0 1 5 15.6c0-3.1 2.7-5.4 6-5v3.2a2.3 2.3 0 0 0-2.9 2.2 2.3 2.3 0 0 0 4.6.1V3z"/></svg>',
+  facebook:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H8v-2.9h2.4V9.4c0-2.4 1.4-3.7 3.6-3.7 1 0 2.1.2 2.1.2v2.3h-1.2c-1.2 0-1.5.7-1.5 1.5v1.8h2.6L15.6 15h-2.2v7A10 10 0 0 0 22 12z"/></svg>',
+  spotify:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.6 14.4a.8.8 0 0 1-1.1.3c-3-1.8-6.7-2.2-11.1-1.2a.8.8 0 1 1-.3-1.5c4.8-1.1 8.9-.6 12.2 1.4.4.2.5.6.3 1zm1.2-2.7a1 1 0 0 1-1.3.3c-3.4-2.1-8.6-2.7-12.6-1.5a1 1 0 1 1-.6-1.9c4.6-1.4 10.3-.7 14.2 1.7.4.3.6.9.3 1.4zm.1-2.8C14 8.6 7.9 8.4 4.3 9.5a1.2 1.2 0 1 1-.7-2.3C7.8 5.9 14.5 6.1 18.9 8.8a1.2 1.2 0 0 1-1 2.1z"/></svg>',
+  globe:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18"/></svg>',
+  shield:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>',
+  chat:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 12a8 8 0 0 1-11.5 7.2L3 21l1.8-6A8 8 0 1 1 21 12z"/></svg>',
+  chev:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg>',
+};
+
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+document.getElementById("ctaic").innerHTML = IC.chat;
+
+// Converte um link do Spotify no player incorporado (show/episódio/playlist...)
+function spotifyEmbed(url){
+  const m=String(url||"").match(/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(show|episode|playlist|album|track)\/([A-Za-z0-9]+)/);
+  return m ? `https://open.spotify.com/embed/${m[1]}/${m[2]}?utm_source=generator` : null;
+}
+
+function cardHTML(p){
+  const url = p.url && p.url!=="#" ? p.url : "#";
+  const emb = spotifyEmbed(p.url);
+  const bg = p.image ? `background-image:url('${esc(p.image)}')` : `background:${p.grad||GRADS[0]}`;
+  // pôster "bare": a arte já traz título/CTA, então mostramos só a imagem
+  if(p.image && p.bare){
+    return `<a class="poster${emb?' sp':''}"${emb?` data-emb="${esc(emb)}"`:''} href="${esc(url)}" target="_blank" rel="noopener" aria-label="${esc(p.titulo)}">
+      <div class="bg" style="${bg}"></div></a>`;
+  }
+  const icon = p.image ? "" : `<div class="ic">${IC[emb?"spotify":(p.icon||"globe")]||IC.globe}</div>`;
+  return `<a class="poster${emb?' sp':''}"${emb?` data-emb="${esc(emb)}"`:''} href="${esc(url)}" target="_blank" rel="noopener">
+    <div class="bg" style="${bg}"></div>${icon}
+    <div class="info"><b>${esc(p.titulo)}</b><span>${esc(p.sub||"")}</span></div></a>`;
+}
+
+// ----- Episódios recentes (automático via proxy do CRM, com fallback) -----
+const CRM_BASE = "https://anacarol.pages.dev";
+function durFmt(ms){ if(!ms)return""; const min=Math.round(ms/60000),h=Math.floor(min/60),m=min%60; return h?`${h} hr ${m} min`:`${m} min`; }
+function dateFmt(d){ if(!d)return""; try{ let s=String(d); if(/^\d{4}-\d{2}-\d{2}$/.test(s)) s+="T12:00:00"; const dt=new Date(s); if(isNaN(dt))return""; return dt.toLocaleDateString("pt-BR",{day:"numeric",month:"long"}); }catch(e){return"";} }
+function epRow(name,sub,url,img){
+  return `<a class="sp-ep" href="${esc(url||PODCAST.spotify)}" target="_blank" rel="noopener">
+    <img src="${esc(img||PODCAST.capa)}" alt="" loading="lazy">
+    <div><b>${esc(name)}</b><span>${esc(sub||"")}</span></div></a>`;
+}
+function epsFallbackHTML(){
+  return PODCAST.episodios.map(e=>epRow(e.t,e.d,e.url,PODCAST.capa)).join("");
+}
+async function loadEpisodes(showId){
+  try{
+    const r=await fetch(`${CRM_BASE}/api/podcast?show=${encodeURIComponent(showId)}`,{cache:"no-store"});
+    const j=await r.json();
+    if(j&&j.ok&&Array.isArray(j.episodes)&&j.episodes.length) return j.episodes;
+  }catch(e){}
+  return null;
+}
+
+// Modal do player (layout estilo Linktree)
+function openPlayer(emb,title,url){
+  if(!emb)return;
+  const rich = PODCAST.showId && String(emb).includes(PODCAST.showId);
+  let html = `<iframe src="${esc(emb)}" allow="encrypted-media" loading="lazy" scrolling="no"></iframe>`;
+  if(rich){
+    const P=PODCAST;
+    document.getElementById("spSub").textContent = "Podcast · "+P.autor;
+    html += `
+      <a class="sp-title" href="${esc(P.spotify)}" target="_blank" rel="noopener" style="text-decoration:none;display:block">${esc(P.titulo)}</a>
+      <div class="sp-author">${esc(P.autor)}</div>
+      <p class="sp-desc">${esc(P.desc)}</p>
+      <div class="sp-h">Ouvir em</div>
+      <a class="sp-listen" href="${esc(P.spotify)}" target="_blank" rel="noopener">${SPOTIFY_G} Spotify</a>
+      <div class="sp-h">Episódios recentes</div>
+      <div class="sp-eps" id="spEps">${epsFallbackHTML()}</div>
+      <a class="sp-follow" href="${esc(P.spotify)}" target="_blank" rel="noopener">${SPOTIFY_G} Seguir no Spotify</a>`;
+  }else{
+    document.getElementById("spSub").textContent = title || "Podcast";
+    html += `<a class="sp-listen" style="margin-top:12px" href="${esc(url||emb)}" target="_blank" rel="noopener">${SPOTIFY_G} Abrir no Spotify</a>`;
+  }
+  document.getElementById("spBody").innerHTML = html;
+  document.getElementById("spModal").classList.add("open");
+}
+function closePlayer(){document.getElementById("spModal").classList.remove("open");document.getElementById("spBody").innerHTML="";}
+document.getElementById("spClose").onclick=closePlayer;
+document.getElementById("spModal").addEventListener("click",e=>{if(e.target.id==="spModal")closePlayer();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closePlayer();});
+function linkHTML(l){
+  return `<a class="item" href="${esc(l.url||'#')}" target="_blank" rel="noopener">
+    <div class="ic" style="background:${esc(l.cor||'#7a2418')}">${IC[l.icon]||IC.globe}</div>
+    <div class="tx"><b>${esc(l.titulo)}</b><span>${esc(l.sub||"")}</span></div>
+    <div class="chev">${IC.chev}</div></a>`;
+}
+
+function renderCards(cards){
+  const rail=document.getElementById("rail");
+  if(!cards.length){document.querySelector(".railwrap").style.display="none";return;}
+  // duplica os itens para o loop ficar contínuo
+  const html=cards.map(cardHTML).join("");
+  rail.innerHTML = cards.length>1 ? html+html : html;
+  // cards do Spotify abrem o player em modal (não navegam)
+  rail.addEventListener("click",e=>{
+    const a=e.target.closest(".poster.sp");
+    if(a){e.preventDefault();openPlayer(a.dataset.emb, a.querySelector(".info b")?.textContent, a.getAttribute("href"));}
+  });
+  autoLoop(rail, cards.length>1);
+}
+function renderLinks(links){
+  document.getElementById("list").innerHTML = links.map(linkHTML).join("");
+  const anim=[document.querySelector(".cta"),document.querySelector(".railwrap"),...document.querySelectorAll(".item")];
+  anim.forEach((el,i)=>{ if(el){el.classList.add("an");el.style.animationDelay=(60+i*70)+"ms";} });
+}
+
+/* Carrossel: rola sozinho em loop; pausa quando o usuário mexe e retoma. */
+function autoLoop(rail, loop){
+  if(!loop) return;
+  let paused=false, t;
+  const pause=(ms)=>{paused=true;clearTimeout(t);t=setTimeout(()=>paused=false,ms||2200);};
+  ["pointerdown","touchstart","wheel"].forEach(ev=>rail.addEventListener(ev,()=>pause(2200),{passive:true}));
+  rail.addEventListener("mouseenter",()=>{paused=true;clearTimeout(t);});
+  rail.addEventListener("mouseleave",()=>pause(400));
+  function tick(){
+    if(!paused){
+      rail.scrollLeft += 0.55;
+      const half = rail.scrollWidth/2;
+      if(rail.scrollLeft >= half) rail.scrollLeft -= half;
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+async function getConfig(){
+  const u=window.BIO_SUPABASE_URL, k=window.BIO_SUPABASE_ANON;
+  if(u && k && !/^COLE_AQUI/.test(u)) return {ok:true,url:u,anonKey:k};
+  try{ return await (await fetch("/api/config",{cache:"no-store"})).json(); }catch(e){ return null; }
+}
+async function boot(){
+  const cfg = await getConfig();
+  let cards=POSTERS, links=LINKS;
+  if(cfg && cfg.ok && window.supabase){
+    try{
+      const sb = window.supabase.createClient(cfg.url, cfg.anonKey);
+      const [rc, rl] = await Promise.all([
+        sb.from("bio_cards").select("*").eq("ativo",true).order("ordem",{ascending:true}),
+        sb.from("bio_links").select("*").eq("ativo",true).order("ordem",{ascending:true}),
+      ]);
+      if(rc.data && rc.data.length){
+        cards = rc.data.map((c,i)=>({image:c.image_url||"", titulo:c.titulo, sub:c.subtitulo, url:c.url, icon:"globe", grad:GRADS[i%GRADS.length]}));
+      }
+      if(rl.data && rl.data.length){
+        links = rl.data.map(l=>({icon:l.icon||"globe", titulo:l.titulo, sub:l.subtitulo, url:l.url, cor:l.cor||"#7a2418"}));
+      }
+    }catch(e){ /* mantém fallback */ }
+  }
+  renderCards(cards);
+  renderLinks(links);
+}
+boot();
+</script>
 </body>
 </html>

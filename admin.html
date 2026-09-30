@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#7a2418">
+<title>Admin — Bio Ana Carolina</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f4efe9;--card:#fff;--ink:#241812;--soft:#8a7a6e;--line:#e6dccf;--wine:#7a2418;--wine2:#9a3524;--gold:#e0a53a;--ok:#1c8a4e;--err:#c0392b}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Manrope',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45}
+  .wrap{max-width:720px;margin:0 auto;padding:18px 16px 60px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  header h1{font-size:19px;font-weight:800}
+  header .who{font-size:12px;color:var(--soft)}
+  .btn{border:0;border-radius:11px;padding:11px 16px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit}
+  .btn.p{background:linear-gradient(135deg,var(--wine2),var(--wine));color:#fff}
+  .btn.g{background:#eadfd2;color:var(--wine)}
+  .btn.d{background:#fbe4e0;color:var(--err)}
+  .btn.s{padding:8px 12px;font-size:13px}
+  .btn:disabled{opacity:.55;cursor:default}
+  .tabs{display:flex;gap:8px;margin-bottom:14px}
+  .tab{flex:1;text-align:center;padding:11px;border-radius:12px;background:#eadfd2;color:var(--wine);font-weight:800;cursor:pointer}
+  .tab.on{background:linear-gradient(135deg,var(--wine2),var(--wine));color:#fff}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 4px 14px rgba(120,50,20,.06)}
+  .row{display:flex;gap:12px;align-items:flex-start}
+  .thumb{width:82px;height:116px;border-radius:12px;background:#20130d center/cover no-repeat;flex:0 0 auto;position:relative;overflow:hidden;display:grid;place-items:center;color:#fff8;font-size:11px;text-align:center}
+  .grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+  label{font-size:11px;font-weight:800;color:var(--soft);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px}
+  input,select{width:100%;background:#faf5ef;border:1.5px solid var(--line);border-radius:10px;padding:10px;font-size:14px;color:var(--ink);font-family:inherit}
+  input:focus,select:focus{outline:none;border-color:var(--gold)}
+  .two{display:flex;gap:8px}.two>div{flex:1}
+  .acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px}
+  .ord{display:flex;flex-direction:column;gap:4px}
+  .ord .btn{padding:4px 10px;font-size:15px;line-height:1}
+  .toggle{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--soft)}
+  .msg{padding:10px 12px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:12px;display:none}
+  .msg.ok{background:#e6f7ee;color:var(--ok);display:block}.msg.err{background:#fdecea;color:var(--err);display:block}
+  .colorwrap{display:flex;align-items:center;gap:8px}
+  input[type=color]{width:46px;height:40px;padding:2px;flex:0 0 auto}
+  .login{max-width:360px;margin:12vh auto 0;background:#fff;border:1px solid var(--line);border-radius:18px;padding:26px 22px;box-shadow:0 10px 30px rgba(120,50,20,.12)}
+  .login h1{font-size:20px;font-weight:800;margin-bottom:4px}
+  .login p{font-size:13px;color:var(--soft);margin-bottom:16px}
+  .login label{margin-top:10px}
+  .login .btn{width:100%;margin-top:16px;padding:13px}
+  .hidden{display:none!important}
+  .hint{font-size:12px;color:var(--soft);margin:2px 0 12px}
+  a.link{color:var(--wine);font-weight:800;text-decoration:none;font-size:13px}
+</style>
+</head>
+<body>
+
+<div id="loginView" class="hidden">
+  <div class="login">
+    <h1>Admin da Bio</h1>
+    <p>Entre com o mesmo login do painel do CRM.</p>
+    <div class="msg" id="loginMsg"></div>
+    <label>E-mail</label><input id="email" type="email" autocomplete="username">
+    <label>Senha</label><input id="pass" type="password" autocomplete="current-password">
+    <button class="btn p" id="loginBtn">Entrar</button>
+  </div>
+</div>
+
+<div id="appView" class="wrap hidden">
+  <header>
+    <div><h1>Bio — Conteúdo</h1><div class="who" id="who"></div></div>
+    <div style="display:flex;gap:8px">
+      <a class="btn g s" href="index.html" target="_blank">Ver página</a>
+      <button class="btn g s" id="logoutBtn">Sair</button>
+    </div>
+  </header>
+
+  <div class="msg" id="msg"></div>
+
+  <div class="tabs">
+    <div class="tab on" data-tab="cards">Cards do carrossel</div>
+    <div class="tab" data-tab="links">Botões</div>
+  </div>
+
+  <div id="cardsTab">
+    <div class="hint">Cada card do carrossel. Suba uma arte (recomendado 600×840, retrato). Sem arte, usa um fundo colorido.</div>
+    <div id="cardsList"></div>
+    <button class="btn p" id="addCard">+ Adicionar card</button>
+  </div>
+
+  <div id="linksTab" class="hidden">
+    <div class="hint">Botões fixos que aparecem abaixo do carrossel.</div>
+    <div id="linksList"></div>
+    <button class="btn p" id="addLink">+ Adicionar botão</button>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+let sb=null, cards=[], links=[];
+const ICONS=["instagram","tiktok","facebook","youtube","spotify","globe","shield","chat","site"];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function flash(el,txt,ok){el.textContent=txt;el.className="msg "+(ok?"ok":"err");setTimeout(()=>{el.className="msg";},3500);}
+
+async function getConfig(){
+  const u=window.BIO_SUPABASE_URL, k=window.BIO_SUPABASE_ANON;
+  if(u && k && !/^COLE_AQUI/.test(u)) return {ok:true,url:u,anonKey:k};
+  try{ return await (await fetch("/api/config",{cache:"no-store"})).json(); }catch(e){ return null; }
+}
+async function start(){
+  const cfg=await getConfig();
+  if(!cfg||!cfg.ok){document.body.innerHTML="<p style='padding:24px;font-family:sans-serif'>Configuração ausente. Abra o arquivo <b>config.js</b> e cole a URL e a anon key do Supabase (os mesmos do CRM).</p>";return;}
+  sb=window.supabase.createClient(cfg.url,cfg.anonKey);
+  const {data:{session}}=await sb.auth.getSession();
+  session?showApp(session):showLogin();
+}
+function showLogin(){$("loginView").classList.remove("hidden");$("appView").classList.add("hidden");}
+async function showApp(session){
+  $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");
+  $("who").textContent=session.user.email;
+  await loadAll();
+}
+
+/* ---------- login ---------- */
+$("loginBtn").onclick=async()=>{
+  const b=$("loginBtn");b.disabled=true;b.textContent="Entrando...";
+  const {data,error}=await sb.auth.signInWithPassword({email:$("email").value.trim(),password:$("pass").value});
+  b.disabled=false;b.textContent="Entrar";
+  if(error){flash($("loginMsg"),"E-mail ou senha inválidos.",false);return;}
+  showApp(data.session);
+};
+$("logoutBtn").onclick=async()=>{await sb.auth.signOut();location.reload();};
+
+/* ---------- tabs ---------- */
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));t.classList.add("on");
+  const c=t.dataset.tab==="cards";
+  $("cardsTab").classList.toggle("hidden",!c);$("linksTab").classList.toggle("hidden",c);
+});
+
+/* ---------- load ---------- */
+async function loadAll(){
+  const [rc,rl]=await Promise.all([
+    sb.from("bio_cards").select("*").order("ordem",{ascending:true}),
+    sb.from("bio_links").select("*").order("ordem",{ascending:true}),
+  ]);
+  cards=rc.data||[]; links=rl.data||[];
+  renderCards(); renderLinks();
+}
+
+/* ---------- cards ---------- */
+function renderCards(){
+  $("cardsList").innerHTML=cards.map((c,i)=>`
+   <div class="box" data-id="${c.id}">
+    <div class="row">
+      <div class="thumb" style="${c.image_url?`background-image:url('${esc(c.image_url)}')`:''}">${c.image_url?'':'sem arte'}</div>
+      <div class="grow">
+        <div><label>Título</label><input data-f="titulo" value="${esc(c.titulo)}"></div>
+        <div><label>Subtítulo</label><input data-f="subtitulo" value="${esc(c.subtitulo||'')}"></div>
+        <div><label>Link (URL)</label><input data-f="url" value="${esc(c.url||'')}" placeholder="https://..."></div>
+        <div class="acts">
+          <input type="file" accept="image/*" class="file" style="font-size:12px;max-width:190px">
+          <label class="toggle"><input type="checkbox" data-f="ativo" ${c.ativo?'checked':''}> ativo</label>
+          <button class="btn p s save">Salvar</button>
+          <button class="btn d s del">Excluir</button>
+        </div>
+      </div>
+      <div class="ord">
+        <button class="btn g up" ${i===0?'disabled':''}>▲</button>
+        <button class="btn g down" ${i===cards.length-1?'disabled':''}>▼</button>
+      </div>
+    </div>
+   </div>`).join("")||"<div class='hint'>Nenhum card ainda.</div>";
+  bindRows("cardsList",cards,"bio_cards","cards");
+}
+
+/* ---------- links ---------- */
+function renderLinks(){
+  $("linksList").innerHTML=links.map((l,i)=>`
+   <div class="box" data-id="${l.id}">
+    <div class="row">
+      <div class="grow">
+        <div class="two">
+          <div><label>Título</label><input data-f="titulo" value="${esc(l.titulo)}"></div>
+          <div><label>Ícone</label><select data-f="icon">${ICONS.map(ic=>`<option ${l.icon===ic?'selected':''}>${ic}</option>`).join("")}</select></div>
+        </div>
+        <div><label>Subtítulo</label><input data-f="subtitulo" value="${esc(l.subtitulo||'')}"></div>
+        <div><label>Link (URL)</label><input data-f="url" value="${esc(l.url||'')}" placeholder="https://..."></div>
+        <div class="two">
+          <div><label>Cor do ícone</label><div class="colorwrap"><input type="color" data-f="cor" value="${esc(l.cor||'#7a2418')}"><input data-f="corTxt" value="${esc(l.cor||'#7a2418')}"></div></div>
+          <div style="display:flex;align-items:flex-end"><label class="toggle" style="margin-bottom:10px"><input type="checkbox" data-f="ativo" ${l.ativo?'checked':''}> ativo</label></div>
+        </div>
+        <div class="acts">
+          <button class="btn p s save">Salvar</button>
+          <button class="btn d s del">Excluir</button>
+        </div>
+      </div>
+      <div class="ord">
+        <button class="btn g up" ${i===0?'disabled':''}>▲</button>
+        <button class="btn g down" ${i===links.length-1?'disabled':''}>▼</button>
+      </div>
+    </div>
+   </div>`).join("")||"<div class='hint'>Nenhum botão ainda.</div>";
+  bindRows("linksList",links,"bio_links","links");
+  // sincroniza color picker <-> texto
+  $("linksList").querySelectorAll('input[type=color]').forEach(ci=>{
+    const txt=ci.parentElement.querySelector('[data-f=corTxt]');
+    ci.oninput=()=>txt.value=ci.value; txt.oninput=()=>{if(/^#[0-9a-f]{6}$/i.test(txt.value))ci.value=txt.value;};
+  });
+}
+
+function collect(box){
+  const o={};
+  box.querySelectorAll('[data-f]').forEach(el=>{
+    const f=el.dataset.f;
+    if(f==='corTxt')return;
+    o[f]=el.type==='checkbox'?el.checked:el.value.trim();
+  });
+  if(o.cor && /^#[0-9a-f]{6}$/i.test((box.querySelector('[data-f=corTxt]')||{}).value||''))
+    o.cor=box.querySelector('[data-f=corTxt]').value;
+  return o;
+}
+
+function bindRows(listId,arr,table,kind){
+  $(listId).querySelectorAll('.box').forEach(box=>{
+    const id=box.dataset.id;
+    box.querySelector('.save').onclick=async(e)=>{
+      const b=e.target;b.disabled=true;b.textContent="...";
+      const patch=collect(box);
+      const {error}=await sb.from(table).update(patch).eq('id',id);
+      b.disabled=false;b.textContent="Salvar";
+      if(error){flash($("msg"),"Erro ao salvar: "+error.message,false);return;}
+      flash($("msg"),"Salvo!",true);await loadAll();
+    };
+    box.querySelector('.del').onclick=async()=>{
+      if(!confirm("Excluir este item?"))return;
+      const {error}=await sb.from(table).delete().eq('id',id);
+      if(error){flash($("msg"),"Erro ao excluir.",false);return;}
+      flash($("msg"),"Excluído.",true);await loadAll();
+    };
+    box.querySelector('.up').onclick=()=>move(arr,table,id,-1);
+    box.querySelector('.down').onclick=()=>move(arr,table,id,1);
+    const file=box.querySelector('.file');
+    if(file)file.onchange=async()=>{
+      const f=file.files[0];if(!f)return;
+      flash($("msg"),"Enviando imagem...",true);
+      const ext=(f.name.split('.').pop()||'jpg').toLowerCase();
+      const path='cards/'+id+'-'+Date.now()+'.'+ext;
+      const {error:upErr}=await sb.storage.from('bio').upload(path,f,{upsert:true,contentType:f.type});
+      if(upErr){flash($("msg"),"Falha no upload: "+upErr.message,false);return;}
+      const url=sb.storage.from('bio').getPublicUrl(path).data.publicUrl;
+      const {error}=await sb.from('bio_cards').update({image_url:url}).eq('id',id);
+      if(error){flash($("msg"),"Imagem enviada, mas não salvou no card.",false);return;}
+      flash($("msg"),"Imagem atualizada!",true);await loadAll();
+    };
+  });
+}
+
+async function move(arr,table,id,dir){
+  const i=arr.findIndex(x=>x.id===id);const j=i+dir;
+  if(j<0||j>=arr.length)return;
+  const a=arr[i],b=arr[j];
+  await Promise.all([
+    sb.from(table).update({ordem:b.ordem}).eq('id',a.id),
+    sb.from(table).update({ordem:a.ordem}).eq('id',b.id),
+  ]);
+  await loadAll();
+}
+
+/* ---------- add ---------- */
+$("addCard").onclick=async()=>{
+  const ordem=(cards.reduce((m,c)=>Math.max(m,c.ordem),0))+1;
+  const {error}=await sb.from('bio_cards').insert({titulo:'Novo card',subtitulo:'',url:'',ordem});
+  if(error){flash($("msg"),"Erro ao criar.",false);return;}
+  await loadAll();
+};
+$("addLink").onclick=async()=>{
+  const ordem=(links.reduce((m,c)=>Math.max(m,c.ordem),0))+1;
+  const {error}=await sb.from('bio_links').insert({titulo:'Novo botão',subtitulo:'',url:'',icon:'globe',cor:'#7a2418',ordem});
+  if(error){flash($("msg"),"Erro ao criar.",false);return;}
+  await loadAll();
+};
+
+start();
+</script>
+</body>
+</html>
