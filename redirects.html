@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Redirecionamentos · Ana Carolina</title>
+<style>
+:root{
+  --preto:#0c0908; --preto-2:#17100F; --amarelo:#e0a53a; --verde:#1f9d63; --azul:#3b82f6;
+  --vermelho:#c0392b; --linha:rgba(255,255,255,.12); --cinza-2:rgba(255,255,255,.55);
+  --d:"Poppins",system-ui,sans-serif; --f:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:linear-gradient(160deg,#0c0908,#17100F 60%,#241611);color:#fff;font-family:var(--f);min-height:100vh}
+.wrap{max-width:1000px;margin:0 auto;padding:22px 18px 60px}
+h1{font-family:var(--d);font-weight:900;font-size:22px}
+h1 b{color:var(--amarelo)}
+.btn{font-family:var(--d);font-weight:800;font-size:13px;border:1px solid var(--linha);border-radius:10px;
+  padding:10px 14px;background:var(--amarelo);color:#3a2600;cursor:pointer;transition:.15s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{filter:brightness(1.06)} .btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-2{background:rgba(255,255,255,.06);color:#fff}
+.btn-del{background:transparent;color:var(--vermelho);border-color:transparent;padding:6px 8px;font-size:18px}
+.topo{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.topo .acoes{display:flex;gap:8px;flex-wrap:wrap}
+
+#tela-login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card-login{background:var(--preto-2);border:1px solid var(--linha);border-radius:16px;padding:26px;width:100%;max-width:360px}
+.card-login h2{font-family:var(--d);font-weight:900;margin-bottom:16px}
+.card-login input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--linha);background:#0c0908;color:#fff;margin-bottom:10px;font-size:15px}
+.card-login .btn{width:100%;justify-content:center;margin-top:6px}
+#erro-login{color:#e74c3c;font-size:13px;min-height:18px;margin-top:6px}
+
+.aviso{background:rgba(224,165,58,.12);border:1px solid rgba(224,165,58,.4);color:#f0d59a;border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:18px}
+table{width:100%;border-collapse:collapse;background:var(--preto-2);border:1px solid var(--linha);border-radius:12px;overflow:hidden}
+th,td{padding:12px 12px;text-align:left;border-bottom:1px solid var(--linha);vertical-align:middle;font-size:14px}
+th{font-family:var(--d);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--cinza-2);font-weight:800}
+tr:last-child td{border-bottom:none}
+td .pg{font-weight:700} td .pg small{display:block;color:var(--cinza-2);font-weight:400;font-size:12px;margin-top:2px}
+input.url{width:100%;min-width:220px;padding:9px 10px;border-radius:8px;border:1px solid var(--linha);background:#0c0908;color:#fff;font-size:13px}
+.sw{position:relative;width:54px;height:30px;border-radius:9999px;border:1px solid var(--linha);background:#555;cursor:pointer;transition:background .18s;flex-shrink:0}
+.sw .b{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .18s}
+.sw.on{background:var(--verde)} .sw.on .b{left:27px}
+.sw-wrap{display:flex;align-items:center;gap:9px}
+.sw-wrap .est{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cinza-2);width:78px}
+.msg{font-size:11px;min-height:14px;margin-top:3px}
+.msg.ok{color:var(--verde)} .msg.err{color:#e74c3c}
+.novo{margin-top:16px;background:var(--preto-2);border:1.5px dashed var(--linha);border-radius:12px;padding:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.novo .cg{display:flex;flex-direction:column;gap:4px}
+.novo label{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cinza-2)}
+.novo input{padding:9px 10px;border-radius:8px;border:1px solid var(--linha);background:#0c0908;color:#fff;font-size:13px}
+.vazio{color:var(--cinza-2);font-size:13px;padding:14px}
+</style>
+</head>
+<body>
+
+<div id="tela-login">
+  <div class="card-login">
+    <h2>Redirecionamentos</h2>
+    <input type="email" id="email" placeholder="E-mail" autocomplete="username" />
+    <input type="password" id="senha" placeholder="Senha" autocomplete="current-password" />
+    <button class="btn" id="btn-entrar">Entrar</button>
+    <div id="erro-login"></div>
+  </div>
+</div>
+
+<div class="wrap" id="tela-painel" style="display:none">
+  <div class="topo">
+    <h1>Redirecionamentos <b>de páginas</b></h1>
+    <div class="acoes">
+      <a class="btn btn-2" href="/romaneio.html">← Romaneio</a>
+      <button class="btn btn-2" id="btn-sair">Sair</button>
+    </div>
+  </div>
+
+  <div class="aviso">
+    Ligue a chave de uma página para <b>redirecionar</b> quem a abrir para a URL de destino. Desligada, a página
+    funciona normalmente. As mudanças valem na hora (a página consulta este painel ao carregar).
+  </div>
+
+  <table id="tabela">
+    <thead>
+      <tr><th>Página</th><th>Redireciona para (URL)</th><th>Redirect</th><th></th></tr>
+    </thead>
+    <tbody id="corpo"><tr><td colspan="4" class="vazio">Carregando…</td></tr></tbody>
+  </table>
+
+  <div class="novo">
+    <div class="cg"><label>Slug (ex: apoiar)</label><input id="n-slug" placeholder="slug" style="width:140px"></div>
+    <div class="cg"><label>Nome amigável</label><input id="n-titulo" placeholder="Ex: Página X" style="width:220px"></div>
+    <div class="cg" style="flex:1;min-width:220px"><label>URL de destino</label><input id="n-destino" placeholder="https://..." style="width:100%"></div>
+    <button class="btn" id="n-add">+ Adicionar página</button>
+    <div class="msg" id="n-msg" style="flex-basis:100%"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+let sb = null, ITENS = [];
+
+async function getCfg(){
+  const u = window.SUPA_URL, k = window.SUPA_ANON;
+  if(u && k && !/^COLE/.test(u)) return { url:u, anonKey:k };
+  try{ const c = await (await fetch('/api/config',{cache:'no-store'})).json(); if(c && c.ok) return { url:c.url, anonKey:c.anonKey }; }catch(e){}
+  return null;
+}
+async function initSb(){
+  const c = await getCfg();
+  if(!c){ $('#erro-login').textContent = 'Configuração ausente (/api/config).'; return false; }
+  sb = window.supabase.createClient(c.url, c.anonKey);
+  return true;
+}
+async function entrar(){
+  const email = $('#email').value.trim(), senha = $('#senha').value;
+  if(!email || !senha) return;
+  if(!sb && !(await initSb())) return;
+  $('#btn-entrar').disabled = true; $('#erro-login').textContent = '';
+  try{
+    const { error } = await sb.auth.signInWithPassword({ email, password: senha });
+    if(error) throw new Error('E-mail ou senha inválidos.');
+    $('#tela-login').style.display='none'; $('#tela-painel').style.display='block';
+    carregar();
+  }catch(e){ $('#erro-login').textContent = e.message; }
+  finally{ $('#btn-entrar').disabled = false; }
+}
+$('#btn-entrar').addEventListener('click', entrar);
+$('#senha').addEventListener('keydown', e => { if(e.key==='Enter') entrar(); });
+$('#email').addEventListener('keydown', e => { if(e.key==='Enter') $('#senha').focus(); });
+$('#btn-sair').addEventListener('click', async ()=>{ if(sb) await sb.auth.signOut(); location.reload(); });
+
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+async function carregar(){
+  $('#corpo').innerHTML = '<tr><td colspan="4" class="vazio">Carregando…</td></tr>';
+  const { data, error } = await sb.from('pagina_redirects').select('*').order('titulo',{ascending:true});
+  if(error){ $('#corpo').innerHTML = '<tr><td colspan="4" class="vazio">Erro: '+error.message+'</td></tr>'; return; }
+  ITENS = data || [];
+  render();
+}
+function render(){
+  const b = $('#corpo'); b.innerHTML = '';
+  if(!ITENS.length){ b.innerHTML = '<tr><td colspan="4" class="vazio">Nenhuma página cadastrada.</td></tr>'; return; }
+  ITENS.forEach(it => b.appendChild(linha(it)));
+}
+function linha(it){
+  const tr = document.createElement('tr');
+  tr.innerHTML =
+    `<td><div class="pg">${esc(it.titulo)}<small>slug: ${esc(it.slug)}</small></div></td>
+     <td><input class="url" type="url" value="${esc(it.destino)}" placeholder="https://..."></td>
+     <td><div class="sw-wrap"><span class="est">—</span><div class="sw" role="switch"><span class="b"></span></div></div></td>
+     <td style="white-space:nowrap">
+       <button class="btn" data-a="salvar">Salvar</button>
+       <button class="btn-del" data-a="excluir" title="Excluir">🗑</button>
+       <div class="msg" data-msg></div>
+     </td>`;
+  const sw = tr.querySelector('.sw'), est = tr.querySelector('.est'), url = tr.querySelector('.url'), msg = tr.querySelector('[data-msg]');
+  let ativo = !!it.ativo;
+  function pinta(){ sw.classList.toggle('on', ativo); est.textContent = ativo ? 'Ativo' : 'Desligado'; est.style.color = ativo ? 'var(--verde)' : 'var(--cinza-2)'; }
+  pinta();
+  sw.addEventListener('click', ()=>{ ativo = !ativo; pinta(); });
+  tr.querySelector('[data-a="salvar"]').addEventListener('click', async (e)=>{
+    const btn = e.currentTarget; btn.disabled = true; msg.className='msg'; msg.textContent='';
+    const patch = { destino: url.value.trim(), ativo, updated_at: new Date().toISOString() };
+    if(patch.ativo && !/^https?:\/\//i.test(patch.destino)){ msg.className='msg err'; msg.textContent='URL deve começar com http(s)://'; btn.disabled=false; return; }
+    const { error } = await sb.from('pagina_redirects').update(patch).eq('slug', it.slug);
+    if(error){ msg.className='msg err'; msg.textContent = error.message; }
+    else { it.destino=patch.destino; it.ativo=patch.ativo; msg.className='msg ok'; msg.textContent='Salvo ✓'; setTimeout(()=>msg.textContent='',1600); }
+    btn.disabled = false;
+  });
+  tr.querySelector('[data-a="excluir"]').addEventListener('click', async ()=>{
+    if(!confirm(`Remover a página "${it.titulo}" da lista?\n(Isso NÃO apaga a página; só tira o controle de redirect dela.)`)) return;
+    const { error } = await sb.from('pagina_redirects').delete().eq('slug', it.slug);
+    if(error){ alert('Erro: '+error.message); return; }
+    ITENS = ITENS.filter(x => x.slug !== it.slug); render();
+  });
+  return tr;
+}
+
+$('#n-add').addEventListener('click', async ()=>{
+  const slug = $('#n-slug').value.trim(), titulo = $('#n-titulo').value.trim(), destino = $('#n-destino').value.trim();
+  const msg = $('#n-msg'); msg.className='msg'; msg.textContent='';
+  if(!slug || !titulo){ msg.className='msg err'; msg.textContent='Preencha slug e nome.'; return; }
+  const { data, error } = await sb.from('pagina_redirects').insert({ slug, titulo, destino: destino || 'https://anacarolinaoliveira.com.br', ativo:false }).select().single();
+  if(error){ msg.className='msg err'; msg.textContent = error.message; return; }
+  ITENS.push(data); ITENS.sort((a,b)=>a.titulo.localeCompare(b.titulo)); render();
+  $('#n-slug').value=''; $('#n-titulo').value=''; $('#n-destino').value='';
+  msg.className='msg ok'; msg.textContent='Adicionada ✓';
+});
+</script>
+</body>
+</html>

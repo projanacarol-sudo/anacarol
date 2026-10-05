@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<!-- Guard de redirect (gerenciado em redirects.html). Se ATIVO, redireciona; senao mostra a pagina. Fail-open. -->
+<script>
+(function(){try{
+  var SLUG="apresentacao";
+  var de=document.documentElement; de.style.visibility="hidden";
+  var done=false; function mostrar(){if(done)return;done=true;de.style.visibility="";}
+  var ctrl=new AbortController(); var t=setTimeout(function(){try{ctrl.abort();}catch(e){} mostrar();},1500);
+  fetch("/api/pagina-redirect?slug="+SLUG,{cache:"no-store",signal:ctrl.signal})
+    .then(function(r){return r.json();})
+    .then(function(j){clearTimeout(t); if(j&&j.ativo&&j.destino){location.replace(j.destino);} else mostrar();})
+    .catch(function(){clearTimeout(t);mostrar();});
+}catch(e){try{document.documentElement.style.visibility="";}catch(_){}}})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Apresentação do CRM — Ana Carolina</title>
