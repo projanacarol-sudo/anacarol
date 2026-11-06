@@ -136,9 +136,10 @@ async function aplicaTag(env, leadId, tag, add) {
 async function enviaResend(env, lead, seq, step, leadId) {
   // Formato aceito pelo Resend: "email@dominio" OU "Nome <email@dominio>".
   // Sem nome, usa o e-mail puro (nunca "<email>", que o Resend rejeita).
-  const from = seq.from_email
-    ? (seq.from_nome ? `${seq.from_nome} <${seq.from_email}>` : seq.from_email)
-    : env.RESEND_FROM;
+  // Nome do remetente sempre "Ana Carolina Oliveira"; e-mail = do funil ou do RESEND_FROM.
+  const _rf = String(env.RESEND_FROM || "").match(/<([^>]+)>/);
+  const emailRem = seq.from_email || (_rf ? _rf[1] : String(env.RESEND_FROM || "").trim());
+  const from = emailRem ? `Ana Carolina Oliveira <${emailRem}>` : null;
   if (!from) throw new Error("sem remetente (RESEND_FROM ou funil.from_email)");
   // usa o e-mail normalizado (válido) e valida antes de chamar o Resend
   const to = String(lead.email_normalizado || lead.email || "").trim().toLowerCase();

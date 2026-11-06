@@ -18,7 +18,7 @@ export async function onRequestPost(context) {
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: env.RESEND_FROM, to: [para], subject: "[TESTE] " + assunto, html: htmlFinal }),
+    body: JSON.stringify({ from: remetente(env.RESEND_FROM), to: [para], subject: "[TESTE] " + assunto, html: htmlFinal }),
   });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) return json({ erro: "Resend recusou", detalhe: d }, 200);
@@ -31,3 +31,12 @@ async function requireAuth(request, env) {
   try { const r = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, { headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: "Bearer " + token } }); return r.ok; } catch (e) { return false; }
 }
 function json(o, s) { return new Response(JSON.stringify(o), { status: s || 200, headers: { "Content-Type": "application/json" } }); }
+
+/* Forca o nome do remetente como "Ana Carolina Oliveira", mantendo o e-mail
+   verificado que estiver em RESEND_FROM (aceita "email" ou "Nome <email>"). */
+function remetente(raw){
+  const s = String(raw || "").trim();
+  const m = s.match(/<([^>]+)>/);
+  const email = (m ? m[1] : s).trim();
+  return email ? `Ana Carolina Oliveira <${email}>` : s;
+}

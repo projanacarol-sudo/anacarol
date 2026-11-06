@@ -43,7 +43,7 @@ export async function onRequestPost(context) {
   const payload = validos.map(l => {
     const unsub = `${base}/api/unsub?l=${encodeURIComponent(l.id)}`;
     return {
-      from: env.RESEND_FROM,
+      from: remetente(env.RESEND_FROM),
       to: [l.email],
       subject: assunto,
       html: String(html).replace(/%UNSUB%/g, unsub),
@@ -74,7 +74,7 @@ export async function onRequestPost(context) {
     for (const l of validos) {
       const unsub = `${base}/api/unsub?l=${encodeURIComponent(l.id)}`;
       const one = {
-        from: env.RESEND_FROM, to: [l.email], subject: assunto,
+        from: remetente(env.RESEND_FROM), to: [l.email], subject: assunto,
         html: String(html).replace(/%UNSUB%/g, unsub),
         headers: { "List-Unsubscribe": `<${unsub}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
         tags: postId ? [{ name: "post", value: String(postId).slice(0, 60) }] : undefined,
@@ -142,3 +142,12 @@ async function requireAuth(request, env) {
   try { const r = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, { headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: "Bearer " + token } }); return r.ok; } catch (e) { return false; }
 }
 function json(o, s) { return new Response(JSON.stringify(o), { status: s || 200, headers: { "Content-Type": "application/json" } }); }
+
+/* Forca o nome do remetente como "Ana Carolina Oliveira", mantendo o e-mail
+   verificado que estiver em RESEND_FROM (aceita "email" ou "Nome <email>"). */
+function remetente(raw){
+  const s = String(raw || "").trim();
+  const m = s.match(/<([^>]+)>/);
+  const email = (m ? m[1] : s).trim();
+  return email ? `Ana Carolina Oliveira <${email}>` : s;
+}

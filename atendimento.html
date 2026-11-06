@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Atendimento WhatsApp · Ana Carolina</title>
+<style>
+:root{--verde:#1f9d63;--verde2:#128C7E;--bg:#eae6df;--card:#fff;--ink:#1f2a30;--mut:#67717a;--linha:#e3e0d8;--laranja:#ED6A2C;--azul:#2f6bdc;--enviei:#d9fdd3}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg);height:100vh;overflow:hidden}
+.btn{font-weight:700;font-size:13px;border:1px solid var(--linha);border-radius:9px;padding:9px 13px;background:var(--verde2);color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn.g{background:#fff;color:var(--ink)} .btn:disabled{opacity:.5}
+
+/* login */
+#login{height:100vh;display:flex;align-items:center;justify-content:center}
+.card-login{background:#fff;border:1px solid var(--linha);border-radius:16px;padding:26px;width:340px}
+.card-login h2{margin-bottom:14px} .card-login input{width:100%;padding:11px;border:1px solid var(--linha);border-radius:9px;margin-bottom:9px}
+.card-login .btn{width:100%;justify-content:center}
+#erroLogin{color:#c0392b;font-size:13px;min-height:16px}
+
+/* app */
+#app{display:none;height:100vh;grid-template-rows:54px 1fr;grid-template-columns:360px 1fr}
+.topo{grid-column:1/3;background:var(--verde2);color:#fff;display:flex;align-items:center;gap:12px;padding:0 14px}
+.topo h1{font-size:16px;font-weight:800} .topo .sp{flex:1}
+.topo select{border:none;border-radius:8px;padding:7px 9px;font-size:13px}
+.dot{width:9px;height:9px;border-radius:50%;background:#e0b04a;display:inline-block;margin-right:5px}
+.dot.on{background:#8fe3a9}
+
+.lista{border-right:1px solid var(--linha);background:#fff;overflow-y:auto}
+.busca{position:sticky;top:0;background:#fff;padding:9px;border-bottom:1px solid var(--linha)}
+.busca input{width:100%;padding:9px 11px;border:1px solid var(--linha);border-radius:9px;font-size:13px}
+.conv{display:flex;gap:10px;padding:11px 12px;border-bottom:1px solid var(--linha);cursor:pointer}
+.conv:hover{background:#f6f5f2} .conv.sel{background:#eef6f3}
+.conv .av{width:44px;height:44px;border-radius:50%;background:#cfd8d5;color:#38534b;display:flex;align-items:center;justify-content:center;font-weight:800;flex:0 0 auto}
+.conv .mid{flex:1;min-width:0} .conv .nome{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv .prev{font-size:12.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv .rt{text-align:right;flex:0 0 auto} .conv .hora{font-size:10.5px;color:var(--mut)}
+.conv .badge{display:inline-block;margin-top:5px;background:var(--verde);color:#fff;font-size:10px;font-weight:800;border-radius:999px;min-width:18px;padding:1px 6px}
+.deptag{font-size:9.5px;font-weight:800;color:#fff;border-radius:5px;padding:1px 6px;margin-left:6px}
+
+/* chat */
+.chat{display:flex;flex-direction:column;background:#efe9df;background-image:linear-gradient(rgba(233,228,218,.6),rgba(233,228,218,.6));overflow:hidden}
+.chat .cab{background:#f6f5f2;border-bottom:1px solid var(--linha);padding:10px 14px;display:flex;align-items:center;gap:10px}
+.chat .cab .nome{font-weight:800} .chat .cab .fone{font-size:12px;color:var(--mut)}
+.chat .cab .sp{flex:1}
+.msgs{flex:1;overflow-y:auto;padding:16px 10%;display:flex;flex-direction:column;gap:7px}
+.bolha{max-width:70%;padding:8px 11px;border-radius:9px;font-size:14px;line-height:1.4;box-shadow:0 1px 1px rgba(0,0,0,.08);word-wrap:break-word}
+.bolha.in{background:#fff;align-self:flex-start;border-top-left-radius:2px}
+.bolha.out{background:var(--enviei);align-self:flex-end;border-top-right-radius:2px}
+.bolha .meta{display:block;font-size:10px;color:#8a949b;text-align:right;margin-top:3px}
+.bolha.err{background:#fdecea}
+.vazio{flex:1;display:flex;align-items:center;justify-content:center;color:#8a949b;font-size:14px;text-align:center;padding:20px}
+.barra{background:#f6f5f2;border-top:1px solid var(--linha);padding:10px;display:flex;gap:9px}
+.barra input{flex:1;padding:12px 14px;border:1px solid var(--linha);border-radius:22px;font-size:14px}
+.barra .btn{border-radius:50%;width:46px;height:46px;justify-content:center;padding:0}
+
+/* modal QR */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:50}
+.modal.on{display:flex}
+.folha{background:#fff;border-radius:16px;padding:22px;width:340px;text-align:center}
+.folha img{width:240px;height:240px;margin:12px auto;border:1px solid var(--linha);border-radius:10px}
+.folha .x{float:right;cursor:pointer;color:var(--mut);font-size:20px;font-weight:800}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="card-login">
+    <h2>Atendimento WhatsApp</h2>
+    <input type="email" id="email" placeholder="E-mail" autocomplete="username">
+    <input type="password" id="senha" placeholder="Senha" autocomplete="current-password">
+    <button class="btn" id="btnEntrar">Entrar</button>
+    <div id="erroLogin"></div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topo">
+    <h1>💬 Atendimento</h1>
+    <select id="fDep"><option value="">Todos os departamentos</option></select>
+    <select id="fStatus">
+      <option value="">Todos os status</option>
+      <option value="novo">Novos</option>
+      <option value="em_atendimento">Em atendimento</option>
+      <option value="resolvido">Resolvidos</option>
+    </select>
+    <span class="sp"></span>
+    <span id="conexao" style="font-size:12px"><span class="dot" id="dot"></span><span id="estado">—</span></span>
+    <button class="btn g" id="btnQR">Conectar WhatsApp</button>
+    <a class="btn g" href="/painel.html">Painel</a>
+    <button class="btn g" id="btnSair">Sair</button>
+  </div>
+
+  <div class="lista">
+    <div class="busca"><input type="search" id="busca" placeholder="Buscar nome ou número"></div>
+    <div id="conversas"></div>
+  </div>
+
+  <div class="chat">
+    <div class="cab" id="cab" style="display:none">
+      <div class="av2"></div>
+      <div><div class="nome" id="cabNome"></div><div class="fone" id="cabFone"></div></div>
+      <span class="sp"></span>
+      <select id="selStatus" style="border:1px solid var(--linha);border-radius:8px;padding:6px 8px;font-size:12px">
+        <option value="novo">Novo</option><option value="em_atendimento">Em atendimento</option><option value="resolvido">Resolvido</option>
+      </select>
+    </div>
+    <div class="msgs" id="msgs"><div class="vazio">Selecione uma conversa para começar</div></div>
+    <div class="barra" id="barra" style="display:none">
+      <input type="text" id="campo" placeholder="Digite uma mensagem">
+      <button class="btn" id="btnEnviar" title="Enviar">➤</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalQR">
+  <div class="folha">
+    <span class="x" onclick="document.getElementById('modalQR').classList.remove('on')">×</span>
+    <h3>Conectar o WhatsApp</h3>
+    <p style="font-size:13px;color:#67717a;margin-top:6px">Abra o WhatsApp do número → Aparelhos conectados → Conectar aparelho, e escaneie o código.</p>
+    <img id="qrImg" alt="QR" style="display:none">
+    <div id="qrMsg" style="font-size:13px;color:#67717a;margin-top:8px">Gerando código…</div>
+    <button class="btn" id="btnCriar" style="margin-top:6px;display:none">Criar instância</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+let sb=null, DEPTS={}, CONVS=[], ABERTA=null, token=null, realtimeOn=false;
+
+async function cfg(){ try{const c=await (await fetch('/api/config',{cache:'no-store'})).json(); if(c.ok) return c;}catch(e){} return null; }
+async function initSb(){ const c=await cfg(); if(!c){$('#erroLogin').textContent='Config ausente.';return false;} sb=window.supabase.createClient(c.url,c.anonKey); return true; }
+async function entrar(){
+  const email=$('#email').value.trim(), senha=$('#senha').value; if(!email||!senha) return;
+  if(!sb && !(await initSb())) return; $('#btnEntrar').disabled=true; $('#erroLogin').textContent='';
+  try{ const {error}=await sb.auth.signInWithPassword({email,password:senha}); if(error) throw new Error('E-mail ou senha inválidos.'); await abrir(); }
+  catch(e){ $('#erroLogin').textContent=e.message; } finally{ $('#btnEntrar').disabled=false; }
+}
+$('#btnEntrar').addEventListener('click',entrar);
+$('#senha').addEventListener('keydown',e=>{if(e.key==='Enter')entrar();});
+$('#btnSair').addEventListener('click',async()=>{ if(sb) await sb.auth.signOut(); location.reload(); });
+
+async function abrir(){
+  $('#login').style.display='none'; $('#app').style.display='grid';
+  const {data:{session}}=await sb.auth.getSession(); token=session?.access_token;
+  await carregarDepts(); await carregarConversas(); ligarRealtime(); checarConexao();
+}
+async function carregarDepts(){
+  const {data}=await sb.from('wa_departamentos').select('*').eq('ativo',true).order('ordem');
+  const sel=$('#fDep'); (data||[]).forEach(d=>{ DEPTS[d.id]=d; sel.insertAdjacentHTML('beforeend',`<option value="${d.id}">${esc(d.nome)}</option>`); });
+}
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hora=t=>{ if(!t)return''; const d=new Date(t); const h=d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); const hoje=new Date().toDateString()===d.toDateString(); return hoje?h:d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}); };
+const ini=n=>{ n=(n||'?').trim(); return (n[0]||'?').toUpperCase(); };
+
+async function carregarConversas(){
+  let q=sb.from('wa_conversas').select('*').order('ultimo_em',{ascending:false,nullsFirst:false}).limit(200);
+  const dep=$('#fDep').value, st=$('#fStatus').value;
+  if(dep) q=q.eq('departamento_id',dep);
+  if(st) q=q.eq('status',st);
+  const {data}=await q; CONVS=data||[]; renderConversas();
+}
+function renderConversas(){
+  const termo=$('#busca').value.toLowerCase().trim();
+  const box=$('#conversas'); box.innerHTML='';
+  CONVS.filter(c=>!termo || (c.nome||'').toLowerCase().includes(termo) || (c.telefone_e164||'').includes(termo))
+  .forEach(c=>{
+    const d=DEPTS[c.departamento_id];
+    const el=document.createElement('div'); el.className='conv'+(ABERTA&&ABERTA.id===c.id?' sel':'');
+    el.innerHTML=`<div class="av">${ini(c.nome||c.telefone_e164)}</div>
+      <div class="mid"><div class="nome">${esc(c.nome||c.telefone_e164)}${d?`<span class="deptag" style="background:${d.cor}">${esc(d.nome)}</span>`:''}</div>
+      <div class="prev">${esc(c.ultimo_texto||'')}</div></div>
+      <div class="rt"><div class="hora">${hora(c.ultimo_em)}</div>${c.nao_lidas?`<span class="badge">${c.nao_lidas}</span>`:''}</div>`;
+    el.addEventListener('click',()=>abrirConversa(c));
+    box.appendChild(el);
+  });
+}
+$('#fDep').addEventListener('change',carregarConversas);
+$('#fStatus').addEventListener('change',carregarConversas);
+$('#busca').addEventListener('input',renderConversas);
+
+async function abrirConversa(c){
+  ABERTA=c; renderConversas();
+  $('#cab').style.display='flex'; $('#barra').style.display='flex';
+  $('#cabNome').textContent=c.nome||c.telefone_e164; $('#cabFone').textContent=c.telefone_e164;
+  $('#selStatus').value=c.status||'novo';
+  const {data}=await sb.from('wa_mensagens').select('*').eq('conversa_id',c.id).order('criado_em');
+  renderMsgs(data||[]);
+  if(c.nao_lidas){ await sb.from('wa_conversas').update({nao_lidas:0}).eq('id',c.id); c.nao_lidas=0; renderConversas(); }
+}
+function renderMsgs(ms){
+  const box=$('#msgs'); box.innerHTML='';
+  if(!ms.length){ box.innerHTML='<div class="vazio">Sem mensagens ainda</div>'; return; }
+  ms.forEach(m=>box.appendChild(bolha(m)));
+  box.scrollTop=box.scrollHeight;
+}
+function bolha(m){
+  const d=document.createElement('div'); d.className='bolha '+(m.direcao==='out'?'out':'in')+(m.status==='erro'?' err':'');
+  const corpo = m.texto ? esc(m.texto) : `<i>[${esc(m.tipo)}]</i>`;
+  d.innerHTML=`${corpo}<span class="meta">${hora(m.criado_em)}${m.direcao==='out'?(m.status==='erro'?' · falhou':' ✓'):''}</span>`;
+  return d;
+}
+$('#selStatus').addEventListener('change',async e=>{ if(!ABERTA)return; await sb.from('wa_conversas').update({status:e.target.value}).eq('id',ABERTA.id); ABERTA.status=e.target.value; });
+
+async function enviar(){
+  const txt=$('#campo').value.trim(); if(!txt||!ABERTA) return;
+  $('#campo').value=''; $('#btnEnviar').disabled=true;
+  try{
+    const r=await fetch('/api/wa/enviar',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({conversa_id:ABERTA.id,texto:txt})});
+    const j=await r.json(); if(!j.ok){ alert('Falhou: '+(j.erro||'')); }
+    // a mensagem aparece via realtime; recarrega por garantia
+    const {data}=await sb.from('wa_mensagens').select('*').eq('conversa_id',ABERTA.id).order('criado_em'); renderMsgs(data||[]);
+  }catch(e){ alert('Erro de envio.'); } finally{ $('#btnEnviar').disabled=false; $('#campo').focus(); }
+}
+$('#btnEnviar').addEventListener('click',enviar);
+$('#campo').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); enviar(); } });
+
+function ligarRealtime(){
+  if(realtimeOn) return; realtimeOn=true;
+  sb.channel('wa-rt')
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'wa_mensagens'},p=>{
+      const m=p.new;
+      if(ABERTA && m.conversa_id===ABERTA.id){ $('#msgs').appendChild(bolha(m)); $('#msgs').scrollTop=$('#msgs').scrollHeight; }
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'wa_conversas'},()=>carregarConversas())
+    .subscribe();
+}
+
+/* ---- conexão / QR ---- */
+async function apiGet(url){ const r=await fetch(url,{headers:{'Authorization':'Bearer '+token}}); return r.json(); }
+async function checarConexao(){
+  try{ const j=await apiGet('/api/wa/instancia?acao=status'); const on=(j.estado==='open'); $('#dot').className='dot'+(on?' on':''); $('#estado').textContent=on?'Conectado':(j.estado||'—'); }
+  catch(e){ $('#estado').textContent='—'; }
+}
+$('#btnQR').addEventListener('click',async()=>{
+  $('#modalQR').classList.add('on'); $('#qrImg').style.display='none'; $('#qrMsg').textContent='Gerando código…'; $('#btnCriar').style.display='none';
+  try{
+    const j=await apiGet('/api/wa/instancia?acao=qr');
+    if(j.base64){ $('#qrImg').src=j.base64.startsWith('data:')?j.base64:('data:image/png;base64,'+j.base64); $('#qrImg').style.display='block'; $('#qrMsg').textContent='Escaneie com o WhatsApp do número.'; poll(); }
+    else { $('#qrMsg').textContent='Instância ainda não existe. Clique para criar.'; $('#btnCriar').style.display='inline-flex'; }
+  }catch(e){ $('#qrMsg').textContent='Erro ao gerar o código.'; }
+});
+$('#btnCriar').addEventListener('click',async()=>{
+  $('#qrMsg').textContent='Criando…';
+  const r=await fetch('/api/wa/instancia',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({acao:'criar'})});
+  const j=await r.json();
+  if(j.base64){ $('#qrImg').src=j.base64.startsWith('data:')?j.base64:('data:image/png;base64,'+j.base64); $('#qrImg').style.display='block'; $('#qrMsg').textContent='Escaneie com o WhatsApp do número.'; $('#btnCriar').style.display='none'; poll(); }
+  else $('#qrMsg').textContent='Instância criada. Reabra o QR em instantes.';
+});
+let pollT=null;
+function poll(){ clearInterval(pollT); pollT=setInterval(async()=>{ const j=await apiGet('/api/wa/instancia?acao=status'); if(j.estado==='open'){ clearInterval(pollT); $('#modalQR').classList.remove('on'); checarConexao(); } },3000); }
+</script>
+</body>
+</html>
