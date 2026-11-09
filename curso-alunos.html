@@ -161,6 +161,9 @@ $('#sSalvar').onclick=async()=>{
   if(!j.ok){ m.className='msg err'; m.textContent='Erro ao salvar.'; return; }
   m.className='msg ok'; m.textContent='Senha alterada ✓'; setTimeout(()=>fechar('mSenha'),900);
 };
+
+/* Se já estiver logado no CRM (mesma sessão), entra direto sem pedir senha */
+(async()=>{ try{ if(await initSb()){ const {data:{session}}=await sb.auth.getSession(); if(session){ token=session.access_token; $('#login').style.display='none'; $('#painel').style.display='block'; carregar(); } } }catch(e){} })();
 </script>
 </body>
 </html>

@@ -161,6 +161,9 @@ function rowMat(m){
 }
 function flash(el,error){ el.className='msg '+(error?'err':'ok'); el.textContent=error?error.message:'Salvo ✓'; setTimeout(()=>el.textContent='',1800); }
 $('#addMod').onclick=async()=>{ const {data}=await sb.from('ead_modulos').insert({titulo:'Novo módulo',ordem:MODS.length+1}).select().single(); MODS.push(data); render(); };
+
+/* Se já estiver logado no CRM (mesma sessão), entra direto sem pedir senha */
+(async()=>{ try{ if(await initSb()){ const {data:{session}}=await sb.auth.getSession(); if(session){ $('#login').style.display='none'; $('#painel').style.display='block'; carregar(); } } }catch(e){} })();
 </script>
 </body>
 </html>

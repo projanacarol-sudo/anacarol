@@ -16,7 +16,8 @@ function unhex(h){ const a = new Uint8Array(h.length/2); for(let i=0;i<a.length;
 export async function hashSenha(senha, saltHex){
   const salt = saltHex ? unhex(saltHex) : crypto.getRandomValues(new Uint8Array(16));
   const key = await crypto.subtle.importKey("raw", enc.encode(senha), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits({ name:"PBKDF2", salt, iterations:120000, hash:"SHA-256" }, key, 256);
+  // Cloudflare Workers limita o PBKDF2 a 100.000 iterações.
+  const bits = await crypto.subtle.deriveBits({ name:"PBKDF2", salt, iterations:100000, hash:"SHA-256" }, key, 256);
   return { salt: hex(salt), hash: hex(bits) };
 }
 export async function conferirSenha(senha, saltHex, hashHex){
