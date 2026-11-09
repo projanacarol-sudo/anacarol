@@ -3,6 +3,7 @@ import { conferirSenha, assinarToken, rest, json, cors } from "./_lib.js";
 export function onRequestOptions(){ return new Response(null,{status:204,headers:cors()}); }
 
 export async function onRequestPost({ request, env }){
+  if(!env.EAD_SECRET) return json({ok:false,erro:"EAD_SECRET nao configurado no Cloudflare"},500);
   let b={}; try{ b=await request.json(); }catch{}
   const email=(b.email||"").trim().toLowerCase(), senha=(b.senha||"");
   if(!email||!senha) return json({ok:false,erro:"faltam_dados"},400);

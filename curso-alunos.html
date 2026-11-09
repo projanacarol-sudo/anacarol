@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Alunos do Curso · Silêncio que Grita</title>
+<style>
+:root{--lar:#ED6A2C;--verde:#1f9d63;--verm:#c0392b;--linha:rgba(255,255,255,.12);--cinza:rgba(255,255,255,.55)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:linear-gradient(160deg,#0c0908,#17100F 60%,#241611);color:#fff;font-family:system-ui,Arial,sans-serif;min-height:100vh}
+.wrap{max-width:1040px;margin:0 auto;padding:22px 18px 60px}
+h1{font-size:22px} h1 b{color:var(--lar)}
+.btn{font-weight:800;font-size:13px;border:1px solid var(--linha);border-radius:9px;padding:9px 13px;background:var(--lar);color:#3a1800;cursor:pointer;text-decoration:none;display:inline-flex;gap:6px;align-items:center}
+.btn.g{background:rgba(255,255,255,.06);color:#fff} .btn.sm{padding:6px 9px;font-size:12px}
+.btn.del{background:transparent;color:var(--verm);border:none;font-size:16px}
+input{font-family:inherit;background:#17100F;color:#fff;border:1px solid var(--linha);border-radius:8px;padding:9px 10px;font-size:13px}
+.topo{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.cl{background:#17100F;border:1px solid var(--linha);border-radius:16px;padding:26px;width:340px}
+.cl input{width:100%;margin-bottom:9px} .cl .btn{width:100%;justify-content:center}
+#erro{color:#e67;font-size:13px;min-height:16px}
+.novo{background:#17100F;border:1.5px dashed var(--linha);border-radius:12px;padding:14px;display:flex;gap:9px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
+.novo .cg{display:flex;flex-direction:column;gap:4px} .novo label{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cinza)}
+table{width:100%;border-collapse:collapse;background:#17100F;border:1px solid var(--linha);border-radius:12px;overflow:hidden}
+th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--linha);font-size:13.5px;vertical-align:middle}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--cinza)}
+tr:last-child td{border-bottom:none}
+.al b{display:block} .al span{font-size:12px;color:var(--cinza)}
+.pbar{height:7px;width:90px;background:#2a1a12;border-radius:999px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:7px}
+.pbar>i{display:block;height:100%;background:linear-gradient(90deg,var(--lar),#E6A53A)}
+.chip{font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;background:#15402b;color:#8fe3a9}
+.busca{margin:0 0 14px;max-width:320px;width:100%}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:50}
+.modal.on{display:flex}
+.folha{background:#17100F;border:1px solid var(--linha);border-radius:16px;padding:20px;width:360px}
+.folha h3{margin-bottom:12px} .folha label{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cinza);display:block;margin:8px 0 3px}
+.folha input{width:100%} .folha .fim{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.msg{font-size:12px;min-height:15px} .msg.ok{color:#8fe3a9} .msg.err{color:#e67}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="cl">
+    <h2 style="margin-bottom:14px">Alunos do Curso</h2>
+    <input type="email" id="email" placeholder="E-mail"><input type="password" id="senha" placeholder="Senha">
+    <button class="btn" id="btnEntrar">Entrar</button><div id="erro"></div>
+  </div>
+</div>
+
+<div class="wrap" id="painel" style="display:none">
+  <div class="topo">
+    <h1>Alunos do <b>Curso SQG</b> <span id="cont" style="font-size:14px;color:var(--cinza)"></span></h1>
+    <div style="display:flex;gap:8px">
+      <a class="btn g" href="/curso-admin.html">🎓 Conteúdo do curso</a>
+      <button class="btn g" id="sair">Sair</button>
+    </div>
+  </div>
+
+  <div class="novo">
+    <div class="cg"><label>Nome</label><input id="nNome" placeholder="Nome" style="width:170px"></div>
+    <div class="cg"><label>E-mail</label><input id="nEmail" placeholder="email@..." style="width:200px"></div>
+    <div class="cg"><label>WhatsApp</label><input id="nWhats" placeholder="(DDD) número" style="width:150px"></div>
+    <div class="cg"><label>Senha</label><input id="nSenha" placeholder="mín. 6" style="width:120px"></div>
+    <button class="btn" id="btnCriar">+ Criar aluno</button>
+    <div class="msg" id="nMsg" style="flex-basis:100%"></div>
+  </div>
+
+  <input class="busca" type="search" id="busca" placeholder="Buscar por nome, e-mail ou WhatsApp">
+  <table><thead><tr><th>Aluno</th><th>WhatsApp</th><th>Progresso</th><th>Certificado</th><th>Entrou</th><th></th></tr></thead>
+  <tbody id="corpo"><tr><td colspan="6" style="color:var(--cinza)">Carregando…</td></tr></tbody></table>
+</div>
+
+<!-- modal editar -->
+<div class="modal" id="mEdit">
+  <div class="folha">
+    <h3>Editar aluno</h3>
+    <label>Nome</label><input id="eNome">
+    <label>E-mail</label><input id="eEmail">
+    <label>WhatsApp</label><input id="eWhats">
+    <div class="msg" id="eMsg"></div>
+    <div class="fim"><button class="btn g" onclick="fechar('mEdit')">Cancelar</button><button class="btn" id="eSalvar">Salvar</button></div>
+  </div>
+</div>
+<!-- modal senha -->
+<div class="modal" id="mSenha">
+  <div class="folha">
+    <h3>Alterar senha</h3>
+    <label>Nova senha (mín. 6)</label><input id="sNova" type="text" placeholder="nova senha">
+    <div class="msg" id="sMsg"></div>
+    <div class="fim"><button class="btn g" onclick="fechar('mSenha')">Cancelar</button><button class="btn" id="sSalvar">Salvar senha</button></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+let sb=null, token=null, ALUNOS=[], editId=null, senhaId=null;
+async function cfg(){ try{const c=await (await fetch('/api/config',{cache:'no-store'})).json(); if(c.ok)return c;}catch(e){} return null; }
+async function initSb(){ const c=await cfg(); if(!c){$('#erro').textContent='Config ausente';return false;} sb=window.supabase.createClient(c.url,c.anonKey); return true; }
+async function entrar(){ const email=$('#email').value.trim(),senha=$('#senha').value; if(!email||!senha)return; if(!sb&&!(await initSb()))return; $('#btnEntrar').disabled=true;$('#erro').textContent='';
+  try{ const {error}=await sb.auth.signInWithPassword({email,password:senha}); if(error)throw new Error('E-mail ou senha inválidos.'); $('#login').style.display='none';$('#painel').style.display='block'; const {data:{session}}=await sb.auth.getSession(); token=session.access_token; carregar(); }
+  catch(e){ $('#erro').textContent=e.message; } finally{ $('#btnEntrar').disabled=false; } }
+$('#btnEntrar').onclick=entrar; $('#senha').addEventListener('keydown',e=>{if(e.key==='Enter')entrar();});
+$('#sair').onclick=async()=>{ if(sb)await sb.auth.signOut(); location.reload(); };
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function api(method,body){ const r=await fetch('/api/ead/admin',{method,headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:body?JSON.stringify(body):undefined}); return r.json(); }
+
+async function carregar(){
+  const j=await api('GET'); if(!j.ok){ $('#corpo').innerHTML='<tr><td colspan="6">Erro ao carregar.</td></tr>'; return; }
+  ALUNOS=j.alunos||[]; $('#cont').textContent='· '+ALUNOS.length; render();
+}
+function render(){
+  const termo=$('#busca').value.toLowerCase().trim();
+  const b=$('#corpo'); b.innerHTML='';
+  const lista=ALUNOS.filter(a=>!termo||(a.nome||'').toLowerCase().includes(termo)||(a.email||'').toLowerCase().includes(termo)||(a.whatsapp||'').includes(termo));
+  if(!lista.length){ b.innerHTML='<tr><td colspan="6" style="color:var(--cinza)">Nenhum aluno.</td></tr>'; return; }
+  lista.forEach(a=>{
+    const pct=a.total?Math.round(a.concluidas/a.total*100):0;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="al"><b>${esc(a.nome||'—')}</b><span>${esc(a.email)}</span></td>
+      <td>${esc(a.whatsapp||'—')}</td>
+      <td><span class="pbar"><i style="width:${pct}%"></i></span>${a.concluidas}/${a.total}</td>
+      <td>${a.certificado?`<span class="chip">✓ ${esc(a.certificado)}</span>`:'<span style="color:var(--cinza)">—</span>'}</td>
+      <td style="color:var(--cinza)">${a.criado_em?new Date(a.criado_em).toLocaleDateString('pt-BR'):''}</td>
+      <td style="white-space:nowrap">
+        <button class="btn g sm" data-a="edit">Editar</button>
+        <button class="btn g sm" data-a="senha">Senha</button>
+        <button class="btn del" data-a="del" title="Excluir">🗑</button>
+      </td>`;
+    tr.querySelector('[data-a="edit"]').onclick=()=>abrirEdit(a);
+    tr.querySelector('[data-a="senha"]').onclick=()=>{ senhaId=a.id; $('#sNova').value=''; $('#sMsg').textContent=''; abrir('mSenha'); };
+    tr.querySelector('[data-a="del"]').onclick=async()=>{ if(!confirm(`Excluir o aluno "${a.nome||a.email}"?`))return; const j=await api('POST',{acao:'excluir',id:a.id}); if(j.ok){ ALUNOS=ALUNOS.filter(x=>x.id!==a.id); render(); } else alert('Erro ao excluir.'); };
+    b.appendChild(tr);
+  });
+}
+$('#busca').addEventListener('input',render);
+
+$('#btnCriar').onclick=async()=>{
+  const nome=$('#nNome').value.trim(),email=$('#nEmail').value.trim(),whatsapp=$('#nWhats').value.trim(),senha=$('#nSenha').value;
+  const m=$('#nMsg'); m.className='msg';
+  if(!email||senha.length<6){ m.className='msg err'; m.textContent='Informe e-mail e senha de 6+ caracteres.'; return; }
+  $('#btnCriar').disabled=true; m.textContent='Criando…';
+  const j=await api('POST',{acao:'criar',nome,email,whatsapp,senha}); $('#btnCriar').disabled=false;
+  if(!j.ok){ m.className='msg err'; m.textContent=j.erro==='ja_existe'?'Esse e-mail já tem conta.':('Erro: '+(j.erro||'')); return; }
+  m.className='msg ok'; m.textContent='Aluno criado ✓'; $('#nNome').value='';$('#nEmail').value='';$('#nWhats').value='';$('#nSenha').value='';
+  carregar();
+};
+
+function abrir(id){ $('#'+id).classList.add('on'); } function fechar(id){ $('#'+id).classList.remove('on'); }
+function abrirEdit(a){ editId=a.id; $('#eNome').value=a.nome||''; $('#eEmail').value=a.email||''; $('#eWhats').value=a.whatsapp||''; $('#eMsg').textContent=''; abrir('mEdit'); }
+$('#eSalvar').onclick=async()=>{
+  const j=await api('POST',{acao:'editar',id:editId,nome:$('#eNome').value.trim(),email:$('#eEmail').value.trim(),whatsapp:$('#eWhats').value.trim()});
+  const m=$('#eMsg'); if(!j.ok){ m.className='msg err'; m.textContent=j.erro==='email_invalido'?'E-mail inválido.':'Erro (e-mail pode já existir).'; return; }
+  fechar('mEdit'); carregar();
+};
+$('#sSalvar').onclick=async()=>{
+  const nova=$('#sNova').value; const m=$('#sMsg');
+  if(nova.length<6){ m.className='msg err'; m.textContent='Mínimo 6 caracteres.'; return; }
+  const j=await api('POST',{acao:'senha',id:senhaId,senha:nova});
+  if(!j.ok){ m.className='msg err'; m.textContent='Erro ao salvar.'; return; }
+  m.className='msg ok'; m.textContent='Senha alterada ✓'; setTimeout(()=>fechar('mSenha'),900);
+};
+</script>
+</body>
+</html>

@@ -109,14 +109,47 @@ function cardAula(a){
       <label class="chk" style="display:flex;gap:7px;align-items:center;margin-top:8px"><input type="checkbox" data-k="ativo" ${a.ativo?'checked':''} style="width:auto"> Aula visível</label>
       <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" data-a="salvarAula">Salvar aula</button><button class="btn del" data-a="delAula">🗑</button><span class="msg" data-m style="align-self:center"></span></div>
       <label style="margin-top:12px">Materiais</label><div class="matbox"></div>
-      <div class="mat"><div><input data-nm="titulo" placeholder="Título do material"></div><div><input data-nm="url" placeholder="URL (PDF/link)"></div><div style="max-width:80px"><input data-nm="tipo" placeholder="pdf"></div><button class="btn g" data-a="addMat">+</button></div>
+      <div class="mat" style="flex-wrap:wrap">
+        <div style="flex:1 1 160px"><input data-nm="titulo" placeholder="Título do material"></div>
+        <div style="flex:1 1 160px"><input data-nm="url" placeholder="Cole uma URL ou escolha um arquivo →"></div>
+        <div style="max-width:66px"><input data-nm="tipo" placeholder="pdf"></div>
+        <input type="file" data-nm="arq" style="max-width:150px;padding:6px;font-size:11px">
+        <button class="btn g" data-a="addMat">+ Adicionar</button>
+        <span class="msg" data-matmsg style="flex-basis:100%"></span>
+      </div>
     </div>`;
   d.querySelector('.cab').onclick=(e)=>{ if(e.target.closest('input,textarea'))return; d.classList.toggle('aberta'); };
   const msg=d.querySelector('[data-m]');
   d.querySelector('[data-a="salvarAula"]').onclick=async()=>{ const g=k=>d.querySelector(`[data-k="${k}"]`); const patch={titulo:g('titulo').value.trim(),duracao:g('duracao').value.trim(),ordem:+g('ordem').value||0,descricao:g('descricao').value,embed:g('embed').value,ativo:g('ativo').checked}; const {error}=await sb.from('ead_aulas').update(patch).eq('id',a.id); flash(msg,error); Object.assign(a,patch); d.querySelector('.cab .t').textContent=patch.titulo; };
   d.querySelector('[data-a="delAula"]').onclick=async()=>{ if(!confirm('Excluir a aula?'))return; await sb.from('ead_aulas').delete().eq('id',a.id); carregar(); };
   const mb=d.querySelector('.matbox'); mats.forEach(m=>mb.appendChild(rowMat(m)));
-  d.querySelector('[data-a="addMat"]').onclick=async()=>{ const g=k=>d.querySelector(`[data-nm="${k}"]`); const titulo=g('titulo').value.trim(),url=g('url').value.trim(); if(!titulo||!url)return; const {data}=await sb.from('ead_materiais').insert({aula_id:a.id,titulo,url,tipo:g('tipo').value.trim()||'pdf',ordem:mats.length+1}).select().single(); MATS.push(data); g('titulo').value='';g('url').value='';g('tipo').value=''; mb.appendChild(rowMat(data)); };
+  d.querySelector('[data-a="addMat"]').onclick=async(e)=>{
+    const g=k=>d.querySelector(`[data-nm="${k}"]`); const mm=d.querySelector('[data-matmsg]');
+    let titulo=g('titulo').value.trim(), url=g('url').value.trim(), tipo=g('tipo').value.trim();
+    const arq=g('arq').files[0];
+    if(!titulo && arq) titulo=arq.name.replace(/\.[^.]+$/,'');
+    if(!titulo){ mm.className='msg err'; mm.textContent='Dê um título.'; return; }
+    const btn=e.currentTarget; btn.disabled=true; mm.className='msg'; mm.textContent='';
+    try{
+      if(arq){
+        mm.textContent='Enviando arquivo…';
+        const ext=(arq.name.split('.').pop()||'bin').toLowerCase();
+        const slug=titulo.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)||'material';
+        const caminho=`${a.id}/${Date.now()}-${slug}.${ext}`;
+        const up=await sb.storage.from('ead-materiais').upload(caminho,arq,{upsert:false,contentType:arq.type||undefined});
+        if(up.error) throw up.error;
+        url=sb.storage.from('ead-materiais').getPublicUrl(caminho).data.publicUrl;
+        if(!tipo) tipo=ext;
+      }
+      if(!url){ mm.className='msg err'; mm.textContent='Cole uma URL ou escolha um arquivo.'; btn.disabled=false; return; }
+      const {data,error}=await sb.from('ead_materiais').insert({aula_id:a.id,titulo,url,tipo:tipo||'pdf',ordem:mats.length+1}).select().single();
+      if(error) throw error;
+      MATS.push(data); mb.appendChild(rowMat(data));
+      g('titulo').value='';g('url').value='';g('tipo').value='';g('arq').value='';
+      mm.className='msg ok'; mm.textContent='Material adicionado ✓'; setTimeout(()=>mm.textContent='',1800);
+    }catch(err){ mm.className='msg err'; mm.textContent=err.message||String(err); }
+    btn.disabled=false;
+  };
   return d;
 }
 function rowMat(m){
