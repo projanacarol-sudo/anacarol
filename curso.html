@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Curso Silêncio que Grita · Área de Membros</title>
+<style>
+:root{--lar:#ED6A2C;--lar2:#c9501b;--plum:#3B1F1A;--cream:#FBF7F4;--ink:#241812;--mut:#8a7a70;--linha:#ece2da;--verde:#1f9d63;--card:#fff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;color:var(--ink);background:var(--cream)}
+a{color:inherit}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--lar);color:#fff;font-weight:800;border:none;border-radius:12px;padding:13px 16px;cursor:pointer;font-size:15px}
+.btn.g{background:#fff;color:var(--ink);border:1.5px solid var(--linha)}
+.btn:disabled{opacity:.55;cursor:default}
+
+/* AUTH */
+#auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:linear-gradient(160deg,#2a1612,#5a2a1c 60%,#8a3a1f)}
+.caixa{background:#fff;border-radius:18px;padding:26px;width:100%;max-width:400px;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.caixa .logo{text-align:center;margin-bottom:6px}
+.caixa .logo b{display:block;font-size:20px;font-weight:900;color:var(--plum)}
+.caixa .logo span{font-size:12px;color:var(--lar);font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.caixa h2{font-size:17px;margin:16px 0 12px}
+.caixa input{width:100%;padding:12px;border:1px solid var(--linha);border-radius:10px;margin-bottom:10px;font-size:15px}
+.caixa .btn{width:100%;margin-top:4px}
+.troca{text-align:center;margin-top:14px;font-size:13px;color:var(--mut)}
+.troca a{color:var(--lar);font-weight:700;cursor:pointer;text-decoration:none}
+#erro{color:#c0392b;font-size:13px;min-height:16px;text-align:center}
+
+/* APP */
+#app{display:none;min-height:100vh;grid-template-columns:340px 1fr}
+.side{background:#fff;border-right:1px solid var(--linha);height:100vh;overflow-y:auto;position:sticky;top:0}
+.side .topo{padding:18px 18px 12px;border-bottom:1px solid var(--linha)}
+.side .topo .nome{font-weight:900;font-size:16px;color:var(--plum)}
+.side .topo .sub{font-size:12px;color:var(--mut)}
+.prog{height:8px;background:#f0e6df;border-radius:999px;overflow:hidden;margin-top:12px}
+.prog>i{display:block;height:100%;background:linear-gradient(90deg,var(--lar),#E6A53A)}
+.prog-txt{font-size:11.5px;color:var(--mut);margin-top:6px}
+.mod{padding:6px 0}
+.mod h3{font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--mut);padding:12px 18px 6px}
+.aula{display:flex;align-items:center;gap:10px;padding:10px 18px;cursor:pointer;border-left:3px solid transparent}
+.aula:hover{background:#faf6f2} .aula.sel{background:#fdf0e8;border-left-color:var(--lar)}
+.aula .ck{width:20px;height:20px;border-radius:50%;border:2px solid var(--linha);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff}
+.aula.done .ck{background:var(--verde);border-color:var(--verde)}
+.aula .t{font-size:13.5px;line-height:1.3}
+.side .rod{padding:14px 18px;border-top:1px solid var(--linha)}
+.side .rod a{font-size:12.5px;color:var(--mut);text-decoration:none}
+
+.main{padding:26px 30px 60px;max-width:900px}
+.breadc{font-size:12px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.main h1{font-size:23px;margin:8px 0 14px;letter-spacing:-.3px}
+.player{background:#000;border-radius:14px;overflow:hidden;aspect-ratio:16/9;margin-bottom:16px}
+.player iframe{width:100%;height:100%;border:0;display:block}
+.vazioPlayer{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff8;font-size:14px;text-align:center;padding:20px}
+.desc{color:#4a3f38;line-height:1.6;font-size:14.5px}
+.mats{margin-top:18px}
+.mats h4{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin-bottom:9px}
+.mat{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid var(--linha);border-radius:11px;padding:11px 13px;margin-bottom:8px;text-decoration:none}
+.mat .ic{width:34px;height:34px;border-radius:9px;background:#fde8dc;color:var(--lar);display:flex;align-items:center;justify-content:center;font-weight:800;flex:0 0 auto}
+.mat b{font-size:13.5px} .mat span{font-size:11.5px;color:var(--mut)}
+.acoes{display:flex;gap:10px;align-items:center;margin-top:22px;flex-wrap:wrap}
+.cert{margin-top:24px;background:linear-gradient(135deg,#1f9d63,#157a4b);color:#fff;border-radius:16px;padding:20px;display:none}
+.cert b{font-size:17px} .cert p{font-size:13px;color:#d6f0e3;margin:4px 0 12px}
+@media(max-width:860px){#app{grid-template-columns:1fr}.side{position:static;height:auto}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN / CADASTRO -->
+<div id="auth">
+  <div class="caixa">
+    <div class="logo"><span>Área de Membros</span><b>Curso Silêncio que Grita</b></div>
+
+    <div id="formLogin">
+      <h2>Entrar</h2>
+      <input type="email" id="lEmail" placeholder="Seu e-mail" autocomplete="username">
+      <input type="password" id="lSenha" placeholder="Sua senha" autocomplete="current-password">
+      <button class="btn" id="btnLogin">Entrar</button>
+      <div class="troca">Ainda não tem conta? <a id="irCad">Criar conta grátis</a></div>
+    </div>
+
+    <div id="formCad" style="display:none">
+      <h2>Criar conta grátis</h2>
+      <input type="text" id="cNome" placeholder="Seu nome completo">
+      <input type="text" id="cWhats" placeholder="WhatsApp (com DDD)">
+      <input type="email" id="cEmail" placeholder="Seu e-mail" autocomplete="username">
+      <input type="password" id="cSenha" placeholder="Crie uma senha (mín. 6)" autocomplete="new-password">
+      <button class="btn" id="btnCad">Criar conta e começar</button>
+      <div class="troca">Já tem conta? <a id="irLogin">Entrar</a></div>
+    </div>
+    <div id="erro" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<!-- CURSO -->
+<div id="app">
+  <aside class="side">
+    <div class="topo">
+      <div class="nome" id="oiNome">Olá!</div>
+      <div class="sub">Curso Silêncio que Grita</div>
+      <div class="prog"><i id="progBar" style="width:0%"></i></div>
+      <div class="prog-txt" id="progTxt">0 de 0 aulas</div>
+    </div>
+    <div id="modulos"></div>
+    <div class="rod"><a id="sair">Sair</a></div>
+  </aside>
+
+  <main class="main">
+    <div class="breadc" id="bc">Selecione uma aula</div>
+    <h1 id="aulaTitulo">Bem-vindo(a)</h1>
+    <div class="player"><div class="vazioPlayer" id="playerVazio">Escolha uma aula no menu ao lado para começar.</div><div id="playerBox" style="display:none;width:100%;height:100%"></div></div>
+    <div class="desc" id="aulaDesc"></div>
+    <div class="mats" id="matsBox" style="display:none"><h4>Materiais complementares</h4><div id="mats"></div></div>
+    <div class="acoes" id="acoes" style="display:none">
+      <button class="btn" id="btnConcluir">Marcar como concluída</button>
+      <button class="btn g" id="btnProx">Próxima aula →</button>
+    </div>
+
+    <div class="cert" id="certBox">
+      <b>🎓 Parabéns, você concluiu o curso!</b>
+      <p>Você agora é um Apoiador Capacitado do Silêncio que Grita. Emita seu certificado.</p>
+      <button class="btn" style="background:#fff;color:#157a4b" id="btnCert">Emitir meu certificado</button>
+    </div>
+  </main>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const API='/api/ead';
+let TOKEN=localStorage.getItem('ead_token')||null;
+let CURSO=null, AULA=null, PLANA=[];
+
+/* ---- auth ---- */
+$('#irCad').onclick=()=>{ $('#formLogin').style.display='none'; $('#formCad').style.display='block'; $('#erro').textContent=''; };
+$('#irLogin').onclick=()=>{ $('#formCad').style.display='none'; $('#formLogin').style.display='block'; $('#erro').textContent=''; };
+async function post(path,body){ const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json',...(TOKEN?{'Authorization':'Bearer '+TOKEN}:{})},body:JSON.stringify(body)}); return r.json(); }
+async function get(path){ const r=await fetch(API+path,{headers:{'Authorization':'Bearer '+TOKEN}}); return r.json(); }
+
+$('#btnCad').onclick=async()=>{
+  const nome=$('#cNome').value.trim(), whatsapp=$('#cWhats').value.trim(), email=$('#cEmail').value.trim(), senha=$('#cSenha').value;
+  if(!nome||!email||senha.length<6){ $('#erro').textContent='Preencha nome, e-mail e uma senha de 6+ caracteres.'; return; }
+  $('#btnCad').disabled=true; $('#erro').textContent='';
+  const j=await post('/cadastro',{nome,whatsapp,email,senha}); $('#btnCad').disabled=false;
+  if(!j.ok){ $('#erro').textContent = j.erro==='ja_cadastrado'?'Esse e-mail já tem conta. Faça login.':'Não foi possível criar a conta.'; return; }
+  TOKEN=j.token; localStorage.setItem('ead_token',TOKEN); abrirCurso();
+};
+$('#btnLogin').onclick=async()=>{
+  const email=$('#lEmail').value.trim(), senha=$('#lSenha').value;
+  if(!email||!senha) return; $('#btnLogin').disabled=true; $('#erro').textContent='';
+  const j=await post('/login',{email,senha}); $('#btnLogin').disabled=false;
+  if(!j.ok){ $('#erro').textContent='E-mail ou senha incorretos.'; return; }
+  TOKEN=j.token; localStorage.setItem('ead_token',TOKEN); abrirCurso();
+};
+$('#sair').onclick=()=>{ localStorage.removeItem('ead_token'); location.reload(); };
+['lSenha','cSenha'].forEach(id=>$('#'+id).addEventListener('keydown',e=>{ if(e.key==='Enter'){ (id==='lSenha'?$('#btnLogin'):$('#btnCad')).click(); }}));
+
+/* ---- curso ---- */
+async function abrirCurso(){
+  const j=await get('/curso');
+  if(!j.ok){ localStorage.removeItem('ead_token'); location.reload(); return; }
+  CURSO=j; $('#auth').style.display='none'; $('#app').style.display='grid';
+  $('#oiNome').textContent='Olá, '+((j.aluno.nome||'').split(' ')[0]||'aluno')+'!';
+  render();
+  // abre a primeira aula não concluída
+  PLANA=[]; j.modulos.forEach(m=>m.aulas.forEach(a=>PLANA.push(a)));
+  const prox=PLANA.find(a=>!a.concluida)||PLANA[0];
+  if(prox) abrirAula(prox.id);
+}
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function render(){
+  $('#progBar').style.width=(CURSO.total?Math.round(CURSO.concluidas/CURSO.total*100):0)+'%';
+  $('#progTxt').textContent=`${CURSO.concluidas} de ${CURSO.total} aulas`;
+  const box=$('#modulos'); box.innerHTML='';
+  CURSO.modulos.forEach(m=>{
+    if(!m.aulas.length) return;
+    const d=document.createElement('div'); d.className='mod';
+    d.innerHTML=`<h3>${esc(m.titulo)}</h3>`;
+    m.aulas.forEach(a=>{
+      const el=document.createElement('div'); el.className='aula'+(a.concluida?' done':'')+(AULA&&AULA.id===a.id?' sel':'');
+      el.innerHTML=`<div class="ck">${a.concluida?'✓':''}</div><div class="t">${esc(a.titulo)}</div>`;
+      el.onclick=()=>abrirAula(a.id); d.appendChild(el);
+    });
+    box.appendChild(d);
+  });
+  $('#certBox').style.display = CURSO.completo ? 'block' : 'none';
+}
+function abrirAula(id){
+  AULA=PLANA.find(a=>a.id===id); if(!AULA) return;
+  const mod=CURSO.modulos.find(m=>m.aulas.some(a=>a.id===id));
+  $('#bc').textContent=mod?mod.titulo:''; $('#aulaTitulo').textContent=AULA.titulo;
+  $('#aulaDesc').textContent=AULA.descricao||'';
+  // player (embed do Smart Player)
+  const vazio=$('#playerVazio'), pbox=$('#playerBox');
+  if(AULA.embed && AULA.embed.trim()){ vazio.style.display='none'; pbox.style.display='block'; injetarEmbed(pbox, AULA.embed); }
+  else { pbox.style.display='none'; vazio.style.display='flex'; vazio.textContent='Vídeo em breve.'; }
+  // materiais
+  const mb=$('#matsBox');
+  if(AULA.materiais && AULA.materiais.length){
+    mb.style.display='block'; const m=$('#mats'); m.innerHTML='';
+    AULA.materiais.forEach(x=>{ m.insertAdjacentHTML('beforeend',`<a class="mat" href="${esc(x.url)}" target="_blank" rel="noopener"><div class="ic">${(x.tipo||'PDF').slice(0,3).toUpperCase()}</div><div><b>${esc(x.titulo)}</b><span>Abrir material</span></div></a>`); });
+  } else mb.style.display='none';
+  // ações
+  $('#acoes').style.display='flex';
+  $('#btnConcluir').textContent=AULA.concluida?'✓ Concluída (desmarcar)':'Marcar como concluída';
+  $('#btnConcluir').className='btn'+(AULA.concluida?' g':'');
+  render();
+  window.scrollTo(0,0);
+}
+function injetarEmbed(container, html){
+  container.innerHTML=html;
+  // re-executa <script> (Smart Player costuma usar script)
+  container.querySelectorAll('script').forEach(old=>{
+    const s=document.createElement('script');
+    [...old.attributes].forEach(a=>s.setAttribute(a.name,a.value));
+    s.textContent=old.textContent; old.replaceWith(s);
+  });
+}
+$('#btnConcluir').onclick=async()=>{
+  if(!AULA) return; const novo=!AULA.concluida; $('#btnConcluir').disabled=true;
+  const j=await post('/progresso',{aula_id:AULA.id,concluida:novo}); $('#btnConcluir').disabled=false;
+  if(j.ok){ AULA.concluida=novo; CURSO.concluidas=j.concluidas; CURSO.total=j.total; CURSO.completo=j.completo; abrirAula(AULA.id); }
+};
+$('#btnProx').onclick=()=>{ const i=PLANA.findIndex(a=>a.id===AULA.id); if(i>=0 && i+1<PLANA.length) abrirAula(PLANA[i+1].id); };
+$('#btnCert').onclick=async()=>{
+  const j=await get('/certificado');
+  if(!j.ok){ alert('Conclua todas as aulas para emitir o certificado.'); return; }
+  const url=`/certificado.html?codigo=${encodeURIComponent(j.codigo)}&nome=${encodeURIComponent(j.nome||'')}&data=${encodeURIComponent(j.emitido_em||'')}`;
+  window.open(url,'_blank');
+};
+
+/* entrada */
+if(TOKEN) abrirCurso(); else { $('#auth').style.display='flex'; }
+</script>
+</body>
+</html>

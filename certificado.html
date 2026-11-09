@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Certificado · Silêncio que Grita</title>
+<style>
+:root{--lar:#ED6A2C;--gold:#C9972B;--plum:#3B1F1A;--ink:#241812;--mut:#7d6b61}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Georgia,"Times New Roman",serif;background:#efe9e2;color:var(--ink);padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px}
+.barra{display:flex;gap:10px}
+.btn{font-family:Arial,sans-serif;font-weight:800;border:none;border-radius:10px;padding:11px 18px;background:var(--plum);color:#fff;cursor:pointer}
+.btn.g{background:#fff;color:var(--plum);border:1.5px solid #d8cfc6}
+.cert{width:1000px;max-width:100%;aspect-ratio:1.414/1;background:#fff;position:relative;
+  border:14px solid var(--plum);box-shadow:0 20px 50px rgba(0,0,0,.2);padding:54px 64px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.cert::before{content:"";position:absolute;inset:14px;border:2px solid var(--gold)}
+.sel{width:70px;height:78px;position:relative;z-index:1}
+.kick{z-index:1;margin-top:14px;letter-spacing:5px;text-transform:uppercase;font-family:Arial,sans-serif;font-size:12px;font-weight:800;color:var(--lar)}
+h1{z-index:1;font-size:34px;color:var(--plum);margin-top:6px;letter-spacing:1px}
+.sub{z-index:1;font-size:15px;color:var(--mut);margin-top:16px}
+.nome{z-index:1;font-size:40px;color:var(--ink);margin:10px 0;border-bottom:2px solid var(--gold);padding:0 30px 8px}
+.txt{z-index:1;font-size:15px;color:#4a3f38;max-width:640px;line-height:1.6;margin-top:14px}
+.rod{z-index:1;margin-top:auto;display:flex;justify-content:space-between;width:100%;align-items:flex-end}
+.ass{text-align:center} .ass .ln{width:220px;border-top:1.5px solid #9c8f85;margin:0 auto 6px}
+.ass b{font-family:Arial,sans-serif;font-size:13px} .ass span{font-size:11px;color:var(--mut);font-family:Arial,sans-serif}
+.cod{font-family:Arial,sans-serif;font-size:11px;color:var(--mut);text-align:left}
+@media print{ body{background:#fff;padding:0;gap:0} .barra{display:none} .cert{box-shadow:none;width:100%;border-width:12px} }
+</style>
+</head>
+<body>
+<div class="barra">
+  <button class="btn" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+  <a class="btn g" href="/curso.html">Voltar ao curso</a>
+</div>
+
+<div class="cert">
+  <svg class="sel" viewBox="0 0 24 24" fill="none" stroke="#C9972B" stroke-width="1.4"><path d="M12 3l7 3v5c0 4.6-3 8.3-7 10-4-1.7-7-5.4-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
+  <div class="kick">Certificado de Conclusão</div>
+  <h1>Silêncio que Grita</h1>
+  <div class="sub">Certificamos que</div>
+  <div class="nome" id="nome">—</div>
+  <div class="txt">concluiu o curso de formação do Projeto Silêncio que Grita e está apto(a) como <b>Apoiador(a) Capacitado(a)</b> na proteção de crianças e adolescentes contra a violência e o abuso.</div>
+  <div class="rod">
+    <div class="cod">Código: <b id="cod">—</b><br>Emitido em <span id="data">—</span></div>
+    <div class="ass"><div class="ln"></div><b>Ana Carolina Oliveira</b><br><span>Idealizadora do projeto</span></div>
+  </div>
+</div>
+
+<script>
+const q=new URLSearchParams(location.search);
+document.getElementById('nome').textContent=(q.get('nome')||'Aluno(a)').toUpperCase();
+document.getElementById('cod').textContent=q.get('codigo')||'—';
+const d=q.get('data');
+document.getElementById('data').textContent = d ? new Date(d).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}) : new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+document.title = 'Certificado · '+(q.get('nome')||'');
+</script>
+</body>
+</html>

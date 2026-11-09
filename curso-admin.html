@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin do Curso · Silêncio que Grita</title>
+<style>
+:root{--lar:#ED6A2C;--plum:#3B1F1A;--verde:#1f9d63;--verm:#c0392b;--linha:rgba(255,255,255,.12);--cinza:rgba(255,255,255,.55)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:linear-gradient(160deg,#0c0908,#17100F 60%,#241611);color:#fff;font-family:system-ui,Arial,sans-serif;min-height:100vh}
+.wrap{max-width:900px;margin:0 auto;padding:22px 18px 60px}
+h1{font-size:22px} h1 b{color:var(--lar)}
+.btn{font-weight:800;font-size:13px;border:1px solid var(--linha);border-radius:9px;padding:9px 13px;background:var(--lar);color:#3a1800;cursor:pointer;text-decoration:none;display:inline-flex;gap:6px;align-items:center}
+.btn.g{background:rgba(255,255,255,.06);color:#fff} .btn.del{background:transparent;color:var(--verm);border:none;font-size:17px;padding:5px 8px}
+.topo{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+input,textarea,select{font-family:inherit;background:#17100F;color:#fff;border:1px solid var(--linha);border-radius:8px;padding:9px 10px;font-size:13px;width:100%}
+textarea{min-height:60px;resize:vertical} label{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cinza);display:block;margin:8px 0 3px}
+/* login */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.cl{background:#17100F;border:1px solid var(--linha);border-radius:16px;padding:26px;width:340px}
+.cl input{margin-bottom:9px} .cl .btn{width:100%;justify-content:center;margin-top:5px}
+#erro{color:#e67;font-size:13px;min-height:16px}
+.mod{background:#17100F;border:1px solid var(--linha);border-radius:14px;padding:14px;margin-bottom:14px}
+.mod .lh{display:flex;gap:9px;align-items:flex-end}
+.mod .lh .f1{flex:1} .mod .lh .f0{width:80px}
+.aula{background:#0c0908;border:1px solid var(--linha);border-radius:11px;margin-top:9px}
+.aula .cab{display:flex;align-items:center;gap:9px;padding:10px 12px;cursor:pointer}
+.aula .cab .t{flex:1;font-weight:700;font-size:14px} .aula .cab .meta{font-size:11px;color:var(--cinza)}
+.aula .corpo{padding:0 12px 12px;display:none} .aula.aberta .corpo{display:block}
+.row{display:flex;gap:9px} .row>div{flex:1}
+.mat{display:flex;gap:8px;align-items:flex-end;margin-top:7px}
+.msg{font-size:11px;min-height:14px;margin-top:4px} .msg.ok{color:#8fe3a9} .msg.err{color:#e67}
+.add{margin-top:9px}
+.chip{font-size:10px;font-weight:800;padding:2px 7px;border-radius:999px;background:#2a1a12;color:#e0a} .chip.off{background:#3a2a24;color:#b9a99f}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="cl">
+    <h2 style="margin-bottom:14px">Admin do Curso</h2>
+    <input type="email" id="email" placeholder="E-mail"><input type="password" id="senha" placeholder="Senha">
+    <button class="btn" id="btnEntrar">Entrar</button><div id="erro"></div>
+  </div>
+</div>
+
+<div class="wrap" id="painel" style="display:none">
+  <div class="topo">
+    <h1>Admin do <b>Curso SQG</b></h1>
+    <div style="display:flex;gap:8px">
+      <a class="btn g" href="/curso.html" target="_blank">👁 Ver curso</a>
+      <button class="btn g" id="addMod">+ Módulo</button>
+      <button class="btn g" id="sair">Sair</button>
+    </div>
+  </div>
+  <div id="mods"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+let sb=null, MODS=[], AULAS=[], MATS=[];
+async function cfg(){ try{const c=await (await fetch('/api/config',{cache:'no-store'})).json(); if(c.ok)return c;}catch(e){} return null; }
+async function initSb(){ const c=await cfg(); if(!c){$('#erro').textContent='Config ausente';return false;} sb=window.supabase.createClient(c.url,c.anonKey); return true; }
+async function entrar(){ const email=$('#email').value.trim(),senha=$('#senha').value; if(!email||!senha)return; if(!sb&&!(await initSb()))return; $('#btnEntrar').disabled=true;$('#erro').textContent='';
+  try{ const {error}=await sb.auth.signInWithPassword({email,password:senha}); if(error)throw new Error('E-mail ou senha inválidos.'); $('#login').style.display='none';$('#painel').style.display='block'; carregar(); }
+  catch(e){ $('#erro').textContent=e.message; } finally{ $('#btnEntrar').disabled=false; } }
+$('#btnEntrar').onclick=entrar; $('#senha').addEventListener('keydown',e=>{if(e.key==='Enter')entrar();});
+$('#sair').onclick=async()=>{ if(sb)await sb.auth.signOut(); location.reload(); };
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+async function carregar(){
+  const [m,a,t]=await Promise.all([
+    sb.from('ead_modulos').select('*').order('ordem'),
+    sb.from('ead_aulas').select('*').order('ordem'),
+    sb.from('ead_materiais').select('*').order('ordem'),
+  ]);
+  MODS=m.data||[]; AULAS=a.data||[]; MATS=t.data||[]; render();
+}
+function render(){
+  const box=$('#mods'); box.innerHTML='';
+  MODS.forEach(mod=>box.appendChild(cardMod(mod)));
+}
+function cardMod(mod){
+  const d=document.createElement('div'); d.className='mod';
+  const aulas=AULAS.filter(a=>a.modulo_id===mod.id);
+  d.innerHTML=`<div class="lh">
+      <div class="f1"><label>Módulo</label><input value="${esc(mod.titulo)}" data-k="titulo"></div>
+      <div class="f0"><label>Ordem</label><input type="number" value="${mod.ordem||0}" data-k="ordem"></div>
+      <button class="btn" data-a="salvarMod">Salvar</button>
+      <button class="btn del" data-a="delMod" title="Excluir">🗑</button>
+    </div><div class="msg" data-m></div>
+    <div class="aulas"></div>
+    <button class="btn g add" data-a="addAula">+ Aula</button>`;
+  const msg=d.querySelector('[data-m]');
+  d.querySelector('[data-a="salvarMod"]').onclick=async()=>{ const patch={titulo:d.querySelector('[data-k="titulo"]').value.trim(),ordem:+d.querySelector('[data-k="ordem"]').value||0}; const {error}=await sb.from('ead_modulos').update(patch).eq('id',mod.id); flash(msg,error); Object.assign(mod,patch); };
+  d.querySelector('[data-a="delMod"]').onclick=async()=>{ if(!confirm('Excluir o módulo e suas aulas?'))return; await sb.from('ead_modulos').delete().eq('id',mod.id); carregar(); };
+  d.querySelector('[data-a="addAula"]').onclick=async()=>{ const ord=aulas.length+1; const {data}=await sb.from('ead_aulas').insert({modulo_id:mod.id,titulo:'Nova aula',ordem:ord}).select().single(); AULAS.push(data); render(); };
+  const ab=d.querySelector('.aulas'); aulas.forEach(a=>ab.appendChild(cardAula(a)));
+  return d;
+}
+function cardAula(a){
+  const d=document.createElement('div'); d.className='aula'; const mats=MATS.filter(x=>x.aula_id===a.id);
+  d.innerHTML=`<div class="cab"><span class="chip ${a.ativo?'':'off'}">${a.ativo?'ativa':'oculta'}</span><div class="t">${esc(a.titulo)}</div><div class="meta">${esc(a.duracao||'')} ▾</div></div>
+    <div class="corpo">
+      <div class="row"><div><label>Título</label><input data-k="titulo" value="${esc(a.titulo)}"></div><div style="max-width:120px"><label>Duração</label><input data-k="duracao" value="${esc(a.duracao||'')}" placeholder="12 min"></div><div style="max-width:90px"><label>Ordem</label><input type="number" data-k="ordem" value="${a.ordem||0}"></div></div>
+      <label>Descrição</label><textarea data-k="descricao">${esc(a.descricao||'')}</textarea>
+      <label>Embed do Smart Player (iframe/script)</label><textarea data-k="embed" placeholder="Cole aqui o código do Smart Player">${esc(a.embed||'')}</textarea>
+      <label class="chk" style="display:flex;gap:7px;align-items:center;margin-top:8px"><input type="checkbox" data-k="ativo" ${a.ativo?'checked':''} style="width:auto"> Aula visível</label>
+      <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" data-a="salvarAula">Salvar aula</button><button class="btn del" data-a="delAula">🗑</button><span class="msg" data-m style="align-self:center"></span></div>
+      <label style="margin-top:12px">Materiais</label><div class="matbox"></div>
+      <div class="mat"><div><input data-nm="titulo" placeholder="Título do material"></div><div><input data-nm="url" placeholder="URL (PDF/link)"></div><div style="max-width:80px"><input data-nm="tipo" placeholder="pdf"></div><button class="btn g" data-a="addMat">+</button></div>
+    </div>`;
+  d.querySelector('.cab').onclick=(e)=>{ if(e.target.closest('input,textarea'))return; d.classList.toggle('aberta'); };
+  const msg=d.querySelector('[data-m]');
+  d.querySelector('[data-a="salvarAula"]').onclick=async()=>{ const g=k=>d.querySelector(`[data-k="${k}"]`); const patch={titulo:g('titulo').value.trim(),duracao:g('duracao').value.trim(),ordem:+g('ordem').value||0,descricao:g('descricao').value,embed:g('embed').value,ativo:g('ativo').checked}; const {error}=await sb.from('ead_aulas').update(patch).eq('id',a.id); flash(msg,error); Object.assign(a,patch); d.querySelector('.cab .t').textContent=patch.titulo; };
+  d.querySelector('[data-a="delAula"]').onclick=async()=>{ if(!confirm('Excluir a aula?'))return; await sb.from('ead_aulas').delete().eq('id',a.id); carregar(); };
+  const mb=d.querySelector('.matbox'); mats.forEach(m=>mb.appendChild(rowMat(m)));
+  d.querySelector('[data-a="addMat"]').onclick=async()=>{ const g=k=>d.querySelector(`[data-nm="${k}"]`); const titulo=g('titulo').value.trim(),url=g('url').value.trim(); if(!titulo||!url)return; const {data}=await sb.from('ead_materiais').insert({aula_id:a.id,titulo,url,tipo:g('tipo').value.trim()||'pdf',ordem:mats.length+1}).select().single(); MATS.push(data); g('titulo').value='';g('url').value='';g('tipo').value=''; mb.appendChild(rowMat(data)); };
+  return d;
+}
+function rowMat(m){
+  const d=document.createElement('div'); d.className='mat';
+  d.innerHTML=`<div><input value="${esc(m.titulo)}" data-k="titulo"></div><div><input value="${esc(m.url)}" data-k="url"></div><div style="max-width:80px"><input value="${esc(m.tipo||'pdf')}" data-k="tipo"></div><button class="btn" data-a="s">Salvar</button><button class="btn del" data-a="d">🗑</button>`;
+  d.querySelector('[data-a="s"]').onclick=async()=>{ await sb.from('ead_materiais').update({titulo:d.querySelector('[data-k="titulo"]').value,url:d.querySelector('[data-k="url"]').value,tipo:d.querySelector('[data-k="tipo"]').value}).eq('id',m.id); };
+  d.querySelector('[data-a="d"]').onclick=async()=>{ await sb.from('ead_materiais').delete().eq('id',m.id); MATS=MATS.filter(x=>x.id!==m.id); d.remove(); };
+  return d;
+}
+function flash(el,error){ el.className='msg '+(error?'err':'ok'); el.textContent=error?error.message:'Salvo ✓'; setTimeout(()=>el.textContent='',1800); }
+$('#addMod').onclick=async()=>{ const {data}=await sb.from('ead_modulos').insert({titulo:'Novo módulo',ordem:MODS.length+1}).select().single(); MODS.push(data); render(); };
+</script>
+</body>
+</html>
