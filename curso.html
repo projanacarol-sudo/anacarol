@@ -57,11 +57,26 @@ a{color:inherit}
 .mats h4{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin-bottom:9px}
 .mat{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid var(--linha);border-radius:11px;padding:11px 13px;margin-bottom:8px;text-decoration:none}
 .mat .ic{width:34px;height:34px;border-radius:9px;background:#fde8dc;color:var(--lar);display:flex;align-items:center;justify-content:center;font-weight:800;flex:0 0 auto}
-.mat b{font-size:13.5px} .mat span{font-size:11.5px;color:var(--mut)}
+.mat b{font-size:13.5px;display:block} .mat span{font-size:11.5px;color:var(--mut)}
 .acoes{display:flex;gap:10px;align-items:center;margin-top:22px;flex-wrap:wrap}
 .cert{margin-top:24px;background:linear-gradient(135deg,#1f9d63,#157a4b);color:#fff;border-radius:16px;padding:20px;display:none}
 .cert b{font-size:17px} .cert p{font-size:13px;color:#d6f0e3;margin:4px 0 12px}
-@media(max-width:860px){#app{grid-template-columns:1fr}.side{position:static;height:auto}}
+.mbar{display:none}
+.drawer-ov{display:none}
+@media(max-width:860px){
+  #app{display:block!important}
+  .mbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:40;background:#fff;border-bottom:1px solid var(--linha);padding:12px 14px}
+  .mbar .mb{font-size:23px;background:none;border:none;color:var(--plum);cursor:pointer;line-height:1;padding:0 2px}
+  .mbar .mt{font-weight:800;color:var(--plum);font-size:14.5px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mbar .mp{font-size:11px;color:var(--mut);font-weight:700}
+  .side{position:fixed;top:0;left:0;width:84%;max-width:320px;height:100vh;z-index:60;transform:translateX(-100%);transition:transform .25s ease}
+  .side.open{transform:none;box-shadow:0 0 50px rgba(0,0,0,.4)}
+  .drawer-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:55}
+  .drawer-ov.on{display:block}
+  .main{padding:18px 16px 54px;max-width:100%}
+  .main h1{font-size:19px;margin:6px 0 12px}
+  .acoes .btn{flex:1;justify-content:center}
+}
 </style>
 </head>
 <body>
@@ -94,6 +109,8 @@ a{color:inherit}
 
 <!-- CURSO -->
 <div id="app">
+  <div class="mbar"><button class="mb" id="mbMenu" aria-label="Aulas">☰</button><div class="mt">Curso Silêncio que Grita</div><div class="mp" id="mbProg">0/0</div></div>
+  <div class="drawer-ov" id="drawerOv"></div>
   <aside class="side">
     <div class="topo">
       <div class="nome" id="oiNome">Olá!</div>
@@ -170,6 +187,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;',
 function render(){
   $('#progBar').style.width=(CURSO.total?Math.round(CURSO.concluidas/CURSO.total*100):0)+'%';
   $('#progTxt').textContent=`${CURSO.concluidas} de ${CURSO.total} aulas`;
+  $('#mbProg').textContent=`${CURSO.concluidas}/${CURSO.total}`;
   const box=$('#modulos'); box.innerHTML='';
   CURSO.modulos.forEach(m=>{
     if(!m.aulas.length) return;
@@ -204,8 +222,14 @@ function abrirAula(id){
   $('#btnConcluir').textContent=AULA.concluida?'✓ Concluída (desmarcar)':'Marcar como concluída';
   $('#btnConcluir').className='btn'+(AULA.concluida?' g':'');
   render();
+  fecharDrawer();
   window.scrollTo(0,0);
 }
+/* drawer de aulas no mobile */
+function abrirDrawer(){ document.querySelector('.side').classList.add('open'); $('#drawerOv').classList.add('on'); }
+function fecharDrawer(){ document.querySelector('.side').classList.remove('open'); $('#drawerOv').classList.remove('on'); }
+$('#mbMenu').onclick=abrirDrawer;
+$('#drawerOv').onclick=fecharDrawer;
 function injetarEmbed(container, html){
   container.innerHTML=html;
   // re-executa <script> (Smart Player costuma usar script)
