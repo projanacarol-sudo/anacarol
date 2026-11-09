@@ -52,7 +52,8 @@ a{color:inherit}
 .player{background:#000;border-radius:14px;overflow:hidden;aspect-ratio:16/9;margin-bottom:16px}
 .player iframe{width:100%;height:100%;border:0;display:block}
 .vazioPlayer{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff8;font-size:14px;text-align:center;padding:20px}
-.desc{color:#4a3f38;line-height:1.6;font-size:14.5px}
+.desc{color:#4a3f38;line-height:1.6;font-size:14.5px;white-space:pre-wrap}
+.desc.texto{background:#fff;border:1px solid var(--linha);border-radius:14px;padding:18px 20px;font-size:15px;margin-top:2px;box-shadow:0 6px 18px rgba(59,31,26,.06)}
 .mats{margin-top:18px}
 .mats h4{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin-bottom:9px}
 .mat{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid var(--linha);border-radius:11px;padding:11px 13px;margin-bottom:8px;text-decoration:none}
@@ -207,10 +208,12 @@ function abrirAula(id){
   const mod=CURSO.modulos.find(m=>m.aulas.some(a=>a.id===id));
   $('#bc').textContent=mod?mod.titulo:''; $('#aulaTitulo').textContent=AULA.titulo;
   $('#aulaDesc').textContent=AULA.descricao||'';
-  // player (embed do Smart Player)
-  const vazio=$('#playerVazio'), pbox=$('#playerBox');
-  if(AULA.embed && AULA.embed.trim()){ vazio.style.display='none'; pbox.style.display='block'; injetarEmbed(pbox, AULA.embed); }
-  else { pbox.style.display='none'; vazio.style.display='flex'; vazio.textContent='Vídeo em breve.'; }
+  // player: só aparece se a aula tiver vídeo. Sem vídeo, a descrição vira o conteúdo.
+  const player=document.querySelector('.player'), vazio=$('#playerVazio'), pbox=$('#playerBox');
+  const temVideo = !!(AULA.embed && AULA.embed.trim());
+  if(temVideo){ player.style.display=''; vazio.style.display='none'; pbox.style.display='block'; injetarEmbed(pbox, AULA.embed); }
+  else { player.style.display='none'; pbox.style.display='none'; pbox.innerHTML=''; }
+  $('#aulaDesc').classList.toggle('texto', !temVideo);
   // materiais
   const mb=$('#matsBox');
   if(AULA.materiais && AULA.materiais.length){
